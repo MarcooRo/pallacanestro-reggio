@@ -2,7 +2,7 @@
 
 # Convenzioni
 
-La specifica completa è in PROJECT-RE.md: leggila prima di implementare.
+La specifica completa è in PROJECT_RE.md: leggila prima di implementare.
 
 - Italiano nei commenti e nei messaggi di commit
 - Niente RLS: ogni accesso al DB passa da server action tipizzate

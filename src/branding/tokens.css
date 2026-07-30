@@ -1,0 +1,33 @@
+/*
+ * Token di branding. UNICO punto dove vivono i colori del brand:
+ * mai hardcoded nei componenti (PROJECT_RE.md, sezione 11).
+ * Il set attivo è selezionato da data-branding sull'elemento <html>,
+ * valorizzato dal layout in base alla env var BRANDING.
+ */
+
+/* Ufficiale: colori Pallacanestro Reggiana (biancorosso) */
+[data-branding="official"] {
+  --brand-primary: #c8102e;
+  --brand-primary-hover: #a30d26;
+  --brand-on-primary: #ffffff;
+  --brand-accent: #1d1d1b;
+  --brand-surface-tint: #fdf2f3;
+}
+
+/* Generico: nessun riferimento al club, per distribuzione senza accordo */
+[data-branding="generic"] {
+  --brand-primary: #2563eb;
+  --brand-primary-hover: #1d4ed8;
+  --brand-on-primary: #ffffff;
+  --brand-accent: #0f172a;
+  --brand-surface-tint: #eff6ff;
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-branding="official"] {
+    --brand-surface-tint: #2a1215;
+  }
+  [data-branding="generic"] {
+    --brand-surface-tint: #172033;
+  }
+}

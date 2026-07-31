@@ -128,7 +128,8 @@ export async function haVotato(matchId: string, userId: string): Promise<boolean
   return Boolean(riga);
 }
 
-// Per la home: la prossima partita in calendario e l'ultima pagella pubblicata.
+// Per la home: la prossima partita DI REGGIO (le altre stanno nel
+// calendario) e l'ultima pagella pubblicata.
 export async function getProssimaPartita() {
   const [riga] = await db
     .select(colonnePartita)
@@ -136,7 +137,16 @@ export async function getProssimaPartita() {
     .innerJoin(competitions, eq(competitions.id, matches.competitionId))
     .innerJoin(casa, eq(casa.id, matches.homeTeamSeasonId))
     .innerJoin(ospite, eq(ospite.id, matches.awayTeamSeasonId))
-    .where(gt(matches.startsAt, new Date()))
+    .where(
+      and(
+        gt(matches.startsAt, new Date()),
+        sql`exists (
+          select 1 from clubs c
+          where c.is_home_club
+            and c.id in (${casa.clubId}, ${ospite.clubId})
+        )`,
+      ),
+    )
     .orderBy(matches.startsAt)
     .limit(1);
   return riga ?? null;

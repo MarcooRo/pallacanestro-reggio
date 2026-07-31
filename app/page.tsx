@@ -62,7 +62,8 @@ async function HomeLoggata() {
   ]);
 
   return (
-    <main className="flex flex-1 flex-col gap-8 px-4 py-6">
+    // Ogni sezione dopo la prima è separata da un divisorio e respira.
+    <main className="flex flex-1 flex-col gap-2 px-4 py-6 [&>section]:py-6 [&>section+section]:border-t [&>section+section]:border-border">
       <p className="eyebrow sale">Ciao, {profilo!.nickname}</p>
 
       {votazione && (
@@ -78,14 +79,9 @@ async function HomeLoggata() {
         </section>
       )}
 
-      {prossima && (
-        <section className="sale sale-2 flex flex-col gap-3">
-          <h2 className="display text-2xl">Prossima partita</h2>
-          <PartitaCard partita={prossima} />
-        </section>
-      )}
-
-      {ultima && (
+      {/* L'ultima pagella fa da contesto SOLO mentre si vota:
+          "guarda il verdetto scorso, ora tocca a te". */}
+      {votazione && ultima && (
         <section className="sale sale-3 flex flex-col gap-3">
           <div className="flex items-baseline justify-between">
             <h2 className="display text-2xl">L&apos;ultima pagella</h2>
@@ -103,7 +99,14 @@ async function HomeLoggata() {
         </section>
       )}
 
-      {!votazione && !prossima && !ultima && (
+      {prossima && (
+        <section className="sale sale-2 flex flex-col gap-3">
+          <h2 className="display text-2xl">Prossima partita</h2>
+          <PartitaCard partita={prossima} />
+        </section>
+      )}
+
+      {!votazione && !prossima && (
         <p className="taglio-sm border border-border bg-surface p-4 text-sm text-muted">
           Nessuna votazione in corso. Intanto puoi sfogliare il{" "}
           <Link href="/calendario" className="text-brand-vivid underline">

@@ -1,33 +1,23 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { PartitaCard } from "@/src/components/partita-card";
+import { Pagella } from "@/src/components/pagella";
 import { branding } from "@/src/branding";
 import { getProfilo, getUtente } from "@/src/lib/auth/session";
+import {
+  getProssimaPartita,
+  getUltimaPagella,
+  getVotazioneAperta,
+} from "@/src/lib/partite/queries";
 
 export default async function HomePage() {
   const utente = await getUtente();
 
   // Loggato ma senza nickname: il profilo va completato prima di entrare.
-  if (utente) {
-    const profilo = await getProfilo();
-    if (!profilo) redirect("/benvenuto");
+  if (utente && !(await getProfilo())) redirect("/benvenuto");
 
-    return (
-      <main className="flex flex-1 flex-col gap-6 px-4 py-8">
-        <div>
-          <h1 className="text-2xl font-bold">Ciao, {profilo.nickname}</h1>
-          <p className="mt-1 text-sm text-muted">
-            A fine partita si vota il migliore in campo. La pagella della
-            curva arriva in Fase 2.
-          </p>
-        </div>
-
-        <div className="rounded-lg border border-border bg-surface p-4 text-sm text-muted">
-          Qui compariranno la prossima partita e la scheda di voto.
-        </div>
-      </main>
-    );
-  }
+  if (utente) return <HomeLoggata />;
 
   // Splash per chi non è loggato. Solo la home fa da vetrina: le pagine
   // pubbliche (pagelle, classifiche) restano apribili dal link condiviso,
@@ -59,6 +49,69 @@ export default async function HomePage() {
           Ti basta l&apos;email, niente password.
         </p>
       </div>
+    </main>
+  );
+}
+
+async function HomeLoggata() {
+  const profilo = await getProfilo();
+  const [votazione, prossima, ultima] = await Promise.all([
+    getVotazioneAperta(),
+    getProssimaPartita(),
+    getUltimaPagella(),
+  ]);
+
+  return (
+    <main className="flex flex-1 flex-col gap-6 px-4 py-8">
+      <h1 className="text-2xl font-bold">Ciao, {profilo!.nickname}</h1>
+
+      {votazione && (
+        <section className="flex flex-col gap-3">
+          <h2 className="font-bold">C&apos;è una votazione aperta</h2>
+          <PartitaCard partita={votazione} />
+          <Link
+            href={`/partite/${votazione.id}`}
+            className="rounded-md bg-brand px-4 py-3 text-center font-semibold text-on-brand hover:bg-brand-hover"
+          >
+            Vota il migliore
+          </Link>
+        </section>
+      )}
+
+      {prossima && (
+        <section className="flex flex-col gap-3">
+          <h2 className="font-bold">Prossima partita</h2>
+          <PartitaCard partita={prossima} />
+        </section>
+      )}
+
+      {ultima && (
+        <section className="flex flex-col gap-3">
+          <div className="flex items-baseline justify-between">
+            <h2 className="font-bold">L&apos;ultima pagella</h2>
+            <Link href={`/partite/${ultima.partita.id}`} className="text-sm text-brand">
+              vedi tutta →
+            </Link>
+          </div>
+          <p className="text-xs text-muted">
+            {ultima.partita.homeTeam} – {ultima.partita.awayTeam}
+            {ultima.partita.status === "finished"
+              ? ` · ${ultima.partita.homeScore}-${ultima.partita.awayScore}`
+              : ""}
+          </p>
+          <Pagella righe={ultima.pagella} compatta />
+        </section>
+      )}
+
+      {!votazione && !prossima && !ultima && (
+        <p className="rounded-lg border border-border bg-surface p-4 text-sm text-muted">
+          Nessuna votazione in corso. Intanto puoi sfogliare il{" "}
+          <Link href="/calendario" className="text-brand underline">
+            calendario
+          </Link>
+          .
+        </p>
+      )}
     </main>
   );
 }

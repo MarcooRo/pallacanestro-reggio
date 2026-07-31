@@ -42,6 +42,15 @@ export default async function ProfiloPage() {
         </div>
       </dl>
 
+      {profilo.role === "admin" && (
+        <Link
+          href="/admin"
+          className="rounded-md bg-brand px-4 py-2 text-center font-semibold text-on-brand hover:bg-brand-hover"
+        >
+          Pannello admin
+        </Link>
+      )}
+
       <form action={esci}>
         <button
           type="submit"

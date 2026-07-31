@@ -15,6 +15,16 @@ interface Branding {
   tagline: string;
   /** Path del logo in /public; null = fallback tipografico */
   logoUrl: string | null;
+  /**
+   * Palette per i contesti dove il CSS non arriva (immagini OG generate
+   * server-side). Tenere allineata a tokens.css: è l'unica altra copia.
+   */
+  colori: {
+    primario: string;
+    onPrimario: string;
+    scuro: string;
+    tinta: string;
+  };
 }
 
 // Il nome è volutamente identico nei due modi: finisce nel dominio, nel
@@ -27,6 +37,12 @@ const configs: Record<BrandingMode, Branding> = {
     appShortName: "Pagella",
     tagline: "Il migliore in campo lo decide la curva",
     logoUrl: null,
+    colori: {
+      primario: "#c8102e",
+      onPrimario: "#ffffff",
+      scuro: "#1d1d1b",
+      tinta: "#fdf2f3",
+    },
   },
   generic: {
     mode: "generic",
@@ -34,6 +50,12 @@ const configs: Record<BrandingMode, Branding> = {
     appShortName: "Pagella",
     tagline: "Il migliore in campo lo decidi tu",
     logoUrl: null,
+    colori: {
+      primario: "#2563eb",
+      onPrimario: "#ffffff",
+      scuro: "#0f172a",
+      tinta: "#eff6ff",
+    },
   },
 };
 

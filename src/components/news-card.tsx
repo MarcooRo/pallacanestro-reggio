@@ -31,7 +31,10 @@ export function NewsCard({ item }: { item: typeof news.$inferSelect }) {
       )}
       <span className="flex min-w-0 flex-col gap-1">
         <span className="eyebrow">
-          {nomeFonte[item.source] ?? item.source}
+          {/* le news di Reggio si riconoscono al volo: fonte in rosso */}
+          <span className={item.source === "pr_wordpress" ? "font-bold !text-brand-vivid" : ""}>
+            {nomeFonte[item.source] ?? item.source}
+          </span>
           {item.category ? ` · ${item.category}` : ""} · {soloOra(item.publishedAt)}
         </span>
         <span className="font-bold leading-snug">{item.title}</span>

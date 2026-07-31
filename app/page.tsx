@@ -58,7 +58,8 @@ async function HomeLoggata() {
     getVotazioneAperta(),
     getProssimaPartita(),
     getUltimaPagella(),
-    getNews(4),
+    // in home solo le news di Reggio; la Serie A vive in /news
+    getNews(4, "pr_wordpress"),
   ]);
 
   return (

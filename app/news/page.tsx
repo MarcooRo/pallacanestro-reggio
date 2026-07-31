@@ -6,11 +6,11 @@ import { getNews, type FonteNews } from "@/src/lib/news/queries";
 
 export const metadata: Metadata = { title: "News" };
 
-// Reggio è il default: le news della Serie A si scelgono apposta.
+// Di default si vede tutto, mescolato; i tag scelgono la fonte.
 const FILTRI: { chiave: string; etichetta: string; fonte?: FonteNews }[] = [
+  { chiave: "tutte", etichetta: "Tutte" },
   { chiave: "reggio", etichetta: "Reggio", fonte: "pr_wordpress" },
   { chiave: "seriea", etichetta: "Serie A", fonte: "lba" },
-  { chiave: "tutte", etichetta: "Tutte" },
 ];
 
 export default async function NewsPage({

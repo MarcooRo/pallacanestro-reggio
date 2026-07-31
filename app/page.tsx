@@ -58,14 +58,29 @@ async function HomeLoggata() {
     getVotazioneAperta(),
     getProssimaPartita(),
     getUltimaPagella(),
-    // in home solo le news di Reggio; la Serie A vive in /news
-    getNews(4, "pr_wordpress"),
+    getNews(4),
   ]);
 
   return (
     // Ogni sezione dopo la prima è separata da un divisorio e respira.
     <main className="flex flex-1 flex-col gap-2 px-4 py-6 [&>section]:py-6 [&>section+section]:border-t [&>section+section]:border-border">
       <p className="eyebrow sale">Ciao, {profilo!.nickname}</p>
+
+      {/* Il primo blocco è sempre la prossima partita di Reggio. */}
+      <section className="sale sale-2 flex flex-col gap-3">
+        <h2 className="display text-2xl">Prossima partita</h2>
+        {prossima ? (
+          <PartitaCard partita={prossima} />
+        ) : (
+          <p className="taglio-sm border border-border bg-surface p-4 text-sm text-muted">
+            Nessuna partita di Reggio pianificata. Guarda il{" "}
+            <Link href="/calendario" className="font-bold text-brand-vivid underline">
+              calendario
+            </Link>{" "}
+            per tutte le altre.
+          </p>
+        )}
+      </section>
 
       {votazione && (
         <section className="sale sale-2 flex flex-col gap-3">
@@ -98,23 +113,6 @@ async function HomeLoggata() {
           </p>
           <Pagella righe={ultima.pagella} compatta />
         </section>
-      )}
-
-      {prossima && (
-        <section className="sale sale-2 flex flex-col gap-3">
-          <h2 className="display text-2xl">Prossima partita</h2>
-          <PartitaCard partita={prossima} />
-        </section>
-      )}
-
-      {!votazione && !prossima && (
-        <p className="taglio-sm border border-border bg-surface p-4 text-sm text-muted">
-          Nessuna votazione in corso. Intanto puoi sfogliare il{" "}
-          <Link href="/calendario" className="text-brand-vivid underline">
-            calendario
-          </Link>
-          .
-        </p>
       )}
 
       {ultimeNews.length > 0 && (

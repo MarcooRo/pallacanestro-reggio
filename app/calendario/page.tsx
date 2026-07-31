@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Calendario" };
 export default async function CalendarioPage({
   searchParams,
 }: {
-  searchParams: Promise<{ s?: string }>;
+  searchParams: Promise<{ s?: string; f?: string }>;
 }) {
   const stagioni = await getStagioni();
   if (stagioni.length === 0) {
@@ -22,21 +22,37 @@ export default async function CalendarioPage({
     );
   }
 
-  const { s } = await searchParams;
+  const { s, f } = await searchParams;
   const richiesta = Number(s);
   const stagione = stagioni.includes(richiesta) ? richiesta : stagioni[0];
-  const partite = await getCalendario(stagione);
+  const soloReggio = f === "reggio";
+  const partite = await getCalendario(stagione, soloReggio);
+
+  const url = (patch: { s?: number; f?: string }) => {
+    const query = new URLSearchParams();
+    query.set("s", String(patch.s ?? stagione));
+    const filtro = "f" in patch ? patch.f : f;
+    if (filtro) query.set("f", filtro);
+    return `/calendario?${query.toString()}`;
+  };
 
   return (
     <main className="flex flex-1 flex-col gap-4 px-4 py-6">
       <h1 className="display text-3xl">Partite</h1>
 
-      <div className="flex gap-2.5 pl-1">
+      <div className="flex flex-wrap gap-2.5 pl-1">
         {stagioni.map((anno) => (
-          <Pillola key={anno} href={`/calendario?s=${anno}`} attiva={anno === stagione}>
+          <Pillola key={anno} href={url({ s: anno })} attiva={anno === stagione}>
             {etichettaStagione(anno)}
           </Pillola>
         ))}
+        <span aria-hidden className="mx-1 w-px bg-border" />
+        <Pillola href={url({ f: undefined })} attiva={!soloReggio}>
+          Tutte
+        </Pillola>
+        <Pillola href={url({ f: "reggio" })} attiva={soloReggio}>
+          Solo Reggio
+        </Pillola>
       </div>
 
       <p className="eyebrow">{partite.length} partite · dalla più recente</p>

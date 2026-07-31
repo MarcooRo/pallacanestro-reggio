@@ -42,14 +42,25 @@ const colonnePartita = {
 
 export type PartitaLista = Awaited<ReturnType<typeof getCalendario>>[number];
 
-export async function getCalendario(seasonYear: number) {
+export async function getCalendario(seasonYear: number, soloReggio = false) {
   return db
     .select(colonnePartita)
     .from(matches)
     .innerJoin(competitions, eq(competitions.id, matches.competitionId))
     .innerJoin(casa, eq(casa.id, matches.homeTeamSeasonId))
     .innerJoin(ospite, eq(ospite.id, matches.awayTeamSeasonId))
-    .where(eq(competitions.seasonYear, seasonYear))
+    .where(
+      and(
+        eq(competitions.seasonYear, seasonYear),
+        soloReggio
+          ? sql`exists (
+              select 1 from clubs c
+              where c.is_home_club
+                and c.id in (${casa.clubId}, ${ospite.clubId})
+            )`
+          : undefined,
+      ),
+    )
     .orderBy(desc(matches.startsAt));
 }
 

@@ -3,6 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 
 import { AvatarGiocatore } from "@/src/components/avatar-giocatore";
+import { TornaIndietro } from "@/src/components/torna-indietro";
 import { etichettaStagione } from "@/src/lib/date";
 import {
   getGiocatore,
@@ -61,7 +62,9 @@ export default async function GiocatorePage({
 
   return (
     <main className="flex flex-1 flex-col gap-6 px-4 py-6">
-      <header className="taglio relative flex items-center gap-4 overflow-hidden border border-border bg-surface p-4">
+      <TornaIndietro fallback="/giocatori" etichetta="La squadra" />
+
+      <header className="taglio relative -mt-2 flex items-center gap-4 overflow-hidden border border-border bg-surface p-4">
         {ultimaPermanenza?.jerseyNumber && (
           <span
             aria-hidden

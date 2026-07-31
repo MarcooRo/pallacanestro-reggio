@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { FormVoto } from "@/src/components/form-voto";
 import { Pagella } from "@/src/components/pagella";
 import { Tabellino } from "@/src/components/tabellino";
+import { TornaIndietro } from "@/src/components/torna-indietro";
 import { getProfilo, getUtente } from "@/src/lib/auth/session";
 import { dataOra, soloOra } from "@/src/lib/date";
 import {
@@ -44,8 +45,10 @@ export default async function PartitaPage({
 
   return (
     <main className="flex flex-1 flex-col gap-8 px-4 py-6">
+      <TornaIndietro fallback="/calendario" etichetta="Partite" />
+
       {/* Scoreboard */}
-      <header className="flex flex-col gap-3">
+      <header className="-mt-4 flex flex-col gap-3">
         <p className="eyebrow">
           {partita.competitionName}
           {partita.dayName ? ` · ${partita.dayName}` : ""} ·{" "}

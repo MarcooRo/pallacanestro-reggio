@@ -9,10 +9,22 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { db } from "@/src/db";
-import { matches, voteTallies } from "@/src/db/schema";
+import { matches, players, voteTallies } from "@/src/db/schema";
+import { aggiornaNews } from "@/src/ingestion/news";
 import { getProfilo } from "@/src/lib/auth/session";
+import { getPartita } from "@/src/lib/partite/queries";
+import { inviaPushCategoria } from "@/src/lib/push/invia";
 import { ORE_FINESTRA_DEFAULT } from "@/src/lib/voto/regole";
 import { calcolaTally } from "@/src/lib/voto/tally";
+
+// L'invio push non deve mai far fallire l'azione che lo innesca.
+async function pushSicura(...args: Parameters<typeof inviaPushCategoria>) {
+  try {
+    await inviaPushCategoria(...args);
+  } catch (err) {
+    console.warn("Invio push fallito:", err);
+  }
+}
 
 async function richiediAdmin() {
   const profilo = await getProfilo();
@@ -75,6 +87,13 @@ export async function apriVotazione(formData: FormData) {
     })
     .where(eq(matches.id, matchId));
 
+  const dettagli = await getPartita(matchId);
+  await pushSicura("vote_open", {
+    title: "Fine partita. Vota il migliore.",
+    body: dettagli ? `${dettagli.homeTeam} – ${dettagli.awayTeam}` : "",
+    url: `/partite/${matchId}`,
+  });
+
   revalidaPartita(matchId);
   esitoAdmin(`Votazione aperta per ${ore} ore`);
 }
@@ -125,6 +144,19 @@ export async function chiudiEPubblicaPagella(formData: FormData) {
       .where(eq(matches.id, matchId));
   });
 
+  if (tally.length > 0) {
+    const [migliore] = await db
+      .select({ firstName: players.firstName, lastName: players.lastName })
+      .from(players)
+      .where(eq(players.id, tally[0].playerId))
+      .limit(1);
+    await pushSicura("tally_published", {
+      title: `Il migliore secondo la curva è ${migliore.firstName} ${migliore.lastName}`,
+      body: "La pagella è pubblicata: guarda com'è andata.",
+      url: `/partite/${matchId}`,
+    });
+  }
+
   revalidaPartita(matchId);
   esitoAdmin(
     tally.length > 0
@@ -168,4 +200,21 @@ export async function aggiornaPartita(formData: FormData) {
 
   revalidaPartita(dati.matchId);
   esitoAdmin("Partita aggiornata (manual override attivo)");
+}
+
+// Fase 3: aggiornamento manuale delle news. Ciò che in Fase 4 farà il
+// cron, l'admin lo può fare a mano da subito.
+export async function aggiornaNewsAction() {
+  await richiediAdmin();
+
+  const esito = await aggiornaNews();
+  revalidatePath("/news");
+  revalidatePath("/");
+
+  const parti = [
+    `LBA: +${esito.nuoveLba}`,
+    `Società: +${esito.nuoveWordPress}`,
+    ...esito.errori,
+  ];
+  esitoAdmin(`News aggiornate — ${parti.join(" · ")}`);
 }

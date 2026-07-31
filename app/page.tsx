@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { NewsCard } from "@/src/components/news-card";
 import { PartitaCard } from "@/src/components/partita-card";
 import { Pagella } from "@/src/components/pagella";
 import { branding } from "@/src/branding";
 import { getProfilo, getUtente } from "@/src/lib/auth/session";
+import { getNews } from "@/src/lib/news/queries";
 import {
   getProssimaPartita,
   getUltimaPagella,
@@ -55,10 +57,11 @@ export default async function HomePage() {
 
 async function HomeLoggata() {
   const profilo = await getProfilo();
-  const [votazione, prossima, ultima] = await Promise.all([
+  const [votazione, prossima, ultima, ultimeNews] = await Promise.all([
     getVotazioneAperta(),
     getProssimaPartita(),
     getUltimaPagella(),
+    getNews(4),
   ]);
 
   return (
@@ -111,6 +114,22 @@ async function HomeLoggata() {
           </Link>
           .
         </p>
+      )}
+
+      {ultimeNews.length > 0 && (
+        <section className="flex flex-col gap-3">
+          <div className="flex items-baseline justify-between">
+            <h2 className="font-bold">News</h2>
+            <Link href="/news" className="text-sm text-brand">
+              tutte →
+            </Link>
+          </div>
+          <div className="flex flex-col gap-3">
+            {ultimeNews.map((n) => (
+              <NewsCard key={n.id} item={n} />
+            ))}
+          </div>
+        </section>
       )}
     </main>
   );

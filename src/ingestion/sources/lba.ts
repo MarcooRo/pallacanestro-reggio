@@ -5,6 +5,7 @@
 import type {
   CompetizioneCanonica,
   GiocatoreCanonico,
+  NewsCanonica,
   PartitaCanonica,
   PermanenzaCanonica,
   SquadraStagioneCanonica,
@@ -12,10 +13,14 @@ import type {
 } from "@/src/ingestion/normalize";
 
 const BASE_URL = "https://www.legabasket.it/api";
+const SITE_URL = "https://www.legabasket.it";
 
-async function fetchLba<T>(path: string): Promise<T> {
+// revalidateSecondi: cache del fetch di Next per le letture a render
+// (es. statistiche giocatore). Ignorato fuori da Next (script di seed).
+async function fetchLba<T>(path: string, revalidateSecondi?: number): Promise<T> {
   const res = await fetch(`${BASE_URL}/${path}`, {
     headers: { accept: "application/json" },
+    ...(revalidateSecondi ? { next: { revalidate: revalidateSecondi } } : {}),
   });
   if (!res.ok) {
     throw new Error(`LBA ${path}: HTTP ${res.status}`);
@@ -234,4 +239,161 @@ export async function getCalendario(
   }
 
   return [...partite.values()];
+}
+
+// ---- Statistiche di stagione del giocatore ----
+// Verificate il 31/07/2026 contro l'API (sezione 7.5): points_sum/played
+// quadra con points_avg; rating_oer_sum contiene una MEDIA, non una somma;
+// avg_points_sum significa altro e si ignora. I valori _avg arrivano come
+// stringhe. Le chiavi sono totals_highs_{comp} / avg_{comp} (rs, po, ...).
+
+interface LbaTotali {
+  played_matches_sum: number;
+  quintet_sum: number;
+  points_sum: number;
+  played_minutes_sum: number;
+  shots_2p_realized_sum: number;
+  shots_2p_total_sum: number;
+  shots_3p_realized_sum: number;
+  shots_3p_total_sum: number;
+  free_throws_realized_sum: number;
+  free_throws_total_sum: number;
+  offensive_rebound_sum: number;
+  defensive_rebound_sum: number;
+  assists_sum: number;
+  regain_balls_sum: number;
+  lost_balls_sum: number;
+  ball_stop_given_sum: number;
+  ball_stop_received_sum: number;
+  done_fouls_sum: number;
+  suffered_fouls_sum: number;
+  slam_dunk_sum: number;
+  rating_lega_sum: number;
+  rating_oer_sum: number; // in realtà una media (sezione 7.5)
+  points_max: number;
+  rating_lega_max: number;
+}
+
+interface LbaMedie {
+  points_avg: string;
+  played_minutes_avg: string;
+  rating_lega_avg: string;
+  assists_avg: string;
+}
+
+export interface StatisticheStagione {
+  competizione: string; // 'RS' | 'PO' | ... dal suffisso della chiave
+  partite: number;
+  quintetti: number;
+  punti: number;
+  minuti: number;
+  fg2m: number;
+  fg2a: number;
+  fg3m: number;
+  fg3a: number;
+  ftm: number;
+  fta: number;
+  rebOff: number;
+  rebDef: number;
+  assists: number;
+  steals: number;
+  turnovers: number;
+  blocks: number;
+  blocksReceived: number;
+  foulsCommitted: number;
+  foulsReceived: number;
+  dunks: number;
+  rating: number;
+  oer: number;
+  puntiMedia: number;
+  minutiMedia: number;
+  ratingMedia: number;
+  assistMedia: number;
+  puntiMax: number;
+  ratingMax: number;
+}
+
+export async function getStatisticheGiocatore(
+  lbaPlayerId: number,
+): Promise<StatisticheStagione[]> {
+  const data = await fetchLba<{ stats: Record<string, unknown> }>(
+    `players/get-player-by-id?id=${lbaPlayerId}&stats=true`,
+    3600, // cache 1h: lettura a render, non ingestion
+  );
+
+  const stagioni: StatisticheStagione[] = [];
+  for (const [chiave, valore] of Object.entries(data.stats ?? {})) {
+    const suffisso = chiave.match(/^totals_highs_(\w+)$/)?.[1];
+    if (!suffisso || !valore) continue;
+    const t = valore as LbaTotali;
+    const medie = (data.stats[`avg_${suffisso}`] ?? {}) as LbaMedie;
+
+    stagioni.push({
+      competizione: suffisso.toUpperCase(),
+      partite: t.played_matches_sum,
+      quintetti: t.quintet_sum,
+      punti: t.points_sum,
+      minuti: t.played_minutes_sum,
+      fg2m: t.shots_2p_realized_sum,
+      fg2a: t.shots_2p_total_sum,
+      fg3m: t.shots_3p_realized_sum,
+      fg3a: t.shots_3p_total_sum,
+      ftm: t.free_throws_realized_sum,
+      fta: t.free_throws_total_sum,
+      rebOff: t.offensive_rebound_sum,
+      rebDef: t.defensive_rebound_sum,
+      assists: t.assists_sum,
+      steals: t.regain_balls_sum,
+      turnovers: t.lost_balls_sum,
+      blocks: t.ball_stop_given_sum,
+      blocksReceived: t.ball_stop_received_sum,
+      foulsCommitted: t.done_fouls_sum,
+      foulsReceived: t.suffered_fouls_sum,
+      dunks: t.slam_dunk_sum,
+      rating: t.rating_lega_sum,
+      oer: t.rating_oer_sum,
+      puntiMedia: Number(medie.points_avg ?? 0),
+      minutiMedia: Number(medie.played_minutes_avg ?? 0),
+      ratingMedia: Number(medie.rating_lega_avg ?? 0),
+      assistMedia: Number(medie.assists_avg ?? 0),
+      puntiMax: t.points_max,
+      ratingMax: t.rating_lega_max,
+    });
+  }
+  return stagioni;
+}
+
+// ---- News LBA ----
+
+interface LbaContenuto {
+  id: number;
+  title: string;
+  publication_date: string;
+  abstract: string | null;
+  seo_description: string | null;
+  permalink: string;
+  category_label: string | null;
+  main_image_key: string | null;
+}
+
+export async function getNewsLba(
+  lbaChampionshipId: number,
+  items = 20,
+): Promise<NewsCanonica[]> {
+  const data = await fetchLba<{ contents: LbaContenuto[] }>(
+    `contents/get-contents?c_id=${lbaChampionshipId}&c_type=news&items=${items}`,
+  );
+  return data.contents.map((c) => ({
+    source: "lba",
+    sourceId: String(c.id),
+    title: c.title,
+    // pattern URL verificato sull'HTML del sito: /news/{id}/{permalink}
+    url: `${SITE_URL}/news/${c.id}/${c.permalink}`,
+    excerpt: c.seo_description || c.abstract || null,
+    category: c.category_label,
+    imageUrl: c.main_image_key
+      ? `https://lba-media.s3.eu-south-1.amazonaws.com/variants/${c.main_image_key}/large`
+      : null,
+    publishedAt: new Date(c.publication_date),
+  }));
 }

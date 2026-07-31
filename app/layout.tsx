@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 
 import { BottomNav } from "@/src/components/bottom-nav";
+import { RegistraSw } from "@/src/components/registra-sw";
 import { branding } from "@/src/branding";
 
 import "./globals.css";
@@ -23,6 +24,18 @@ export const metadata: Metadata = {
     template: `%s · ${branding.appName}`,
   },
   description: branding.tagline,
+  appleWebApp: {
+    capable: true,
+    title: branding.appShortName,
+    statusBarStyle: "default",
+  },
+  icons: {
+    apple: "/icons/apple-touch-icon.png",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: branding.colori.primario,
 };
 
 export default function RootLayout({
@@ -41,6 +54,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="flex min-h-dvh flex-col">
+        <RegistraSw />
         <header className="border-b border-border">
           <div className="mx-auto flex max-w-lg items-center px-4 py-3">
             <Link href="/" className="text-lg font-bold text-brand">

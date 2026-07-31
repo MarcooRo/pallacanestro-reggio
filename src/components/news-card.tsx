@@ -1,0 +1,44 @@
+// Card news: titolo, estratto, categoria, immagine. Link sempre alla
+// fonte originale (il testo integrale non si ripubblica).
+
+import Image from "next/image";
+
+import type { news } from "@/src/db/schema";
+import { soloOra } from "@/src/lib/date";
+
+const nomeFonte: Record<string, string> = {
+  lba: "Lega Basket",
+  pr_wordpress: "Pallacanestro Reggiana",
+};
+
+export function NewsCard({ item }: { item: typeof news.$inferSelect }) {
+  return (
+    <a
+      href={item.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex gap-3 rounded-lg border border-border p-3 hover:border-brand"
+    >
+      {item.imageUrl && (
+        <Image
+          src={item.imageUrl}
+          alt=""
+          width={96}
+          height={64}
+          className="hidden shrink-0 rounded-md object-cover sm:block"
+          style={{ width: 96, height: 64 }}
+        />
+      )}
+      <span className="flex min-w-0 flex-col gap-1">
+        <span className="text-xs text-muted">
+          {nomeFonte[item.source] ?? item.source}
+          {item.category ? ` · ${item.category}` : ""} · {soloOra(item.publishedAt)}
+        </span>
+        <span className="font-semibold leading-snug">{item.title}</span>
+        {item.excerpt && (
+          <span className="line-clamp-2 text-sm text-muted">{item.excerpt}</span>
+        )}
+      </span>
+    </a>
+  );
+}

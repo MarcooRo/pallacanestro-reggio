@@ -51,6 +51,17 @@ export type StatoPartita =
   | "postponed"
   | "cancelled";
 
+export interface NewsCanonica {
+  source: "lba" | "pr_wordpress";
+  sourceId: string;
+  title: string;
+  url: string; // si linka SEMPRE alla fonte, mai ripubblicato il testo
+  excerpt: string | null;
+  category: string | null;
+  imageUrl: string | null;
+  publishedAt: Date;
+}
+
 export interface PartitaCanonica {
   lbaMatchId: number;
   lbaChampionshipId: number;

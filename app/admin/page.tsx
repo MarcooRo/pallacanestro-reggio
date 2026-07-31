@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import {
+  aggiornaNewsAction,
   aggiornaPartita,
   apriVotazione,
   chiudiEPubblicaPagella,
@@ -39,6 +40,15 @@ export default async function AdminPage({
           {esito}
         </p>
       )}
+
+      <form action={aggiornaNewsAction}>
+        <button
+          type="submit"
+          className="rounded-md border border-border px-3 py-1.5 text-sm font-semibold hover:bg-surface"
+        >
+          Aggiorna news dalle fonti
+        </button>
+      </form>
 
       <div className="flex flex-col gap-4">
         {partite.map((p) => (

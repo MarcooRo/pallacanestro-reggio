@@ -70,6 +70,16 @@ export default async function PartitaPage({
               : ""}
           </p>
         )}
+        {partita.status === "scheduled" && partita.ticketingUrl && (
+          <a
+            href={partita.ticketingUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="self-start rounded-md border border-border px-4 py-2 text-sm font-semibold hover:bg-surface"
+          >
+            Biglietti →
+          </a>
+        )}
       </header>
 
       {/* Voto o pagella, a seconda dello stato */}

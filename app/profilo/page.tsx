@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { NotifichePush } from "@/src/components/notifiche-push";
 import { esci } from "@/src/lib/auth/actions";
 import { getProfilo, getUtente } from "@/src/lib/auth/session";
 
@@ -41,6 +42,8 @@ export default async function ProfiloPage() {
           <dd className="font-semibold">{utente.email}</dd>
         </div>
       </dl>
+
+      <NotifichePush />
 
       {profilo.role === "admin" && (
         <Link

@@ -35,6 +35,10 @@ export default function RootLayout({
       lang="it"
       data-branding={branding.mode}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      // Le estensioni del browser (es. LanguageTool) iniettano attributi
+      // sull'<html> prima che React si agganci: senza questo, ogni dev
+      // session mostra un falso warning di hydration mismatch.
+      suppressHydrationWarning
     >
       <body className="flex min-h-dvh flex-col">
         <header className="border-b border-border">

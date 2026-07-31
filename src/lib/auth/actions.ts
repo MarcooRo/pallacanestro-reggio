@@ -3,6 +3,7 @@
 // Server actions di autenticazione: OTP via email (Supabase Auth)
 // e creazione del profilo con nickname pubblico.
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
@@ -30,10 +31,17 @@ export async function inviaOtp(formData: FormData) {
   }
   const email = parsed.data;
 
+  // Il link nell'email deve rientrare sulla route di callback di QUESTA
+  // origine (localhost in dev, dominio in prod).
+  const origin = (await headers()).get("origin") ?? "http://localhost:3000";
+
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: { shouldCreateUser: true },
+    options: {
+      shouldCreateUser: true,
+      emailRedirectTo: `${origin}/auth/callback`,
+    },
   });
 
   if (error) {

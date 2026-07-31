@@ -15,7 +15,8 @@ export default async function VerificaPage({
       <div>
         <h1 className="text-2xl font-bold">Controlla la posta</h1>
         <p className="mt-1 text-sm text-muted">
-          Abbiamo mandato un codice a <strong>{email}</strong>.
+          Abbiamo scritto a <strong>{email}</strong>: clicca il link
+          nell&apos;email, oppure inserisci qui il codice se presente.
         </p>
       </div>
 

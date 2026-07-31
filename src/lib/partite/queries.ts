@@ -30,6 +30,7 @@ const colonnePartita = {
   ticketingUrl: matches.ticketingUrl,
   votingState: matches.votingState,
   votingClosesAt: matches.votingClosesAt,
+  quarterScores: matches.quarterScores,
   homeTeam: casa.displayName,
   homeLogoKey: casa.logoKey,
   awayTeam: ospite.displayName,
@@ -187,4 +188,68 @@ export async function getUltimaPagella() {
   if (!partita) return null;
   const pagella = await getPagella(partita.id);
   return { partita, pagella };
+}
+
+// ---- Tabellino ----
+
+export type RigaTabellino = {
+  player_id: string;
+  first_name: string;
+  last_name: string;
+  photo_key: string | null;
+  lato: "home" | "away";
+  starter: boolean | null;
+  minutes: number | null;
+  points: number | null;
+  fg2m: number | null;
+  fg2a: number | null;
+  fg3m: number | null;
+  fg3a: number | null;
+  ftm: number | null;
+  fta: number | null;
+  reb_off: number | null;
+  reb_def: number | null;
+  assists: number | null;
+  steals: number | null;
+  turnovers: number | null;
+  fouls_committed: number | null;
+  rating: number | null;
+  plus_minus: number | null;
+};
+
+// Il lato si deduce dalle permanenze: chi ha uno stint nella squadra di
+// casa della partita è "home", nella squadra ospite è "away"; gli
+// avversari senza stint stanno dal lato opposto al club di casa.
+export async function getTabellinoPartita(matchId: string): Promise<RigaTabellino[]> {
+  const righe = await db.execute<RigaTabellino>(sql`
+    with partita as (
+      select m.home_team_season_id as ht, m.away_team_season_id as vt,
+             exists (
+               select 1 from team_seasons ts
+               join clubs c on c.id = ts.club_id and c.is_home_club
+               where ts.id = m.home_team_season_id
+             ) as reggio_in_casa
+      from matches m where m.id = ${matchId}
+    )
+    select p.id as player_id, p.first_name, p.last_name, p.photo_key,
+           case
+             when exists (select 1 from player_stints st, partita pa
+                          where st.player_id = p.id and st.team_season_id = pa.ht) then 'home'
+             when exists (select 1 from player_stints st, partita pa
+                          where st.player_id = p.id and st.team_season_id = pa.vt) then 'away'
+             when (select reggio_in_casa from partita) then 'away'
+             else 'home'
+           end as lato,
+           pms.starter,
+           pms.minutes::float8 as minutes,
+           pms.points, pms.fg2m, pms.fg2a, pms.fg3m, pms.fg3a, pms.ftm, pms.fta,
+           pms.reb_off, pms.reb_def, pms.assists, pms.steals, pms.turnovers,
+           pms.fouls_committed,
+           pms.rating::float8 as rating, pms.plus_minus
+    from player_match_stats pms
+    join players p on p.id = pms.player_id
+    where pms.match_id = ${matchId}
+    order by pms.starter desc nulls last, pms.points desc nulls last, p.last_name
+  `);
+  return [...righe];
 }

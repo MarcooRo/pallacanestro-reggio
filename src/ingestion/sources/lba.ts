@@ -8,8 +8,10 @@ import type {
   NewsCanonica,
   PartitaCanonica,
   PermanenzaCanonica,
+  RigaTabellinoCanonica,
   SquadraStagioneCanonica,
   StatoPartita,
+  TabellinoCanonico,
 } from "@/src/ingestion/normalize";
 
 const BASE_URL = "https://www.legabasket.it/api";
@@ -396,4 +398,127 @@ export async function getNewsLba(
       : null,
     publishedAt: new Date(c.publication_date),
   }));
+}
+
+// ---- Tabellino per partita ----
+// Endpoint individuato il 31/07/2026 con la sonda della sezione 6:
+// championships/get-championships-matches-by-id?id={lba_match_id}.
+// ATTENZIONE: questo endpoint parla italiano ("pun", "rimbalzi_o",
+// "val_lega") — vocabolario diverso dagli altri, mappato SOLO qui.
+// Verifica 7.5: somme per-partita incrociate con i totali di stagione
+// (script di backfill) — "sec" sono i secondi giocati totali,
+// "sf" = "1" quintetto base, "sc" = schiacciate.
+
+interface LbaRigaTabellino {
+  player_id: number;
+  player_num: number | null;
+  player_surname: string;
+  player_name: string;
+  player_p_key: string | null;
+  pun: number;
+  sec: number;
+  sf: string | null;
+  falli_c: number;
+  falli_sf: number;
+  t2_r: number;
+  t2_t: number;
+  sc: number;
+  t3_r: number;
+  t3_t: number;
+  tl_r: number;
+  tl_t: number;
+  rimbalzi_o: number;
+  rimbalzi_d: number;
+  stoppate_dat: number;
+  stoppate_sub: number;
+  palle_p: number;
+  palle_r: number;
+  ass: number;
+  val_lega: number;
+  val_oer: number;
+  plus_minus: number;
+}
+
+interface LbaTabellinoResponse {
+  match: {
+    game_status: string;
+    home_final_score: number | null;
+    visitor_final_score: number | null;
+    additional_time: number | null;
+    q1_hs: number; q1_vs: number;
+    q2_hs: number; q2_vs: number;
+    q3_hs: number; q3_vs: number;
+    q4_hs: number; q4_vs: number;
+    ot_hs: number; ot_vs: number;
+  };
+  scores: {
+    ht?: { rows?: LbaRigaTabellino[] };
+    vt?: { rows?: LbaRigaTabellino[] };
+  } | null;
+}
+
+function versoRigaCanonica(
+  r: LbaRigaTabellino,
+  lato: "home" | "away",
+): RigaTabellinoCanonica {
+  return {
+    lbaPlayerId: r.player_id,
+    firstName: r.player_name,
+    lastName: r.player_surname,
+    photoKey: r.player_p_key,
+    jerseyNumber: r.player_num === null ? null : String(r.player_num),
+    lato,
+    starter: r.sf === "1",
+    minutes: Math.round((r.sec / 60) * 10) / 10,
+    points: r.pun,
+    fg2m: r.t2_r,
+    fg2a: r.t2_t,
+    fg3m: r.t3_r,
+    fg3a: r.t3_t,
+    ftm: r.tl_r,
+    fta: r.tl_t,
+    dunks: r.sc,
+    rebOff: r.rimbalzi_o,
+    rebDef: r.rimbalzi_d,
+    assists: r.ass,
+    steals: r.palle_r,
+    turnovers: r.palle_p,
+    blocks: r.stoppate_dat,
+    blocksReceived: r.stoppate_sub,
+    foulsCommitted: r.falli_c,
+    foulsReceived: r.falli_sf,
+    plusMinus: r.plus_minus,
+    rating: r.val_lega,
+    oer: r.val_oer,
+  };
+}
+
+export async function getTabellino(lbaMatchId: number): Promise<TabellinoCanonico> {
+  const data = await fetchLba<LbaTabellinoResponse>(
+    `championships/get-championships-matches-by-id?id=${lbaMatchId}`,
+  );
+  const m = data.match;
+
+  const parziali: TabellinoCanonico["parziali"] = {
+    q1: { h: m.q1_hs, v: m.q1_vs },
+    q2: { h: m.q2_hs, v: m.q2_vs },
+    q3: { h: m.q3_hs, v: m.q3_vs },
+    q4: { h: m.q4_hs, v: m.q4_vs },
+  };
+  if ((m.additional_time ?? 0) > 0 || m.ot_hs > 0 || m.ot_vs > 0) {
+    parziali.ot = { h: m.ot_hs, v: m.ot_vs };
+  }
+
+  return {
+    lbaMatchId,
+    status: m.game_status === "2" ? "finished" : m.game_status === "1" ? "live" : "scheduled",
+    homeScore: m.home_final_score,
+    awayScore: m.visitor_final_score,
+    additionalTime: m.additional_time ?? 0,
+    parziali,
+    righe: [
+      ...(data.scores?.ht?.rows ?? []).map((r) => versoRigaCanonica(r, "home")),
+      ...(data.scores?.vt?.rows ?? []).map((r) => versoRigaCanonica(r, "away")),
+    ],
+  };
 }

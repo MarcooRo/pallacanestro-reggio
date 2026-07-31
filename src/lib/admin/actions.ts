@@ -3,7 +3,7 @@
 // Server actions del pannello admin. Il ruolo si verifica QUI, in ogni
 // action (mai in proxy.ts): il proxy fa solo refresh della sessione.
 
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -12,8 +12,8 @@ import { db } from "@/src/db";
 import { matches, players, voteTallies } from "@/src/db/schema";
 import { aggiornaNews } from "@/src/ingestion/news";
 import { getProfilo } from "@/src/lib/auth/session";
-import { getPartita } from "@/src/lib/partite/queries";
 import { inviaPushCategoria } from "@/src/lib/push/invia";
+import { apriFinestraVoto } from "@/src/lib/voto/finestra";
 import { ORE_FINESTRA_DEFAULT } from "@/src/lib/voto/regole";
 import { calcolaTally } from "@/src/lib/voto/tally";
 
@@ -59,40 +59,10 @@ export async function apriVotazione(formData: FormData) {
     .catch(ORE_FINESTRA_DEFAULT)
     .parse(formData.get("ore"));
 
-  const partita = await db.query.matches.findFirst({
-    columns: { id: true, votingState: true },
-    where: (m, { eq }) => eq(m.id, matchId),
-  });
-  if (!partita) esitoAdmin("Partita non trovata");
-  if (partita.votingState !== "closed") {
-    esitoAdmin("La votazione è già stata aperta per questa partita");
-  }
-
-  // Senza votabili la scheda sarebbe vuota: partita di altre squadre
-  // o roster non ancora seedato.
-  const [conteggio] = await db.execute<{ n: number }>(
-    sql`select count(*)::int as n from eligible_voters(${matchId})`,
-  );
-  if (conteggio.n === 0) {
-    esitoAdmin("Nessun giocatore votabile: il club di casa non gioca questa partita o il roster manca");
-  }
-
-  const adesso = new Date();
-  await db
-    .update(matches)
-    .set({
-      votingState: "open",
-      votingOpensAt: adesso,
-      votingClosesAt: new Date(adesso.getTime() + ore * 3_600_000),
-    })
-    .where(eq(matches.id, matchId));
-
-  const dettagli = await getPartita(matchId);
-  await pushSicura("vote_open", {
-    title: "Fine partita. Vota il migliore.",
-    body: dettagli ? `${dettagli.homeTeam} – ${dettagli.awayTeam}` : "",
-    url: `/partite/${matchId}`,
-  });
+  // Stessa logica del cron (src/lib/voto/finestra.ts): controlli,
+  // apertura e push vivono in un punto solo.
+  const esito = await apriFinestraVoto(matchId, ore);
+  if (!esito.ok) esitoAdmin(esito.motivo!);
 
   revalidaPartita(matchId);
   esitoAdmin(`Votazione aperta per ${ore} ore`);

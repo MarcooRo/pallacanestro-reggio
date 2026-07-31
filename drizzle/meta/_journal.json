@@ -15,6 +15,20 @@
       "when": 1785503486054,
       "tag": "0001_voto-funzione-e-viste",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785507385281,
+      "tag": "0002_tabellino-e-promemoria",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1785507933819,
+      "tag": "0003_partite-solo-giocate",
+      "breakpoints": true
     }
   ]
 }

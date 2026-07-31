@@ -51,6 +51,49 @@ export type StatoPartita =
   | "postponed"
   | "cancelled";
 
+// Una riga del tabellino, già in vocabolario canonico.
+export interface RigaTabellinoCanonica {
+  lbaPlayerId: number;
+  firstName: string;
+  lastName: string;
+  photoKey: string | null;
+  jerseyNumber: string | null;
+  lato: "home" | "away";
+  starter: boolean;
+  minutes: number; // con decimali, dai secondi giocati
+  points: number;
+  fg2m: number;
+  fg2a: number;
+  fg3m: number;
+  fg3a: number;
+  ftm: number;
+  fta: number;
+  dunks: number;
+  rebOff: number;
+  rebDef: number;
+  assists: number;
+  steals: number;
+  turnovers: number;
+  blocks: number;
+  blocksReceived: number;
+  foulsCommitted: number;
+  foulsReceived: number;
+  plusMinus: number;
+  rating: number;
+  oer: number;
+}
+
+export interface TabellinoCanonico {
+  lbaMatchId: number;
+  status: StatoPartita;
+  homeScore: number | null;
+  awayScore: number | null;
+  additionalTime: number;
+  // {"q1":{"h":25,"v":21},...,"ot":{...}} — solo i periodi giocati
+  parziali: Record<string, { h: number; v: number }>;
+  righe: RigaTabellinoCanonica[];
+}
+
 export interface NewsCanonica {
   source: "lba" | "pr_wordpress";
   sourceId: string;

@@ -4,11 +4,13 @@ import { notFound } from "next/navigation";
 
 import { FormVoto } from "@/src/components/form-voto";
 import { Pagella } from "@/src/components/pagella";
+import { Tabellino } from "@/src/components/tabellino";
 import { getProfilo, getUtente } from "@/src/lib/auth/session";
 import { dataOra, soloOra } from "@/src/lib/date";
 import {
   getPagella,
   getPartita,
+  getTabellinoPartita,
   getVotabili,
   haVotato,
 } from "@/src/lib/partite/queries";
@@ -60,6 +62,7 @@ export default async function PartitaPage({
               )}
             </div>
           ))}
+          <Parziali quarterScores={partita.quarterScores} />
         </div>
         {(partita.venueName || partita.referees?.length) && (
           <p className="text-xs text-muted">
@@ -99,8 +102,40 @@ export default async function PartitaPage({
           La votazione per questa partita non è aperta.
         </p>
       )}
+
+      <SezioneTabellino
+        matchId={partita.id}
+        nomeCasa={partita.homeTeam}
+        nomeOspiti={partita.awayTeam}
+      />
     </main>
   );
+}
+
+// Parziali per quarto, dal tabellino (jsonb {"q1":{"h":25,"v":21},...}).
+function Parziali({ quarterScores }: { quarterScores: unknown }) {
+  if (!quarterScores || typeof quarterScores !== "object") return null;
+  const periodi = Object.entries(quarterScores as Record<string, { h: number; v: number }>);
+  if (periodi.length === 0) return null;
+  return (
+    <p className="text-xs tabular-nums text-muted">
+      Parziali: {periodi.map(([, p]) => `${p.h}-${p.v}`).join(" · ")}
+    </p>
+  );
+}
+
+async function SezioneTabellino({
+  matchId,
+  nomeCasa,
+  nomeOspiti,
+}: {
+  matchId: string;
+  nomeCasa: string;
+  nomeOspiti: string;
+}) {
+  const righe = await getTabellinoPartita(matchId);
+  if (righe.length === 0) return null;
+  return <Tabellino righe={righe} nomeCasa={nomeCasa} nomeOspiti={nomeOspiti} />;
 }
 
 async function SezioneVoto({

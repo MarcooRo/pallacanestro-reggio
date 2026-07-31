@@ -183,6 +183,8 @@ export const matches = pgTable(
     votingState: text().notNull().default("closed"),
     votingOpensAt: timestamp({ withTimezone: true }),
     votingClosesAt: timestamp({ withTimezone: true }),
+    // quando è partita la push "ultime ore per votare" (null = mai)
+    voteClosingNotifiedAt: timestamp({ withTimezone: true }),
 
     lastSyncedAt: timestamp({ withTimezone: true }),
     manualOverride: boolean().notNull().default(false),

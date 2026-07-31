@@ -4,7 +4,10 @@ import { notFound } from "next/navigation";
 
 import { AvatarGiocatore } from "@/src/components/avatar-giocatore";
 import { etichettaStagione } from "@/src/lib/date";
-import { getGiocatore } from "@/src/lib/giocatori/queries";
+import {
+  getGiocatore,
+  statisticheStagionaliDaDb,
+} from "@/src/lib/giocatori/queries";
 import { fotoUrl } from "@/src/lib/immagini";
 import {
   getStatisticheGiocatore,
@@ -38,11 +41,14 @@ export default async function GiocatorePage({
   const giocatore = await getGiocatore(id);
   if (!giocatore) notFound();
 
-  // Statistiche live dalla fonte, con cache 1h: se l'API non risponde,
-  // la scheda degrada senza rompersi (le stats non sono un dato critico).
-  let statistiche: StatisticheStagione[] = [];
+  // Prima i NOSTRI dati (tabellini ingeriti, v_player_season_stats);
+  // l'API live con cache 1h è solo il fallback, e se non risponde la
+  // scheda degrada senza rompersi.
+  let statistiche: StatisticheStagione[] = await statisticheStagionaliDaDb(
+    giocatore.id,
+  );
   let statsNonDisponibili = false;
-  if (giocatore.lbaPlayerId) {
+  if (statistiche.length === 0 && giocatore.lbaPlayerId) {
     try {
       statistiche = await getStatisticheGiocatore(giocatore.lbaPlayerId);
     } catch {

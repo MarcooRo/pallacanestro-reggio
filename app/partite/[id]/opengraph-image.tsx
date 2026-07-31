@@ -22,7 +22,7 @@ export default async function Image({
   const partita = await getPartita(id);
   if (!partita) {
     return new ImageResponse(
-      <div style={{ width: "100%", height: "100%", display: "flex", background: colori.primario }} />,
+      <div style={{ width: "100%", height: "100%", display: "flex", background: colori.scuro }} />,
       size,
     );
   }
@@ -44,28 +44,32 @@ export default async function Image({
           flexDirection: "column",
           justifyContent: "space-between",
           padding: 56,
-          background: colori.primario,
-          color: colori.onPrimario,
+          background: colori.scuro,
+          color: "#f5f4f2",
           fontSize: 28,
+          borderBottom: `14px solid ${colori.primario}`,
         }}
       >
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <div style={{ display: "flex", fontSize: 30, fontWeight: 700, opacity: 0.9 }}>
-            {branding.appName} · {partita.competitionName}
+          <div style={{ display: "flex", fontSize: 30, fontWeight: 800, textTransform: "uppercase" }}>
+            <span style={{ color: colori.vivo }}>{branding.appName}</span>
+            <span style={{ opacity: 0.6, marginLeft: 16 }}>· {partita.competitionName}</span>
           </div>
           <div style={{ display: "flex", alignItems: "baseline", gap: 24 }}>
-            <div style={{ display: "flex", fontSize: 46, fontWeight: 800 }}>
+            <div style={{ display: "flex", fontSize: 46, fontWeight: 800, textTransform: "uppercase" }}>
               {partita.homeTeam} – {partita.awayTeam}
             </div>
             {punteggio && (
-              <div style={{ display: "flex", fontSize: 46, fontWeight: 800 }}>{punteggio}</div>
+              <div style={{ display: "flex", fontSize: 46, fontWeight: 800, color: colori.vivo }}>
+                {punteggio}
+              </div>
             )}
           </div>
         </div>
 
         {pagella.length > 0 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <div style={{ display: "flex", fontSize: 32, fontWeight: 700, opacity: 0.9 }}>
+            <div style={{ display: "flex", fontSize: 32, fontWeight: 800, textTransform: "uppercase" }}>
               La pagella della curva
             </div>
             {pagella.map((r, i) => {
@@ -77,9 +81,9 @@ export default async function Image({
                     display: "flex",
                     alignItems: "center",
                     gap: 20,
-                    background: i === 0 ? colori.onPrimario : "rgba(255,255,255,0.14)",
-                    color: i === 0 ? colori.scuro : colori.onPrimario,
-                    borderRadius: 18,
+                    background: i === 0 ? colori.primario : "rgba(255,255,255,0.07)",
+                    color: colori.onPrimario,
+                    borderRadius: 6,
                     padding: "14px 28px",
                   }}
                 >
@@ -104,7 +108,7 @@ export default async function Image({
                         height: 64,
                         borderRadius: 999,
                         background: colori.tinta,
-                        color: colori.primario,
+                        color: colori.vivo,
                         fontSize: 26,
                         fontWeight: 800,
                       }}

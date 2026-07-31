@@ -1,33 +1,28 @@
 /*
- * Token di branding. UNICO punto dove vivono i colori del brand:
- * mai hardcoded nei componenti (PROJECT_RE.md, sezione 11).
- * Il set attivo è selezionato da data-branding sull'elemento <html>,
- * valorizzato dal layout in base alla env var BRANDING.
+ * Token di branding — UNICO punto dove vivono i colori del brand
+ * (PROJECT_RE.md, sezione 11). Il set attivo è selezionato da
+ * data-branding sull'<html>, valorizzato dal layout via env BRANDING.
+ *
+ * L'app è dark-only per scelta di design: nero fumo, grafite e il
+ * rosso Reggio. Il verde tricolore compare in un solo punto (il filo
+ * sotto il wordmark): Reggio Emilia è la città del Tricolore.
  */
 
-/* Ufficiale: colori Pallacanestro Reggiana (biancorosso) */
 [data-branding="official"] {
-  --brand-primary: #c8102e;
-  --brand-primary-hover: #a30d26;
+  --brand-primary: #c8102e;      /* rosso Reggio */
+  --brand-primary-hover: #e5183a;
+  --brand-vivid: #ff2440;        /* stati attivi, glow */
   --brand-on-primary: #ffffff;
-  --brand-accent: #1d1d1b;
-  --brand-surface-tint: #fdf2f3;
+  --brand-surface-tint: #2a0d13; /* rosso spento per sfondi */
+  --brand-tricolore: #009246;    /* SOLO nel filo tricolore */
 }
 
 /* Generico: nessun riferimento al club, per distribuzione senza accordo */
 [data-branding="generic"] {
   --brand-primary: #2563eb;
-  --brand-primary-hover: #1d4ed8;
+  --brand-primary-hover: #3b82f6;
+  --brand-vivid: #60a5fa;
   --brand-on-primary: #ffffff;
-  --brand-accent: #0f172a;
-  --brand-surface-tint: #eff6ff;
-}
-
-@media (prefers-color-scheme: dark) {
-  [data-branding="official"] {
-    --brand-surface-tint: #2a1215;
-  }
-  [data-branding="generic"] {
-    --brand-surface-tint: #172033;
-  }
+  --brand-surface-tint: #101a33;
+  --brand-tricolore: transparent; /* niente heritage nel modo generico */
 }

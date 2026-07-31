@@ -9,38 +9,62 @@ export function PartitaCard({ partita }: { partita: PartitaLista }) {
   return (
     <Link
       href={`/partite/${partita.id}`}
-      className="flex flex-col gap-2 rounded-lg border border-border p-4 hover:border-brand"
+      className="taglio-sm group flex flex-col gap-3 border border-border bg-surface p-4 transition-colors hover:border-brand"
     >
-      <div className="flex items-center justify-between gap-2 text-xs text-muted">
-        <span>
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="eyebrow">
           {partita.competitionName}
           {partita.dayName ? ` · ${partita.dayName}` : ""}
         </span>
-        <span>{dataOra(partita.startsAt)}</span>
+        <span className="eyebrow">{dataOra(partita.startsAt)}</span>
       </div>
 
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 flex-col gap-1 text-sm font-semibold">
-          <span className="truncate">{partita.homeTeam}</span>
-          <span className="truncate">{partita.awayTeam}</span>
-        </div>
-        {giocata && (
-          <div className="flex flex-col gap-1 text-right text-sm font-bold tabular-nums">
-            <span>{partita.homeScore}</span>
-            <span>{partita.awayScore}</span>
-          </div>
-        )}
+      <div className="flex flex-col gap-1.5">
+        {[
+          { squadra: partita.homeTeam, punti: partita.homeScore },
+          { squadra: partita.awayTeam, punti: partita.awayScore },
+        ].map(({ squadra, punti }, i) => {
+          const vince =
+            giocata &&
+            partita.homeScore !== null &&
+            partita.awayScore !== null &&
+            (i === 0
+              ? partita.homeScore > partita.awayScore
+              : partita.awayScore > partita.homeScore);
+          return (
+            <div key={squadra} className="flex items-center justify-between gap-3">
+              <span
+                className={`truncate text-[15px] font-bold uppercase tracking-tight ${
+                  giocata && !vince ? "text-muted" : "text-foreground"
+                }`}
+              >
+                {squadra}
+              </span>
+              {giocata && (
+                <span
+                  className={`score text-lg font-bold ${
+                    vince ? "text-brand-vivid" : "text-muted"
+                  }`}
+                >
+                  {punti}
+                </span>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {partita.votingState !== "closed" && (
         <span
-          className={`self-start rounded-full px-2 py-0.5 text-xs font-semibold ${
+          className={`-skew-x-[14deg] self-start px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider ${
             partita.votingState === "open"
               ? "bg-brand text-on-brand"
-              : "bg-brand-tint text-brand"
+              : "bg-brand-tint text-brand-vivid"
           }`}
         >
-          {partita.votingState === "open" ? "Voto aperto" : "Pagella pubblicata"}
+          <span className="inline-block skew-x-[14deg]">
+            {partita.votingState === "open" ? "Voto aperto" : "Pagella"}
+          </span>
         </span>
       )}
     </Link>

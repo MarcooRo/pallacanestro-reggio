@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { AvatarGiocatore } from "@/src/components/avatar-giocatore";
+import { Pillola } from "@/src/components/pillola";
 import { etichettaStagione } from "@/src/lib/date";
 import { getRosterStagione, getStagioniRoster } from "@/src/lib/giocatori/queries";
 
@@ -15,9 +16,9 @@ export default async function GiocatoriPage({
   const stagioni = await getStagioniRoster();
   if (stagioni.length === 0) {
     return (
-      <main className="flex flex-1 flex-col gap-4 px-4 py-8">
-        <h1 className="text-2xl font-bold">Giocatori</h1>
-        <p className="rounded-lg border border-border bg-surface p-4 text-sm text-muted">
+      <main className="flex flex-1 flex-col gap-4 px-4 py-6">
+        <h1 className="display text-3xl">La squadra</h1>
+        <p className="taglio-sm border border-border bg-surface p-4 text-sm text-muted">
           Il roster non è ancora disponibile: la fonte non l&apos;ha pubblicato.
         </p>
       </main>
@@ -33,33 +34,25 @@ export default async function GiocatoriPage({
   );
 
   return (
-    <main className="flex flex-1 flex-col gap-4 px-4 py-8">
-      <h1 className="text-2xl font-bold">Giocatori</h1>
+    <main className="flex flex-1 flex-col gap-4 px-4 py-6">
+      <h1 className="display text-3xl">La squadra</h1>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2.5 pl-1">
         {stagioni.map((anno) => (
-          <Link
-            key={anno}
-            href={`/giocatori?s=${anno}`}
-            className={`rounded-full px-3 py-1 text-sm font-semibold ${
-              anno === stagione
-                ? "bg-brand text-on-brand"
-                : "border border-border text-muted hover:text-foreground"
-            }`}
-          >
+          <Pillola key={anno} href={`/giocatori?s=${anno}`} attiva={anno === stagione}>
             {etichettaStagione(anno)}
-          </Link>
+          </Pillola>
         ))}
       </div>
 
-      <ul className="flex flex-col gap-2">
+      <ul className="flex flex-col">
         {roster.map((g) => (
           <li key={`${g.id}-${g.startDate}`}>
             <Link
               href={`/giocatori/${g.id}`}
-              className="flex items-center gap-3 rounded-lg border border-border p-3 hover:border-brand"
+              className="group flex items-center gap-3 border-b border-border py-3 transition-colors hover:bg-surface"
             >
-              <span className="w-7 text-center text-lg font-bold tabular-nums text-brand">
+              <span className="display w-10 text-center text-2xl text-brand transition-colors group-hover:text-brand-vivid">
                 {g.jerseyNumber ?? "–"}
               </span>
               <AvatarGiocatore
@@ -69,13 +62,14 @@ export default async function GiocatoriPage({
                 dimensione={44}
               />
               <span className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate font-semibold">
+                <span className="truncate font-bold uppercase tracking-tight">
                   {g.firstName} {g.lastName}
                 </span>
-                <span className="text-xs text-muted">
+                <span className="eyebrow mt-0.5">
                   {[g.role, g.nationality].filter(Boolean).join(" · ")}
                 </span>
               </span>
+              <span aria-hidden className="pr-2 text-muted transition-transform group-hover:translate-x-1 group-hover:text-brand-vivid">→</span>
             </Link>
           </li>
         ))}

@@ -17,7 +17,7 @@ export function NewsCard({ item }: { item: typeof news.$inferSelect }) {
       href={item.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex gap-3 rounded-lg border border-border p-3 hover:border-brand"
+      className="taglio-sm group flex gap-3 border border-border bg-surface p-3 transition-colors hover:border-brand"
     >
       {item.imageUrl && (
         <Image
@@ -25,16 +25,16 @@ export function NewsCard({ item }: { item: typeof news.$inferSelect }) {
           alt=""
           width={96}
           height={64}
-          className="hidden shrink-0 rounded-md object-cover sm:block"
+          className="hidden shrink-0 object-cover grayscale transition-[filter] group-hover:grayscale-0 sm:block"
           style={{ width: 96, height: 64 }}
         />
       )}
       <span className="flex min-w-0 flex-col gap-1">
-        <span className="text-xs text-muted">
+        <span className="eyebrow">
           {nomeFonte[item.source] ?? item.source}
           {item.category ? ` · ${item.category}` : ""} · {soloOra(item.publishedAt)}
         </span>
-        <span className="font-semibold leading-snug">{item.title}</span>
+        <span className="font-bold leading-snug">{item.title}</span>
         {item.excerpt && (
           <span className="line-clamp-2 text-sm text-muted">{item.excerpt}</span>
         )}

@@ -1,43 +1,125 @@
 @import "tailwindcss";
 @import "../src/branding/tokens.css";
 
+/*
+ * Design system "La Pagella" — dark only.
+ * Nero fumo + grafite, rosso Reggio, tipografia da maglia da gioco
+ * (Archivo nero espanso corsivo) e numeri da tabellone (mono).
+ * Firma: il "taglio" — spigoli mozzati in diagonale.
+ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --muted: #6b7280;
-  --border: #e5e7eb;
-  --surface: #f9fafb;
+  color-scheme: dark;
+  --sfondo: #0b0b0c;
+  --superficie: #131316;
+  --superficie-2: #1b1b1f;
+  --linea: #26262b;
+  --testo: #f5f4f2;
+  --muted: #93939b;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --muted: #9ca3af;
-    --border: #262626;
-    --surface: #171717;
-  }
-}
-
-/* I token di brand (--brand-*) arrivano da src/branding/tokens.css
-   e sono selezionati da data-branding sull'<html>. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--sfondo);
+  --color-foreground: var(--testo);
   --color-muted: var(--muted);
-  --color-border: var(--border);
-  --color-surface: var(--surface);
+  --color-border: var(--linea);
+  --color-surface: var(--superficie);
+  --color-surface-2: var(--superficie-2);
   --color-brand: var(--brand-primary);
   --color-brand-hover: var(--brand-primary-hover);
+  --color-brand-vivid: var(--brand-vivid);
   --color-on-brand: var(--brand-on-primary);
-  --color-brand-accent: var(--brand-accent);
   --color-brand-tint: var(--brand-surface-tint);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-archivo);
   --font-mono: var(--font-geist-mono);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  background: var(--sfondo);
+  color: var(--testo);
+  font-family: var(--font-archivo), system-ui, sans-serif;
+}
+
+/* Titoli da maglia: neri, espansi, corsivi, maiuscoli */
+.display {
+  font-family: var(--font-archivo), system-ui, sans-serif;
+  font-weight: 900;
+  font-stretch: 118%;
+  font-style: italic;
+  text-transform: uppercase;
+  letter-spacing: -0.015em;
+  line-height: 0.95;
+}
+
+/* Occhiello da tabellone: mono, piccolo, spaziato */
+.eyebrow {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+}
+
+/* Numeri da tabellone */
+.score {
+  font-family: var(--font-geist-mono), monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* La firma: spigolo mozzato in diagonale (basso-destra) */
+.taglio {
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - 14px),
+    calc(100% - 14px) 100%,
+    0 100%
+  );
+}
+.taglio-sm {
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - 8px),
+    calc(100% - 8px) 100%,
+    0 100%
+  );
+}
+
+/* Filo tricolore sotto il wordmark: l'unico richiamo heritage */
+.filo-tricolore {
+  height: 2px;
+  background: linear-gradient(
+    to right,
+    var(--brand-tricolore) 0 22%,
+    var(--testo) 22% 44%,
+    var(--brand-primary) 44% 100%
+  );
+}
+
+/* Reveal orchestrato della home */
+@keyframes sale {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.sale {
+  animation: sale 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.sale-2 { animation-delay: 0.08s; }
+.sale-3 { animation-delay: 0.16s; }
+.sale-4 { animation-delay: 0.24s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sale, .sale-2, .sale-3, .sale-4 {
+    animation: none;
+  }
+  * {
+    transition-duration: 0.01ms !important;
+  }
 }

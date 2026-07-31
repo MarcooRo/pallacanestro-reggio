@@ -40,30 +40,54 @@ export default async function PartitaPage({
   if (!partita) notFound();
 
   const votazioneAperta = finestraAperta(partita, new Date());
+  const giocata = partita.status === "finished";
 
   return (
-    <main className="flex flex-1 flex-col gap-6 px-4 py-8">
-      {/* Intestazione partita */}
+    <main className="flex flex-1 flex-col gap-8 px-4 py-6">
+      {/* Scoreboard */}
       <header className="flex flex-col gap-3">
-        <p className="text-xs text-muted">
+        <p className="eyebrow">
           {partita.competitionName}
           {partita.dayName ? ` · ${partita.dayName}` : ""} ·{" "}
           {dataOra(partita.startsAt)}
         </p>
-        <div className="flex flex-col gap-2 rounded-lg border border-border p-4">
+
+        <div className="taglio flex flex-col gap-2 border border-border bg-surface p-4">
           {[
             { squadra: partita.homeTeam, punti: partita.homeScore },
             { squadra: partita.awayTeam, punti: partita.awayScore },
-          ].map(({ squadra, punti }) => (
-            <div key={squadra} className="flex items-center justify-between gap-3">
-              <span className="font-semibold">{squadra}</span>
-              {partita.status === "finished" && (
-                <span className="text-xl font-bold tabular-nums">{punti}</span>
-              )}
-            </div>
-          ))}
+          ].map(({ squadra, punti }, i) => {
+            const vince =
+              giocata &&
+              partita.homeScore !== null &&
+              partita.awayScore !== null &&
+              (i === 0
+                ? partita.homeScore > partita.awayScore
+                : partita.awayScore > partita.homeScore);
+            return (
+              <div key={squadra} className="flex items-center justify-between gap-3">
+                <span
+                  className={`display min-w-0 truncate text-xl ${
+                    giocata && !vince ? "text-muted" : ""
+                  }`}
+                >
+                  {squadra}
+                </span>
+                {giocata && (
+                  <span
+                    className={`score text-3xl font-bold ${
+                      vince ? "text-brand-vivid" : "text-muted"
+                    }`}
+                  >
+                    {punti}
+                  </span>
+                )}
+              </div>
+            );
+          })}
           <Parziali quarterScores={partita.quarterScores} />
         </div>
+
         {(partita.venueName || partita.referees?.length) && (
           <p className="text-xs text-muted">
             {partita.venueName}
@@ -78,7 +102,7 @@ export default async function PartitaPage({
             href={partita.ticketingUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="self-start rounded-md border border-border px-4 py-2 text-sm font-semibold hover:bg-surface"
+            className="taglio-sm self-start border border-border px-4 py-2 text-sm font-bold uppercase tracking-wide transition-colors hover:border-brand hover:text-brand-vivid"
           >
             Biglietti →
           </a>
@@ -92,13 +116,15 @@ export default async function PartitaPage({
 
       {partita.votingState === "tallied" && (
         <section className="flex flex-col gap-3">
-          <h2 className="text-xl font-bold">La pagella della curva</h2>
+          <h2 className="display text-2xl">
+            La pagella <span className="text-brand-vivid">della curva</span>
+          </h2>
           <Pagella righe={await getPagella(partita.id)} />
         </section>
       )}
 
       {!votazioneAperta && partita.votingState !== "tallied" && (
-        <p className="rounded-lg border border-border bg-surface p-4 text-sm text-muted">
+        <p className="taglio-sm border border-border bg-surface p-4 text-sm text-muted">
           La votazione per questa partita non è aperta.
         </p>
       )}
@@ -118,24 +144,10 @@ function Parziali({ quarterScores }: { quarterScores: unknown }) {
   const periodi = Object.entries(quarterScores as Record<string, { h: number; v: number }>);
   if (periodi.length === 0) return null;
   return (
-    <p className="text-xs tabular-nums text-muted">
-      Parziali: {periodi.map(([, p]) => `${p.h}-${p.v}`).join(" · ")}
+    <p className="eyebrow mt-1 border-t border-border pt-2">
+      {periodi.map(([, p]) => `${p.h}-${p.v}`).join("  ·  ")}
     </p>
   );
-}
-
-async function SezioneTabellino({
-  matchId,
-  nomeCasa,
-  nomeOspiti,
-}: {
-  matchId: string;
-  nomeCasa: string;
-  nomeOspiti: string;
-}) {
-  const righe = await getTabellinoPartita(matchId);
-  if (righe.length === 0) return null;
-  return <Tabellino righe={righe} nomeCasa={nomeCasa} nomeOspiti={nomeOspiti} />;
 }
 
 async function SezioneVoto({
@@ -151,37 +163,56 @@ async function SezioneVoto({
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-baseline justify-between gap-2">
-        <h2 className="text-xl font-bold">Vota il migliore</h2>
-        <span className="text-xs text-muted">chiude {soloOra(chiusura)}</span>
+        <h2 className="display text-2xl text-brand-vivid">Vota il migliore</h2>
+        <span className="eyebrow">chiude {soloOra(chiusura)}</span>
       </div>
 
       {!utente ? (
-        <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4">
-          <p className="text-sm">Per votare serve l&apos;accesso: solo email, niente password.</p>
+        <div className="taglio flex flex-col gap-3 border border-border bg-surface p-4">
+          <p className="text-sm">
+            Per votare serve l&apos;accesso: solo email, niente password.
+          </p>
           <Link
             href="/accesso"
-            className="self-start rounded-md bg-brand px-4 py-2 font-semibold text-on-brand hover:bg-brand-hover"
+            className="taglio-sm display self-start bg-brand px-5 py-2.5 text-lg text-on-brand transition-colors hover:bg-brand-hover"
           >
             Accedi e vota
           </Link>
         </div>
       ) : !profilo ? (
-        <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4">
+        <div className="taglio flex flex-col gap-3 border border-border bg-surface p-4">
           <p className="text-sm">Completa il profilo con un nickname per votare.</p>
           <Link
             href="/benvenuto"
-            className="self-start rounded-md bg-brand px-4 py-2 font-semibold text-on-brand hover:bg-brand-hover"
+            className="taglio-sm display self-start bg-brand px-5 py-2.5 text-lg text-on-brand transition-colors hover:bg-brand-hover"
           >
             Scegli il nickname
           </Link>
         </div>
       ) : (await haVotato(matchId, profilo.id)) ? (
-        <p className="rounded-lg border border-border bg-surface p-4 text-sm">
-          <strong>Hai già votato.</strong> La pagella si pubblica alla chiusura.
-        </p>
+        <div className="taglio border border-brand bg-brand-tint p-4">
+          <p className="display text-lg text-brand-vivid">Hai già votato</p>
+          <p className="mt-1 text-sm text-muted">
+            La pagella si pubblica alla chiusura.
+          </p>
+        </div>
       ) : (
         <FormVoto matchId={matchId} votabili={await getVotabili(matchId)} />
       )}
     </section>
   );
+}
+
+async function SezioneTabellino({
+  matchId,
+  nomeCasa,
+  nomeOspiti,
+}: {
+  matchId: string;
+  nomeCasa: string;
+  nomeOspiti: string;
+}) {
+  const righe = await getTabellinoPartita(matchId);
+  if (righe.length === 0) return null;
+  return <Tabellino righe={righe} nomeCasa={nomeCasa} nomeOspiti={nomeOspiti} />;
 }

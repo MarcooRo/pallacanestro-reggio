@@ -60,15 +60,23 @@ export default async function GiocatorePage({
   const ultimaPermanenza = giocatore.permanenze[0];
 
   return (
-    <main className="flex flex-1 flex-col gap-6 px-4 py-8">
-      <header className="flex items-center gap-4">
+    <main className="flex flex-1 flex-col gap-6 px-4 py-6">
+      <header className="taglio relative flex items-center gap-4 overflow-hidden border border-border bg-surface p-4">
+        {ultimaPermanenza?.jerseyNumber && (
+          <span
+            aria-hidden
+            className="display pointer-events-none absolute -right-3 -top-8 text-[120px] leading-none text-brand/15"
+          >
+            {ultimaPermanenza.jerseyNumber}
+          </span>
+        )}
         {foto ? (
           <Image
             src={foto}
             alt={`${giocatore.firstName} ${giocatore.lastName}`}
             width={96}
             height={96}
-            className="rounded-full bg-brand-tint object-cover"
+            className="z-10 rounded-full bg-brand-tint object-cover"
             style={{ width: 96, height: 96 }}
           />
         ) : (
@@ -79,11 +87,13 @@ export default async function GiocatorePage({
             dimensione={96}
           />
         )}
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-bold">
-            {giocatore.firstName} {giocatore.lastName}
+        <div className="z-10 flex min-w-0 flex-col gap-1">
+          <h1 className="display text-3xl leading-[0.95]">
+            {giocatore.firstName}
+            <br />
+            <span className="text-brand-vivid">{giocatore.lastName}</span>
           </h1>
-          <p className="text-sm text-muted">
+          <p className="eyebrow mt-1">
             {[
               ultimaPermanenza?.jerseyNumber ? `#${ultimaPermanenza.jerseyNumber}` : null,
               ultimaPermanenza?.role,
@@ -95,7 +105,7 @@ export default async function GiocatorePage({
         </div>
       </header>
 
-      <dl className="grid grid-cols-2 gap-3 rounded-lg border border-border p-4 text-sm sm:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-3 border-l-2 border-brand pl-4 text-sm sm:grid-cols-4">
         {giocatore.heightCm && (
           <div>
             <dt className="text-xs uppercase text-muted">Altezza</dt>
@@ -130,14 +140,14 @@ export default async function GiocatorePage({
       </dl>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-xl font-bold">Statistiche di stagione</h2>
+        <h2 className="display text-2xl">Statistiche di stagione</h2>
         {statsNonDisponibili && (
-          <p className="rounded-lg border border-border bg-surface p-4 text-sm text-muted">
+          <p className="taglio-sm border border-border bg-surface p-4 text-sm text-muted">
             Statistiche momentaneamente non disponibili.
           </p>
         )}
         {!statsNonDisponibili && statistiche.length === 0 && (
-          <p className="rounded-lg border border-border bg-surface p-4 text-sm text-muted">
+          <p className="taglio-sm border border-border bg-surface p-4 text-sm text-muted">
             Nessuna statistica per la stagione in corso.
           </p>
         )}
@@ -171,8 +181,8 @@ function TabellaStatistiche({ stats: s }: { stats: StatisticheStagione }) {
   ];
 
   return (
-    <div className="rounded-lg border border-border">
-      <p className="border-b border-border px-4 py-2 text-sm font-bold">
+    <div className="taglio-sm border border-border bg-surface">
+      <p className="display border-b border-border px-4 py-2 text-base">
         {nomiCompetizione[s.competizione] ?? s.competizione}
       </p>
       <dl className="grid grid-cols-1 gap-x-6 px-4 py-2 sm:grid-cols-2">
@@ -182,7 +192,7 @@ function TabellaStatistiche({ stats: s }: { stats: StatisticheStagione }) {
             className="flex items-baseline justify-between gap-3 border-b border-border py-1.5 text-sm last:border-b-0 sm:[&:nth-last-child(2)]:border-b-0"
           >
             <dt className="text-muted">{nome}</dt>
-            <dd className="font-semibold tabular-nums">{valore}</dd>
+            <dd className="score font-semibold">{valore}</dd>
           </div>
         ))}
       </dl>

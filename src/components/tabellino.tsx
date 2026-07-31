@@ -31,11 +31,11 @@ function TabellaSquadra({
   if (righe.length === 0) return null;
   return (
     <div className="flex flex-col gap-2">
-      <h3 className="font-bold">{nome}</h3>
-      <div className="overflow-x-auto rounded-lg border border-border">
-        <table className="w-full min-w-[640px] text-sm tabular-nums">
+      <h3 className="display text-lg">{nome}</h3>
+      <div className="taglio-sm overflow-x-auto border border-border">
+        <table className="score w-full min-w-[640px] text-sm">
           <thead>
-            <tr className="border-b border-border bg-surface text-xs text-muted">
+            <tr className="border-b border-border bg-surface-2 text-xs text-muted">
               <th className="px-3 py-2 text-left font-semibold">Giocatore</th>
               {COLONNE.map((c) => (
                 <th key={c} className="px-2 py-2 text-right font-semibold">
@@ -54,7 +54,7 @@ function TabellaSquadra({
                   </Link>
                 </td>
                 <td className="px-2 py-1.5 text-right">{r.minutes?.toFixed(0) ?? "–"}</td>
-                <td className="px-2 py-1.5 text-right font-semibold">{r.points ?? 0}</td>
+                <td className="px-2 py-1.5 text-right font-bold text-brand-vivid">{r.points ?? 0}</td>
                 <td className="px-2 py-1.5 text-right">{r.fg2m}/{r.fg2a}</td>
                 <td className="px-2 py-1.5 text-right">{r.fg3m}/{r.fg3a}</td>
                 <td className="px-2 py-1.5 text-right">{r.ftm}/{r.fta}</td>
@@ -86,7 +86,7 @@ export function Tabellino({
 }) {
   return (
     <section className="flex flex-col gap-4">
-      <h2 className="text-xl font-bold">Tabellino</h2>
+      <h2 className="display text-2xl">Tabellino</h2>
       <p className="text-xs text-muted">
         In grassetto il quintetto base. MIN minuti · 2P/3P/TL tiri · RO/RD
         rimbalzi off/dif · AS assist · PR recuperi · PP perse · F falli ·

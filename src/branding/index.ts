@@ -21,6 +21,7 @@ interface Branding {
    */
   colori: {
     primario: string;
+    vivo: string;
     onPrimario: string;
     scuro: string;
     tinta: string;
@@ -39,9 +40,10 @@ const configs: Record<BrandingMode, Branding> = {
     logoUrl: null,
     colori: {
       primario: "#c8102e",
+      vivo: "#ff2440",
       onPrimario: "#ffffff",
-      scuro: "#1d1d1b",
-      tinta: "#fdf2f3",
+      scuro: "#0b0b0c",
+      tinta: "#2a0d13",
     },
   },
   generic: {
@@ -52,9 +54,10 @@ const configs: Record<BrandingMode, Branding> = {
     logoUrl: null,
     colori: {
       primario: "#2563eb",
+      vivo: "#60a5fa",
       onPrimario: "#ffffff",
-      scuro: "#0f172a",
-      tinta: "#eff6ff",
+      scuro: "#0b0b0c",
+      tinta: "#101a33",
     },
   },
 };

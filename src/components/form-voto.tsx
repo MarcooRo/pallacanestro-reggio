@@ -22,12 +22,10 @@ function SelettoreGiocatore({
   nota?: string;
 }) {
   return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={name} className="text-sm font-semibold">
-        {label}
-        {!obbligatorio && (
-          <span className="ml-1 font-normal text-muted">(facoltativo)</span>
-        )}
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={name} className="flex items-baseline gap-2">
+        <span className="text-sm font-black uppercase tracking-wide">{label}</span>
+        {!obbligatorio && <span className="eyebrow">facoltativo</span>}
       </label>
       {nota && <p className="text-xs text-muted">{nota}</p>}
       <select
@@ -35,7 +33,7 @@ function SelettoreGiocatore({
         name={name}
         required={obbligatorio}
         defaultValue=""
-        className="rounded-md border border-border bg-background px-3 py-2 outline-none focus:border-brand"
+        className="taglio-sm border border-border bg-surface-2 px-3 py-3 text-[15px] outline-none transition-colors focus:border-brand-vivid"
       >
         <option value="">{obbligatorio ? "Scegli il giocatore…" : "Nessuno"}</option>
         {votabili.map((v) => (
@@ -63,19 +61,24 @@ export function FormVoto({
 
   if (stato.ok) {
     return (
-      <p className="rounded-lg border border-border bg-surface p-4 text-sm">
-        <strong>Voto registrato.</strong> La pagella si vedrà alla chiusura
-        della votazione.
-      </p>
+      <div className="taglio border border-brand bg-brand-tint p-4">
+        <p className="display text-lg text-brand-vivid">Voto registrato</p>
+        <p className="mt-1 text-sm text-muted">
+          La pagella si vedrà alla chiusura della votazione.
+        </p>
+      </div>
     );
   }
 
   return (
-    <form action={azione} className="flex flex-col gap-4">
+    <form
+      action={azione}
+      className="taglio flex flex-col gap-5 border border-border bg-surface p-4"
+    >
       <input type="hidden" name="matchId" value={matchId} />
 
       {stato.errore && (
-        <p className="rounded-md bg-brand-tint px-3 py-2 text-sm text-brand">
+        <p className="border-l-2 border-brand-vivid bg-brand-tint px-3 py-2 text-sm text-brand-vivid">
           {stato.errore}
         </p>
       )}
@@ -103,7 +106,7 @@ export function FormVoto({
       <button
         type="submit"
         disabled={inCorso}
-        className="rounded-md bg-brand px-4 py-3 font-semibold text-on-brand hover:bg-brand-hover disabled:opacity-50"
+        className="taglio-sm display bg-brand px-4 py-3.5 text-xl text-on-brand transition-colors hover:bg-brand-hover disabled:opacity-50"
       >
         {inCorso ? "Invio…" : "Vota"}
       </button>

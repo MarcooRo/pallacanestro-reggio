@@ -14,20 +14,22 @@ export default async function AccessoPage({
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 px-4 py-10">
       <div>
-        <h1 className="text-2xl font-bold">Accedi</h1>
-        <p className="mt-1 text-sm text-muted">
+        <h1 className="display text-4xl">
+          Entra<span className="text-brand-vivid">.</span>
+        </h1>
+        <p className="mt-2 text-sm text-muted">
           Ti mandiamo un codice via email. Niente password.
         </p>
       </div>
 
       {errore && (
-        <p className="rounded-md bg-brand-tint px-3 py-2 text-sm text-brand">
+        <p className="border-l-2 border-brand-vivid bg-brand-tint px-3 py-2 text-sm text-brand-vivid">
           {errore}
         </p>
       )}
 
       <form action={inviaOtp} className="flex flex-col gap-3">
-        <label className="text-sm font-medium" htmlFor="email">
+        <label className="eyebrow" htmlFor="email">
           Email
         </label>
         <input
@@ -37,11 +39,11 @@ export default async function AccessoPage({
           required
           autoComplete="email"
           placeholder="nome@esempio.it"
-          className="rounded-md border border-border bg-background px-3 py-2 outline-none focus:border-brand"
+          className="taglio-sm border border-border bg-surface-2 px-3 py-3 outline-none transition-colors focus:border-brand-vivid"
         />
         <button
           type="submit"
-          className="mt-2 rounded-md bg-brand px-4 py-2 font-semibold text-on-brand hover:bg-brand-hover"
+          className="taglio-sm display mt-2 bg-brand px-4 py-3 text-xl text-on-brand transition-colors hover:bg-brand-hover"
         >
           Inviami il codice
         </button>

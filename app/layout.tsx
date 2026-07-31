@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Archivo, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 
 import { BottomNav } from "@/src/components/bottom-nav";
@@ -8,9 +8,13 @@ import { branding } from "@/src/branding";
 
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Archivo variabile (peso + larghezza): la stessa famiglia fa i titoli
+// da maglia (nero, espanso, corsivo) e il testo corrente.
+const archivo = Archivo({
+  variable: "--font-archivo",
   subsets: ["latin"],
+  style: ["normal", "italic"],
+  axes: ["wdth"],
 });
 
 const geistMono = Geist_Mono({
@@ -27,7 +31,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     title: branding.appShortName,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
   },
   icons: {
     apple: "/icons/apple-touch-icon.png",
@@ -35,7 +39,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: branding.colori.primario,
+  themeColor: "#0b0b0c",
 };
 
 export default function RootLayout({
@@ -47,7 +51,7 @@ export default function RootLayout({
     <html
       lang="it"
       data-branding={branding.mode}
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${archivo.variable} ${geistMono.variable} h-full antialiased`}
       // Le estensioni del browser (es. LanguageTool) iniettano attributi
       // sull'<html> prima che React si agganci: senza questo, ogni dev
       // session mostra un falso warning di hydration mismatch.
@@ -55,11 +59,14 @@ export default function RootLayout({
     >
       <body className="flex min-h-dvh flex-col">
         <RegistraSw />
-        <header className="border-b border-border">
-          <div className="mx-auto flex max-w-lg items-center px-4 py-3">
-            <Link href="/" className="text-lg font-bold text-brand">
+        <header className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur">
+          <div className="mx-auto flex max-w-lg flex-col px-4 pt-3">
+            <Link href="/" className="display self-start text-xl text-foreground">
               {branding.appName}
+              <span className="text-brand">.</span>
             </Link>
+            <div className="filo-tricolore mt-2 w-24" aria-hidden />
+            <div className="pb-2" />
           </div>
         </header>
 

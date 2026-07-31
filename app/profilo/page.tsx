@@ -10,16 +10,16 @@ export default async function ProfiloPage() {
 
   if (!utente) {
     return (
-      <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-4 px-4 py-10 text-center">
-        <h1 className="text-2xl font-bold">Profilo</h1>
+      <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-5 px-4 py-10 text-center">
+        <h1 className="display text-4xl">Profilo</h1>
         <p className="text-sm text-muted">
           Accedi per votare il migliore in campo e comparire nelle classifiche.
         </p>
         <Link
           href="/accesso"
-          className="rounded-md bg-brand px-4 py-2 font-semibold text-on-brand hover:bg-brand-hover"
+          className="taglio-sm display bg-brand px-4 py-3 text-xl text-on-brand transition-colors hover:bg-brand-hover"
         >
-          Accedi
+          Entra
         </Link>
       </main>
     );
@@ -29,17 +29,20 @@ export default async function ProfiloPage() {
   if (!profilo) redirect("/benvenuto");
 
   return (
-    <main className="mx-auto flex w-full max-w-sm flex-1 flex-col gap-6 px-4 py-10">
-      <h1 className="text-2xl font-bold">Profilo</h1>
+    <main className="mx-auto flex w-full max-w-sm flex-1 flex-col gap-6 px-4 py-8">
+      <h1 className="display text-4xl">
+        {profilo.nickname}
+        <span className="text-brand-vivid">.</span>
+      </h1>
 
-      <dl className="flex flex-col gap-3 rounded-lg border border-border p-4">
+      <dl className="flex flex-col gap-3 border-l-2 border-brand pl-4">
         <div>
-          <dt className="text-xs uppercase text-muted">Nickname</dt>
-          <dd className="font-semibold">{profilo.nickname}</dd>
+          <dt className="eyebrow">Nickname</dt>
+          <dd className="font-bold">{profilo.nickname}</dd>
         </div>
         <div>
-          <dt className="text-xs uppercase text-muted">Email</dt>
-          <dd className="font-semibold">{utente.email}</dd>
+          <dt className="eyebrow">Email</dt>
+          <dd className="font-bold">{utente.email}</dd>
         </div>
       </dl>
 
@@ -48,7 +51,7 @@ export default async function ProfiloPage() {
       {profilo.role === "admin" && (
         <Link
           href="/admin"
-          className="rounded-md bg-brand px-4 py-2 text-center font-semibold text-on-brand hover:bg-brand-hover"
+          className="taglio-sm display bg-brand px-4 py-2.5 text-center text-lg text-on-brand transition-colors hover:bg-brand-hover"
         >
           Pannello admin
         </Link>
@@ -57,7 +60,7 @@ export default async function ProfiloPage() {
       <form action={esci}>
         <button
           type="submit"
-          className="w-full rounded-md border border-border px-4 py-2 font-semibold hover:bg-surface"
+          className="taglio-sm w-full border border-border px-4 py-2.5 text-sm font-bold uppercase tracking-wide text-muted transition-colors hover:border-brand hover:text-foreground"
         >
           Esci
         </button>

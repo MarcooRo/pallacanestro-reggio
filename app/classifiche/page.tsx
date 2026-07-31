@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
 import { AvatarGiocatore } from "@/src/components/avatar-giocatore";
+import { Pillola } from "@/src/components/pillola";
 import {
   classificaPerformance,
   classificaPreferito,
@@ -31,29 +31,6 @@ function urlFiltri(f: Filtri, patch: Partial<Filtri>): string {
   return `/classifiche?${query.toString()}`;
 }
 
-function Pillola({
-  href,
-  attiva,
-  children,
-}: {
-  href: string;
-  attiva: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      className={`rounded-full px-3 py-1 text-sm font-semibold ${
-        attiva
-          ? "bg-brand text-on-brand"
-          : "border border-border text-muted hover:text-foreground"
-      }`}
-    >
-      {children}
-    </Link>
-  );
-}
-
 export default async function ClassifichePage({
   searchParams,
 }: {
@@ -64,9 +41,9 @@ export default async function ClassifichePage({
 
   if (stagioni.length === 0) {
     return (
-      <main className="flex flex-1 flex-col gap-4 px-4 py-8">
-        <h1 className="text-2xl font-bold">Classifiche</h1>
-        <p className="rounded-lg border border-border bg-surface p-4 text-sm text-muted">
+      <main className="flex flex-1 flex-col gap-4 px-4 py-6">
+        <h1 className="display text-3xl">Classifiche</h1>
+        <p className="taglio-sm border border-border bg-surface p-4 text-sm text-muted">
           Le classifiche nascono dalle pagelle: appena si chiude la prima
           votazione, qui compaiono Performance e Preferito.
         </p>
@@ -100,12 +77,16 @@ export default async function ClassifichePage({
       ? await classificaPreferito(filtro)
       : await classificaPerformance(filtro);
 
+  const massimo = righe.length
+    ? Math.max(...righe.map((r) => ("punti" in r ? r.punti : r.preferenze)))
+    : 0;
+
   return (
-    <main className="flex flex-1 flex-col gap-4 px-4 py-8">
-      <h1 className="text-2xl font-bold">Classifiche</h1>
+    <main className="flex flex-1 flex-col gap-4 px-4 py-6">
+      <h1 className="display text-3xl">Classifiche</h1>
 
       {/* Performance / Preferito */}
-      <div className="flex gap-2">
+      <div className="flex gap-2.5 pl-1">
         <Pillola
           href={urlFiltri(filtri, { tab: "performance" })}
           attiva={filtri.tab === "performance"}
@@ -121,7 +102,7 @@ export default async function ClassifichePage({
       </div>
 
       {/* Finestre */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2.5 pl-1">
         {stagioni.map((anno) => (
           <Pillola
             key={anno}
@@ -132,9 +113,9 @@ export default async function ClassifichePage({
           </Pillola>
         ))}
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2.5 pl-1">
         <Pillola href={urlFiltri(filtri, { g: undefined, m: undefined })} attiva={!filtri.g && !filtri.m}>
-          Tutta la stagione
+          Stagione
         </Pillola>
         <Pillola href={urlFiltri(filtri, { g: "1", m: undefined })} attiva={filtri.g === "1"}>
           Andata
@@ -153,9 +134,9 @@ export default async function ClassifichePage({
         ))}
       </div>
       {competizioni.length > 1 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2.5 pl-1">
           <Pillola href={urlFiltri(filtri, { c: undefined })} attiva={!filtri.c}>
-            Tutte le competizioni
+            Tutte
           </Pillola>
           {competizioni.map((c) => (
             <Pillola
@@ -169,39 +150,60 @@ export default async function ClassifichePage({
         </div>
       )}
 
-      {/* Classifica */}
+      {/* Classifica: la barra rossa è il dato */}
       {righe.length === 0 ? (
-        <p className="rounded-lg border border-border bg-surface p-4 text-sm text-muted">
+        <p className="taglio-sm border border-border bg-surface p-4 text-sm text-muted">
           Nessuna pagella in questa finestra.
         </p>
       ) : (
-        <ol className="flex flex-col gap-2">
-          {righe.map((r, i) => (
-            <li
-              key={r.player_id}
-              className={`flex items-center gap-3 rounded-lg border p-3 ${
-                i === 0 ? "border-brand bg-brand-tint" : "border-border"
-              }`}
-            >
-              <span className="w-5 text-center text-sm font-bold text-muted">{i + 1}</span>
-              <AvatarGiocatore
-                firstName={r.first_name}
-                lastName={r.last_name}
-                photoKey={r.photo_key}
-              />
-              <span className="min-w-0 flex-1 truncate font-semibold">
-                {r.first_name} {r.last_name}
-              </span>
-              <span className="text-xs text-muted">
-                {"best" in r
-                  ? `${r.best}× migliore · ${r.partite} partite`
-                  : `${r.partite} partite`}
-              </span>
-              <span className="text-lg font-bold tabular-nums text-brand">
-                {"punti" in r ? r.punti : r.preferenze}
-              </span>
-            </li>
-          ))}
+        <ol className="flex flex-col">
+          {righe.map((r, i) => {
+            const valore = "punti" in r ? r.punti : r.preferenze;
+            const quota = massimo > 0 ? Math.max(4, (valore / massimo) * 100) : 0;
+            return (
+              <li
+                key={r.player_id}
+                className="relative flex items-center gap-3 overflow-hidden border-b border-border py-3 pl-1 last:border-b-0"
+              >
+                {/* barra proporzionale al punteggio */}
+                <span
+                  aria-hidden
+                  className="absolute bottom-0 left-0 h-[2px] bg-brand"
+                  style={{ width: `${quota}%`, opacity: i === 0 ? 1 : 0.55 }}
+                />
+                <span
+                  className={`score w-6 text-center text-sm ${
+                    i === 0 ? "font-bold text-brand-vivid" : "text-muted"
+                  }`}
+                >
+                  {i + 1}
+                </span>
+                <AvatarGiocatore
+                  firstName={r.first_name}
+                  lastName={r.last_name}
+                  photoKey={r.photo_key}
+                  dimensione={i === 0 ? 44 : 36}
+                />
+                <span
+                  className={`min-w-0 flex-1 truncate font-bold uppercase tracking-tight ${
+                    i === 0 ? "text-lg" : "text-sm"
+                  }`}
+                >
+                  {r.first_name} {r.last_name}
+                </span>
+                <span className="eyebrow">
+                  {"best" in r ? `${r.best}×B · ${r.partite}g` : `${r.partite}g`}
+                </span>
+                <span
+                  className={`score font-bold ${
+                    i === 0 ? "text-2xl text-brand-vivid" : "text-base"
+                  }`}
+                >
+                  {valore}
+                </span>
+              </li>
+            );
+          })}
         </ol>
       )}
     </main>

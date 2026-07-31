@@ -9,14 +9,14 @@ export default async function NewsPage() {
   const items = await getNews();
 
   return (
-    <main className="flex flex-1 flex-col gap-4 px-4 py-8">
-      <h1 className="text-2xl font-bold">News</h1>
+    <main className="flex flex-1 flex-col gap-4 px-4 py-6">
+      <h1 className="display text-3xl">News</h1>
       {items.length === 0 ? (
-        <p className="rounded-lg border border-border bg-surface p-4 text-sm text-muted">
+        <p className="taglio-sm border border-border bg-surface p-4 text-sm text-muted">
           Nessuna news in archivio.
         </p>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2.5">
           {items.map((n) => (
             <NewsCard key={n.id} item={n} />
           ))}

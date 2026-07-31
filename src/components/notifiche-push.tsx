@@ -110,8 +110,8 @@ export function NotifichePush() {
   if (stato === "verifica") return null;
 
   return (
-    <section className="flex flex-col gap-3 rounded-lg border border-border p-4">
-      <h2 className="font-bold">Notifiche</h2>
+    <section className="taglio-sm flex flex-col gap-3 border border-border bg-surface p-4">
+      <h2 className="display text-lg">Notifiche</h2>
 
       {stato === "non-supportate" && (
         <p className="text-sm text-muted">

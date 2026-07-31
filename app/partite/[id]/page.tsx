@@ -173,7 +173,7 @@ async function SezioneVoto({
       {!utente ? (
         <div className="taglio flex flex-col gap-3 border border-border bg-surface p-4">
           <p className="text-sm">
-            Per votare serve l&apos;accesso: solo email, niente password.
+            Per votare serve l&apos;accesso: registrarsi richiede 10 secondi.
           </p>
           <Link
             href="/accesso"

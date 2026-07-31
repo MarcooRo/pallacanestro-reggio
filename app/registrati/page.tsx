@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { accedi } from "@/src/lib/auth/actions";
+import { registrati } from "@/src/lib/auth/actions";
 import { getUtente } from "@/src/lib/auth/session";
 
-export default async function AccessoPage({
+export default async function RegistratiPage({
   searchParams,
 }: {
   searchParams: Promise<{ errore?: string }>;
@@ -16,9 +16,11 @@ export default async function AccessoPage({
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 px-4 py-10">
       <div>
         <h1 className="display text-4xl">
-          Entra<span className="text-brand-vivid">.</span>
+          Unisciti<span className="text-brand-vivid">.</span>
         </h1>
-        <p className="mt-2 text-sm text-muted">Email e password, come sempre.</p>
+        <p className="mt-2 text-sm text-muted">
+          Email e una password (almeno 8 caratteri): entri subito.
+        </p>
       </div>
 
       {errore && (
@@ -27,7 +29,7 @@ export default async function AccessoPage({
         </p>
       )}
 
-      <form action={accedi} className="flex flex-col gap-3">
+      <form action={registrati} className="flex flex-col gap-3">
         <label className="eyebrow" htmlFor="email">
           Email
         </label>
@@ -49,21 +51,21 @@ export default async function AccessoPage({
           type="password"
           required
           minLength={8}
-          autoComplete="current-password"
+          autoComplete="new-password"
           className="taglio-sm border border-border bg-surface-2 px-3 py-3 outline-none transition-colors focus:border-brand-vivid"
         />
         <button
           type="submit"
           className="taglio-sm display mt-2 bg-brand px-4 py-3 text-xl text-on-brand transition-colors hover:bg-brand-hover"
         >
-          Entra
+          Registrati
         </button>
       </form>
 
       <p className="text-center text-sm text-muted">
-        Prima volta qui?{" "}
-        <Link href="/registrati" className="font-bold text-brand-vivid underline">
-          Registrati
+        Hai già un account?{" "}
+        <Link href="/accesso" className="font-bold text-brand-vivid underline">
+          Entra
         </Link>
       </p>
     </main>

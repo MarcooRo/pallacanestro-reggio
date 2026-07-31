@@ -1,9 +1,10 @@
 "use server";
 
-// Server actions di autenticazione: OTP via email (Supabase Auth)
-// e creazione del profilo con nickname pubblico.
+// Server actions di autenticazione: email + password (login classico,
+// scelta v1 per la cerchia ristretta) e creazione del profilo con
+// nickname pubblico. La conferma email è disattivata lato Supabase;
+// il recupero password arriverà con l'SMTP (Resend).
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
@@ -13,6 +14,9 @@ import { getProfilo, getUtente } from "@/src/lib/auth/session";
 import { createSupabaseServerClient } from "@/src/lib/supabase/server";
 
 const emailSchema = z.string().trim().toLowerCase().email();
+const passwordSchema = z
+  .string()
+  .min(8, "La password deve avere almeno 8 caratteri");
 
 const nicknameSchema = z
   .string()
@@ -24,59 +28,67 @@ const nicknameSchema = z
     "Solo lettere, numeri, spazi, punti e trattini bassi",
   );
 
-export async function inviaOtp(formData: FormData) {
-  const parsed = emailSchema.safeParse(formData.get("email"));
-  if (!parsed.success) {
-    redirect(`/accesso?errore=${encodeURIComponent("Inserisci una email valida")}`);
-  }
-  const email = parsed.data;
-
-  // Il link nell'email deve rientrare sulla route di callback di QUESTA
-  // origine (localhost in dev, dominio in prod).
-  const origin = (await headers()).get("origin") ?? "http://localhost:3000";
-
-  const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: {
-      shouldCreateUser: true,
-      emailRedirectTo: `${origin}/auth/callback`,
-    },
-  });
-
-  if (error) {
-    redirect(
-      `/accesso?errore=${encodeURIComponent("Invio del codice non riuscito, riprova tra qualche minuto")}`,
-    );
-  }
-
-  redirect(`/accesso/verifica?email=${encodeURIComponent(email)}`);
+function credenziali(formData: FormData) {
+  const email = emailSchema.safeParse(formData.get("email"));
+  const password = passwordSchema.safeParse(formData.get("password"));
+  return { email, password };
 }
 
-export async function verificaOtp(formData: FormData) {
-  const email = emailSchema.safeParse(formData.get("email"));
-  const token = z.string().trim().min(6).safeParse(formData.get("token"));
-
-  if (!email.success || !token.success) {
-    redirect(`/accesso?errore=${encodeURIComponent("Codice non valido")}`);
+export async function accedi(formData: FormData) {
+  const { email, password } = credenziali(formData);
+  if (!email.success || !password.success) {
+    redirect(`/accesso?errore=${encodeURIComponent("Email o password non validi")}`);
   }
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.auth.verifyOtp({
+  const { error } = await supabase.auth.signInWithPassword({
     email: email.data,
-    token: token.data,
-    type: "email",
+    password: password.data,
   });
 
   if (error) {
     redirect(
-      `/accesso/verifica?email=${encodeURIComponent(email.data)}&errore=${encodeURIComponent("Codice errato o scaduto")}`,
+      `/accesso?errore=${encodeURIComponent("Email o password sbagliati. Se è la prima volta, registrati.")}`,
     );
   }
 
-  // Primo accesso: prima di entrare serve il nickname pubblico.
   const profilo = await getProfilo();
   redirect(profilo ? "/" : "/benvenuto");
+}
+
+export async function registrati(formData: FormData) {
+  const { email, password } = credenziali(formData);
+  if (!email.success) {
+    redirect(`/registrati?errore=${encodeURIComponent("Inserisci una email valida")}`);
+  }
+  if (!password.success) {
+    redirect(
+      `/registrati?errore=${encodeURIComponent(password.error.issues[0].message)}`,
+    );
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.auth.signUp({
+    email: email.data,
+    password: password.data,
+  });
+
+  if (error) {
+    const messaggio = error.code === "user_already_exists"
+      ? "Questa email è già registrata: accedi"
+      : "Registrazione non riuscita, riprova";
+    redirect(`/registrati?errore=${encodeURIComponent(messaggio)}`);
+  }
+
+  // Con la conferma email disattivata la sessione arriva subito; se in
+  // dashboard è ancora accesa, l'utente esiste ma non può entrare.
+  if (!data.session) {
+    redirect(
+      `/accesso?errore=${encodeURIComponent("Account creato ma serve la conferma email: disattivarla in Supabase (Authentication → Providers → Email)")}`,
+    );
+  }
+
+  redirect("/benvenuto");
 }
 
 export async function creaProfilo(formData: FormData) {

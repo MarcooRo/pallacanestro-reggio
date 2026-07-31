@@ -45,7 +45,7 @@ export default async function HomePage() {
           Entra e vota
         </Link>
         <p className="eyebrow text-center">
-          solo email · niente password · voti anonimi
+          registrazione in 10 secondi · voti anonimi
         </p>
       </div>
     </main>

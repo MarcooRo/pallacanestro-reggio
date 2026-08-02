@@ -25,7 +25,7 @@ export default async function GiocatoriPage({
     return (
       <main className="flex flex-1 flex-col gap-4 px-4 py-6">
         <h1 className="display text-3xl">La squadra</h1>
-        <p className="taglio-sm border border-border bg-surface p-4 text-sm text-muted">
+        <p className="taglio-sm card p-4 text-sm text-muted">
           Il roster non è ancora disponibile: la fonte non l&apos;ha pubblicato.
         </p>
       </main>
@@ -66,7 +66,7 @@ export default async function GiocatoriPage({
               ? ` · ${quintetto.partita.homeScore}-${quintetto.partita.awayScore}`
               : ""}
           </p>
-          <div className="taglio-sm border border-border">
+          <div className="taglio-sm border border-border-strong">
             <CampoQuintetto titolari={quintetto.titolari} />
           </div>
         </section>
@@ -151,7 +151,7 @@ function TesseraLeader({
   valore: string;
 }) {
   return (
-    <div className="taglio-sm flex flex-col items-center gap-1.5 border border-border bg-surface px-2 py-3 text-center">
+    <div className="taglio-sm flex flex-col items-center gap-1.5 card px-2 py-3 text-center">
       <span className="eyebrow">{etichetta}</span>
       <span className="score text-2xl font-bold text-brand-vivid">{valore}</span>
       <AvatarGiocatore

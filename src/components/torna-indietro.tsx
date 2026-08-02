@@ -21,9 +21,9 @@ export function TornaIndietro({
         if (window.history.length > 1) router.back();
         else router.push(fallback);
       }}
-      className="eyebrow -ml-1 flex items-center gap-1.5 self-start px-1 py-1 transition-colors hover:text-brand-vivid"
+      className="taglio-sm flex cursor-pointer items-center gap-2 self-start border border-border-strong bg-surface px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-foreground transition-colors hover:border-brand hover:text-brand-vivid"
     >
-      <span aria-hidden>←</span> {etichetta}
+      <span aria-hidden className="text-brand-vivid">←</span> {etichetta}
     </button>
   );
 }

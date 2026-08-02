@@ -33,7 +33,7 @@ function SelettoreGiocatore({
         name={name}
         required={obbligatorio}
         defaultValue=""
-        className="taglio-sm border border-border bg-surface-2 px-3 py-3 text-[15px] outline-none transition-colors focus:border-brand-vivid"
+        className="taglio-sm border border-border-strong bg-surface-2 px-3 py-3 text-[15px] outline-none transition-colors focus:border-brand-vivid"
       >
         <option value="">{obbligatorio ? "Scegli il giocatore…" : "Nessuno"}</option>
         {votabili.map((v) => (
@@ -73,7 +73,7 @@ export function FormVoto({
   return (
     <form
       action={azione}
-      className="taglio flex flex-col gap-5 border border-border bg-surface p-4"
+      className="taglio flex flex-col gap-5 card p-4"
     >
       <input type="hidden" name="matchId" value={matchId} />
 

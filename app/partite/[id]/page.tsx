@@ -55,7 +55,7 @@ export default async function PartitaPage({
           {dataOra(partita.startsAt)}
         </p>
 
-        <div className="taglio flex flex-col gap-2 border border-border bg-surface p-4">
+        <div className="taglio flex flex-col gap-2 card p-4">
           {[
             { squadra: partita.homeTeam, punti: partita.homeScore },
             { squadra: partita.awayTeam, punti: partita.awayScore },
@@ -127,7 +127,7 @@ export default async function PartitaPage({
       )}
 
       {!votazioneAperta && partita.votingState !== "tallied" && (
-        <p className="taglio-sm border border-border bg-surface p-4 text-sm text-muted">
+        <p className="taglio-sm card p-4 text-sm text-muted">
           La votazione per questa partita non è aperta.
         </p>
       )}
@@ -171,7 +171,7 @@ async function SezioneVoto({
       </div>
 
       {!utente ? (
-        <div className="taglio flex flex-col gap-3 border border-border bg-surface p-4">
+        <div className="taglio flex flex-col gap-3 card p-4">
           <p className="text-sm">
             Per votare serve l&apos;accesso: registrarsi richiede 10 secondi.
           </p>
@@ -183,7 +183,7 @@ async function SezioneVoto({
           </Link>
         </div>
       ) : !profilo ? (
-        <div className="taglio flex flex-col gap-3 border border-border bg-surface p-4">
+        <div className="taglio flex flex-col gap-3 card p-4">
           <p className="text-sm">Completa il profilo con un nickname per votare.</p>
           <Link
             href="/benvenuto"

@@ -42,7 +42,7 @@ export async function ClassificheSezione({
     return (
       <section className="flex flex-col gap-3">
         <h2 className="display text-2xl">Classifiche</h2>
-        <p className="taglio-sm border border-border bg-surface p-4 text-sm text-muted">
+        <p className="taglio-sm card p-4 text-sm text-muted">
           Le classifiche nascono dalle pagelle: appena si chiude la prima
           votazione, qui compaiono Performance e Preferito.
         </p>
@@ -151,7 +151,7 @@ export async function ClassificheSezione({
 
       {/* Classifica: la barra rossa è il dato */}
       {righe.length === 0 ? (
-        <p className="taglio-sm border border-border bg-surface p-4 text-sm text-muted">
+        <p className="taglio-sm card p-4 text-sm text-muted">
           Nessuna pagella in questa finestra.
         </p>
       ) : (

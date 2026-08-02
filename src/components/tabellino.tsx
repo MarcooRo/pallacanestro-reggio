@@ -32,11 +32,15 @@ function TabellaSquadra({
   return (
     <div className="flex flex-col gap-2">
       <h3 className="display text-lg">{nome}</h3>
-      <div className="taglio-sm overflow-x-auto border border-border">
+      <div className="taglio-sm overflow-x-auto border border-border-strong">
         <table className="score w-full min-w-[640px] text-sm">
           <thead>
             <tr className="border-b border-border bg-surface-2 text-xs text-muted">
-              <th className="px-3 py-2 text-left font-semibold">Giocatore</th>
+              {/* Colonna nomi fissa: scorrono solo le statistiche.
+                  Sticky vuole lo sfondo sulla cella, non sulla riga. */}
+              <th className="sticky left-0 z-10 border-r border-border bg-surface-2 px-3 py-2 text-left font-semibold">
+                Giocatore
+              </th>
               {COLONNE.map((c) => (
                 <th key={c} className="px-2 py-2 text-right font-semibold">
                   {c}
@@ -47,7 +51,7 @@ function TabellaSquadra({
           <tbody>
             {righe.map((r) => (
               <tr key={r.player_id} className="border-b border-border last:border-b-0">
-                <td className="px-3 py-1.5">
+                <td className="sticky left-0 whitespace-nowrap border-r border-border bg-background px-3 py-1.5">
                   <Link href={`/giocatori/${r.player_id}`} className="hover:text-brand">
                     {r.starter ? <strong>{r.last_name}</strong> : r.last_name}{" "}
                     <span className="text-muted">{r.first_name?.[0]}.</span>

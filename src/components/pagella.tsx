@@ -9,7 +9,7 @@ type Righe = Awaited<ReturnType<typeof getPagella>>;
 export function Pagella({ righe, compatta = false }: { righe: Righe; compatta?: boolean }) {
   if (righe.length === 0) {
     return (
-      <p className="taglio-sm border border-border bg-surface p-4 text-sm text-muted">
+      <p className="taglio-sm card p-4 text-sm text-muted">
         Nessun voto per questa partita.
       </p>
     );

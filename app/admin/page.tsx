@@ -44,7 +44,7 @@ export default async function AdminPage({
       <form action={aggiornaNewsAction}>
         <button
           type="submit"
-          className="rounded-md border border-border px-3 py-1.5 text-sm font-semibold hover:bg-surface"
+          className="rounded-md border border-border-strong px-3 py-1.5 text-sm font-semibold hover:bg-surface"
         >
           Aggiorna news dalle fonti
         </button>
@@ -67,7 +67,7 @@ const etichettaStato: Record<string, string> = {
 
 function RigaAdmin({ partita }: { partita: PartitaLista }) {
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border p-4">
+    <div className="flex flex-col gap-3 rounded-lg border border-border-strong p-4">
       <div className="flex items-baseline justify-between gap-2 text-xs text-muted">
         <span>
           {partita.competitionName}
@@ -109,7 +109,7 @@ function RigaAdmin({ partita }: { partita: PartitaLista }) {
               defaultValue={ORE_FINESTRA_DEFAULT}
               min={1}
               max={96}
-              className="w-16 rounded-md border border-border bg-background px-2 py-1 text-sm"
+              className="w-16 rounded-md border border-border-strong bg-background px-2 py-1 text-sm"
             />
             <button
               type="submit"
@@ -145,7 +145,7 @@ function RigaAdmin({ partita }: { partita: PartitaLista }) {
             min={0}
             defaultValue={partita.homeScore ?? ""}
             placeholder="casa"
-            className="w-20 rounded-md border border-border bg-background px-2 py-1 text-sm"
+            className="w-20 rounded-md border border-border-strong bg-background px-2 py-1 text-sm"
           />
           <input
             name="awayScore"
@@ -153,12 +153,12 @@ function RigaAdmin({ partita }: { partita: PartitaLista }) {
             min={0}
             defaultValue={partita.awayScore ?? ""}
             placeholder="ospiti"
-            className="w-20 rounded-md border border-border bg-background px-2 py-1 text-sm"
+            className="w-20 rounded-md border border-border-strong bg-background px-2 py-1 text-sm"
           />
           <select
             name="status"
             defaultValue={partita.status}
-            className="rounded-md border border-border bg-background px-2 py-1 text-sm"
+            className="rounded-md border border-border-strong bg-background px-2 py-1 text-sm"
           >
             <option value="scheduled">in programma</option>
             <option value="live">in corso</option>
@@ -168,7 +168,7 @@ function RigaAdmin({ partita }: { partita: PartitaLista }) {
           </select>
           <button
             type="submit"
-            className="rounded-md border border-border px-3 py-1.5 text-sm font-semibold hover:bg-surface"
+            className="rounded-md border border-border-strong px-3 py-1.5 text-sm font-semibold hover:bg-surface"
           >
             Salva
           </button>

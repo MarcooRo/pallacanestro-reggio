@@ -39,7 +39,7 @@ export default async function VideoPage({
       </div>
 
       {items.length === 0 ? (
-        <p className="taglio-sm border border-border bg-surface p-4 text-sm text-muted">
+        <p className="taglio-sm card p-4 text-sm text-muted">
           Nessun video disponibile ora: YouTube non risponde, riprova tra poco.
         </p>
       ) : (

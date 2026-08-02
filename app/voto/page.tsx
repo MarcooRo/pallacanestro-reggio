@@ -41,14 +41,15 @@ export default async function VotoPage({
             </Link>
           </>
         ) : (
-          <p className="taglio-sm border border-border bg-surface p-4 text-sm text-muted">
+          <p className="taglio-sm card p-4 text-sm text-muted">
             Nessuna votazione aperta ora: si vota il migliore in campo a fine
             partita, dalla sirena per 48 ore.
           </p>
         )}
       </section>
 
-      {ultima && (
+      {/* Mentre si vota il verdetto scorso sparisce: prima il presente */}
+      {!votazione && ultima && (
         <section className="flex flex-col gap-3">
           <div className="flex items-baseline justify-between">
             <h2 className="display text-2xl">L&apos;ultima pagella</h2>

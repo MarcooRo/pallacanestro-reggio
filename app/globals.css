@@ -14,6 +14,8 @@
   --superficie: #131316;
   --superficie-2: #1b1b1f;
   --linea: #26262b;
+  /* Bordo netto per card e input: --linea da solo si perde sul fumo */
+  --linea-forte: #3a3a44;
   --testo: #f5f4f2;
   /* Abbastanza chiaro da leggersi sul grigio delle card (surface #131316) */
   --muted: #aeaeb6;
@@ -24,6 +26,7 @@
   --color-foreground: var(--testo);
   --color-muted: var(--muted);
   --color-border: var(--linea);
+  --color-border-strong: var(--linea-forte);
   --color-surface: var(--superficie);
   --color-surface-2: var(--superficie-2);
   --color-brand: var(--brand-primary);
@@ -85,6 +88,14 @@ body {
     calc(100% - 8px) 100%,
     0 100%
   );
+}
+
+/* Card: superficie con bordo netto per staccarla dallo sfondo (il solo
+   bordo --linea si percepiva poco). Niente ombra: il clip-path del
+   taglio la ritaglierebbe via. */
+.card {
+  background: var(--superficie);
+  border: 1px solid var(--linea-forte);
 }
 
 /* Reveal orchestrato della home */

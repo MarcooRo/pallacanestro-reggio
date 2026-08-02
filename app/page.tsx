@@ -75,7 +75,7 @@ async function HomeLoggata() {
         {prossima ? (
           <PartitaCard partita={prossima} />
         ) : (
-          <p className="taglio-sm border border-border bg-surface p-4 text-sm text-muted">
+          <p className="taglio-sm card p-4 text-sm text-muted">
             Nessuna partita di Reggio pianificata. Guarda il{" "}
             <Link href="/calendario" className="font-bold text-brand-vivid underline">
               calendario

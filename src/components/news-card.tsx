@@ -17,7 +17,7 @@ export function NewsCard({ item }: { item: typeof news.$inferSelect }) {
       href={item.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="taglio-sm group flex gap-3 border border-border bg-surface p-3 transition-colors hover:border-brand"
+      className="taglio-sm group flex gap-3 card p-3 transition-colors hover:border-brand"
     >
       {item.imageUrl && (
         <Image

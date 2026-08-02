@@ -44,7 +44,7 @@ export default async function BenvenutoPage({
           minLength={3}
           maxLength={20}
           autoComplete="off"
-          className="taglio-sm border border-border bg-surface-2 px-3 py-3 outline-none transition-colors focus:border-brand-vivid"
+          className="taglio-sm border border-border-strong bg-surface-2 px-3 py-3 outline-none transition-colors focus:border-brand-vivid"
         />
         <button
           type="submit"

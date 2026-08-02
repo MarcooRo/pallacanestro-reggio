@@ -38,7 +38,7 @@ export default async function AccessoPage({
           required
           autoComplete="email"
           placeholder="nome@esempio.it"
-          className="taglio-sm border border-border bg-surface-2 px-3 py-3 outline-none transition-colors focus:border-brand-vivid"
+          className="taglio-sm border border-border-strong bg-surface-2 px-3 py-3 outline-none transition-colors focus:border-brand-vivid"
         />
         <label className="eyebrow mt-1" htmlFor="password">
           Password
@@ -50,7 +50,7 @@ export default async function AccessoPage({
           required
           minLength={8}
           autoComplete="current-password"
-          className="taglio-sm border border-border bg-surface-2 px-3 py-3 outline-none transition-colors focus:border-brand-vivid"
+          className="taglio-sm border border-border-strong bg-surface-2 px-3 py-3 outline-none transition-colors focus:border-brand-vivid"
         />
         <button
           type="submit"

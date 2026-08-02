@@ -64,7 +64,7 @@ export default async function GiocatorePage({
     <main className="flex flex-1 flex-col gap-6 px-4 py-6">
       <TornaIndietro fallback="/giocatori" etichetta="La squadra" />
 
-      <header className="taglio relative -mt-2 flex items-center gap-4 overflow-hidden border border-border bg-surface p-4">
+      <header className="taglio relative -mt-2 flex items-center gap-4 overflow-hidden card p-4">
         {ultimaPermanenza?.jerseyNumber && (
           <span
             aria-hidden
@@ -145,12 +145,12 @@ export default async function GiocatorePage({
       <section className="flex flex-col gap-3">
         <h2 className="display text-2xl">Statistiche di stagione</h2>
         {statsNonDisponibili && (
-          <p className="taglio-sm border border-border bg-surface p-4 text-sm text-muted">
+          <p className="taglio-sm card p-4 text-sm text-muted">
             Statistiche momentaneamente non disponibili.
           </p>
         )}
         {!statsNonDisponibili && statistiche.length === 0 && (
-          <p className="taglio-sm border border-border bg-surface p-4 text-sm text-muted">
+          <p className="taglio-sm card p-4 text-sm text-muted">
             Nessuna statistica per la stagione in corso.
           </p>
         )}
@@ -184,7 +184,7 @@ function TabellaStatistiche({ stats: s }: { stats: StatisticheStagione }) {
   ];
 
   return (
-    <div className="taglio-sm border border-border bg-surface">
+    <div className="taglio-sm card">
       <p className="display border-b border-border px-4 py-2 text-base">
         {nomiCompetizione[s.competizione] ?? s.competizione}
       </p>

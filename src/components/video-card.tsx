@@ -13,7 +13,7 @@ export function VideoCard({ video, className = "" }: { video: Video; className?:
   const [inPlay, setInPlay] = useState(false);
 
   return (
-    <div className={`taglio-sm flex flex-col border border-border bg-surface ${className}`}>
+    <div className={`taglio-sm flex flex-col card ${className}`}>
       <div className="relative aspect-video">
         {inPlay ? (
           <iframe

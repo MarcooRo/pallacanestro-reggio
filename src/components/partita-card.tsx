@@ -25,7 +25,7 @@ export function PartitaCard({ partita }: { partita: PartitaLista }) {
   return (
     <Link
       href={`/partite/${partita.id}`}
-      className="taglio-sm group flex flex-col gap-3 border border-border bg-surface p-4 transition-colors hover:border-brand"
+      className="taglio-sm group flex flex-col gap-3 card p-4 transition-colors hover:border-brand"
     >
       <div className="flex items-baseline justify-between gap-2">
         <span className="eyebrow">

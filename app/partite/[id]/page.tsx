@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { FormVoto } from "@/src/components/form-voto";
 import { Pagella } from "@/src/components/pagella";
+import { MiglioriPartita } from "@/src/components/migliori-partita";
 import { Tabellino } from "@/src/components/tabellino";
 import { TornaIndietro } from "@/src/components/torna-indietro";
 import { getProfilo, getUtente } from "@/src/lib/auth/session";
@@ -217,5 +218,10 @@ async function SezioneTabellino({
 }) {
   const righe = await getTabellinoPartita(matchId);
   if (righe.length === 0) return null;
-  return <Tabellino righe={righe} nomeCasa={nomeCasa} nomeOspiti={nomeOspiti} />;
+  return (
+    <>
+      <MiglioriPartita righe={righe} nomeCasa={nomeCasa} nomeOspiti={nomeOspiti} />
+      <Tabellino righe={righe} nomeCasa={nomeCasa} nomeOspiti={nomeOspiti} />
+    </>
+  );
 }

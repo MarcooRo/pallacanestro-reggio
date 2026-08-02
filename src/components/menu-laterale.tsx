@@ -47,10 +47,11 @@ export function MenuLaterale({ admin = false }: { admin?: boolean }) {
             type="button"
             aria-label="Chiudi il menu"
             onClick={() => setAperto(false)}
-            className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 cursor-default bg-black/80 backdrop-blur-sm"
           />
-          {/* Superficie più chiara dello sfondo pagina, sennò si confonde */}
-          <nav className="absolute inset-y-0 left-0 flex w-64 flex-col gap-1 border-r border-border-strong bg-surface px-5 py-6 shadow-[8px_0_30px_rgba(0,0,0,0.5)]">
+          {/* Pannello opaco e più chiaro dello sfondo: la pagina sotto
+              deve sparire, non trasparire */}
+          <nav className="absolute inset-y-0 left-0 flex w-64 flex-col gap-1 border-r border-border-strong bg-surface-2 px-5 py-6 shadow-[8px_0_30px_rgba(0,0,0,0.6)]">
             <button
               type="button"
               onClick={() => setAperto(false)}

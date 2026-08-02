@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AvatarGiocatore } from "@/src/components/avatar-giocatore";
 import { CampoQuintetto } from "@/src/components/campo-quintetto";
 import { Pillola } from "@/src/components/pillola";
+import { TesseraMigliore } from "@/src/components/tessera-migliore";
 import { etichettaStagione } from "@/src/lib/date";
 import {
   getLeaderStagione,
@@ -76,19 +77,19 @@ export default async function GiocatoriPage({
         <section className="flex flex-col gap-2">
           <h2 className="display text-2xl">Leader stagionali</h2>
           <div className="grid grid-cols-3 gap-2.5">
-            <TesseraLeader etichetta="Punti" leader={leader.punti} valore={media(leader.punti.punti)} />
-            <TesseraLeader etichetta="Rimbalzi" leader={leader.rimbalzi} valore={media(leader.rimbalzi.rimbalzi)} />
-            <TesseraLeader etichetta="Assist" leader={leader.assist} valore={media(leader.assist.assist)} />
-            <TesseraLeader etichetta="Stoppate" leader={leader.stoppate} valore={media(leader.stoppate.stoppate)} />
+            <TesseraStagione etichetta="Punti" leader={leader.punti} valore={media(leader.punti.punti)} />
+            <TesseraStagione etichetta="Rimbalzi" leader={leader.rimbalzi} valore={media(leader.rimbalzi.rimbalzi)} />
+            <TesseraStagione etichetta="Assist" leader={leader.assist} valore={media(leader.assist.assist)} />
+            <TesseraStagione etichetta="Stoppate" leader={leader.stoppate} valore={media(leader.stoppate.stoppate)} />
             {leader.tiri2 && (
-              <TesseraLeader
+              <TesseraStagione
                 etichetta="Tiri da 2"
                 leader={leader.tiri2}
                 valore={percentuale(leader.tiri2.t2m, leader.tiri2.t2a)}
               />
             )}
             {leader.tiri3 && (
-              <TesseraLeader
+              <TesseraStagione
                 etichetta="Tiri da 3"
                 leader={leader.tiri3}
                 valore={percentuale(leader.tiri3.t3m, leader.tiri3.t3a)}
@@ -140,8 +141,8 @@ function percentuale(fatti: number, tentati: number): string {
   return `${Math.round((fatti / tentati) * 100)}%`;
 }
 
-// Tessera compatta: il numero a grandi cifre, il giocatore sotto.
-function TesseraLeader({
+// Adattatore: dal LeaderStagione alla tessera condivisa.
+function TesseraStagione({
   etichetta,
   leader,
   valore,
@@ -151,18 +152,12 @@ function TesseraLeader({
   valore: string;
 }) {
   return (
-    <div className="taglio-sm flex flex-col items-center gap-1.5 card px-2 py-3 text-center">
-      <span className="eyebrow">{etichetta}</span>
-      <span className="score text-2xl font-bold text-brand-vivid">{valore}</span>
-      <AvatarGiocatore
-        firstName={leader.firstName}
-        lastName={leader.lastName}
-        photoKey={leader.photoKey}
-        dimensione={36}
-      />
-      <span className="w-full truncate text-[11px] font-bold uppercase tracking-tight">
-        {leader.lastName}
-      </span>
-    </div>
+    <TesseraMigliore
+      etichetta={etichetta}
+      valore={valore}
+      firstName={leader.firstName}
+      lastName={leader.lastName}
+      photoKey={leader.photoKey}
+    />
   );
 }

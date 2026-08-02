@@ -11,7 +11,6 @@ const FILTRI: { chiave: string; etichetta: string; fonte?: FonteVideo }[] = [
   { chiave: "tutti", etichetta: "Tutti" },
   { chiave: "reggio", etichetta: "Reggiana", fonte: "pr_youtube" },
   { chiave: "highlights", etichetta: "Highlights", fonte: "lba_highlights" },
-  { chiave: "podcast", etichetta: "Podcast", fonte: "backboard" },
   { chiave: "seriea", etichetta: "Serie A", fonte: "lba" },
 ];
 

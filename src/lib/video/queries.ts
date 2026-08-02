@@ -12,11 +12,6 @@ const FONTI = [
     feed: "channel_id=UCSWK9ximwWQ56itm56CBT7A",
   },
   {
-    fonte: "backboard",
-    tag: "Backboard Podcast",
-    feed: "playlist_id=PLcFxAEcZXG4r9I18CQ2v6rfZ8LW6vW6ER",
-  },
-  {
     fonte: "lba_highlights",
     tag: "Highlights LBA",
     feed: "playlist_id=PLY-s_C0dtivEf9Q1fgsIpUBgsR_sAL1it",

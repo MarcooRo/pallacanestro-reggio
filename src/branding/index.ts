@@ -34,9 +34,9 @@ interface Branding {
 const configs: Record<BrandingMode, Branding> = {
   official: {
     mode: "official",
-    appName: "La Pagella",
-    appShortName: "Pagella",
-    tagline: "Il migliore in campo lo decide la curva",
+    appName: "RE-Pallacanestro",
+    appShortName: "RE-Basket",
+    tagline: "Segui Reggio: news, partite e la pagella della curva",
     logoUrl: null,
     colori: {
       primario: "#c8102e",
@@ -48,9 +48,9 @@ const configs: Record<BrandingMode, Branding> = {
   },
   generic: {
     mode: "generic",
-    appName: "La Pagella",
-    appShortName: "Pagella",
-    tagline: "Il migliore in campo lo decidi tu",
+    appName: "RE-Pallacanestro",
+    appShortName: "RE-Basket",
+    tagline: "Segui la tua squadra: news, partite e pagelle",
     logoUrl: null,
     colori: {
       primario: "#2563eb",

@@ -9,11 +9,11 @@ import { useState } from "react";
 import type { Video } from "@/src/lib/video/queries";
 import { soloOra } from "@/src/lib/date";
 
-export function VideoCard({ video }: { video: Video }) {
+export function VideoCard({ video, className = "" }: { video: Video; className?: string }) {
   const [inPlay, setInPlay] = useState(false);
 
   return (
-    <div className="taglio-sm flex flex-col border border-border bg-surface">
+    <div className={`taglio-sm flex flex-col border border-border bg-surface ${className}`}>
       <div className="relative aspect-video">
         {inPlay ? (
           <iframe

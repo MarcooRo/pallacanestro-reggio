@@ -2,9 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { AvatarGiocatore } from "@/src/components/avatar-giocatore";
+import { CampoQuintetto } from "@/src/components/campo-quintetto";
 import { Pillola } from "@/src/components/pillola";
 import { etichettaStagione } from "@/src/lib/date";
-import { getRosterStagione, getStagioniRoster } from "@/src/lib/giocatori/queries";
+import {
+  getLeaderStagione,
+  getQuintettoUltima,
+  getRosterStagione,
+  getStagioniRoster,
+  type LeaderStagione,
+} from "@/src/lib/giocatori/queries";
 
 export const metadata: Metadata = { title: "Giocatori" };
 
@@ -29,9 +36,13 @@ export default async function GiocatoriPage({
   const richiesta = Number(s);
   const stagione = stagioni.includes(richiesta) ? richiesta : stagioni[0];
 
-  const roster = (await getRosterStagione(stagione)).sort(
-    (a, b) => Number(a.jerseyNumber ?? 999) - Number(b.jerseyNumber ?? 999),
-  );
+  const [roster, quintetto, leader] = await Promise.all([
+    getRosterStagione(stagione).then((r) =>
+      r.sort((a, b) => Number(a.jerseyNumber ?? 999) - Number(b.jerseyNumber ?? 999)),
+    ),
+    getQuintettoUltima(),
+    getLeaderStagione(stagione),
+  ]);
 
   return (
     <main className="flex flex-1 flex-col gap-4 px-4 py-6">
@@ -45,6 +56,34 @@ export default async function GiocatoriPage({
         ))}
       </div>
 
+      {/* Il campo ha senso solo per la stagione dell'ultima partita */}
+      {quintetto && quintetto.partita.seasonYear === stagione && (
+        <section className="flex flex-col gap-2">
+          <h2 className="display text-2xl">L&apos;ultimo quintetto</h2>
+          <p className="eyebrow">
+            {quintetto.partita.homeTeam} – {quintetto.partita.awayTeam}
+            {quintetto.partita.homeScore !== null
+              ? ` · ${quintetto.partita.homeScore}-${quintetto.partita.awayScore}`
+              : ""}
+          </p>
+          <div className="taglio-sm border border-border">
+            <CampoQuintetto titolari={quintetto.titolari} />
+          </div>
+        </section>
+      )}
+
+      {leader && (
+        <section className="flex flex-col gap-2">
+          <h2 className="display text-2xl">Leader stagionali</h2>
+          <div className="grid grid-cols-3 gap-2.5">
+            <TesseraLeader etichetta="Punti" leader={leader.punti} valore={leader.punti.punti} />
+            <TesseraLeader etichetta="Rimbalzi" leader={leader.rimbalzi} valore={leader.rimbalzi.rimbalzi} />
+            <TesseraLeader etichetta="Assist" leader={leader.assist} valore={leader.assist.assist} />
+          </div>
+        </section>
+      )}
+
+      <h2 className="display mt-2 text-2xl">Roster</h2>
       <ul className="flex flex-col">
         {roster.map((g) => (
           <li key={`${g.id}-${g.startDate}`}>
@@ -75,5 +114,34 @@ export default async function GiocatoriPage({
         ))}
       </ul>
     </main>
+  );
+}
+
+// Tessera compatta: media a grandi cifre, il giocatore sotto.
+function TesseraLeader({
+  etichetta,
+  leader,
+  valore,
+}: {
+  etichetta: string;
+  leader: LeaderStagione;
+  valore: number;
+}) {
+  return (
+    <div className="taglio-sm flex flex-col items-center gap-1.5 border border-border bg-surface px-2 py-3 text-center">
+      <span className="eyebrow">{etichetta}</span>
+      <span className="score text-2xl font-bold text-brand-vivid">
+        {valore.toLocaleString("it-IT", { minimumFractionDigits: 1 })}
+      </span>
+      <AvatarGiocatore
+        firstName={leader.firstName}
+        lastName={leader.lastName}
+        photoKey={leader.photoKey}
+        dimensione={36}
+      />
+      <span className="w-full truncate text-[11px] font-bold uppercase tracking-tight">
+        {leader.lastName}
+      </span>
+    </div>
   );
 }

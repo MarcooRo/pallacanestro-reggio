@@ -108,9 +108,15 @@ async function HomeLoggata() {
               tutti →
             </Link>
           </div>
-          <div className="flex flex-col gap-3">
+          {/* Slide orizzontale: -mx-4/px-4 per far sbordare lo scroll
+              fino ai bordi dello schermo mantenendo l'allineamento */}
+          <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
             {video.map((v) => (
-              <VideoCard key={v.videoId} video={v} />
+              <VideoCard
+                key={v.videoId}
+                video={v}
+                className="w-[82%] shrink-0 snap-start"
+              />
             ))}
           </div>
         </section>

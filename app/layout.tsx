@@ -4,8 +4,10 @@ import Link from "next/link";
 
 import { BottomNav } from "@/src/components/bottom-nav";
 import { LogoPalla } from "@/src/components/logo-palla";
+import { MenuLaterale } from "@/src/components/menu-laterale";
 import { RegistraSw } from "@/src/components/registra-sw";
 import { branding } from "@/src/branding";
+import { getProfilo } from "@/src/lib/auth/session";
 
 import "./globals.css";
 
@@ -43,11 +45,12 @@ export const viewport: Viewport = {
   themeColor: "#0b0b0c",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const profilo = await getProfilo();
   return (
     <html
       lang="it"
@@ -61,11 +64,12 @@ export default function RootLayout({
       <body className="flex min-h-dvh flex-col">
         <RegistraSw />
         <header className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur">
-          <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3">
+          <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
+            <MenuLaterale admin={profilo?.role === "admin"} />
             {/* text-lg sotto sm: il nome per esteso deve stare su una riga */}
             <Link
               href="/"
-              className="display flex items-center gap-2 text-lg text-foreground sm:text-xl"
+              className="display flex flex-1 items-center gap-2 text-lg text-foreground sm:text-xl"
             >
               <LogoPalla className="h-5 w-5 shrink-0" />
               <span>

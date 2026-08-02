@@ -81,10 +81,19 @@ export async function getVideo(fonte?: FonteVideo): Promise<Video[]> {
   return feeds.flat().sort((a, b) => +b.publishedAt - +a.publishedAt);
 }
 
-/** Per la home: l'ultimo video di ciascun canale, il più recente prima. */
+/**
+ * Per la home: 3 video. L'ultimo di ciascun canale è garantito (LBA
+ * pubblica molto più spesso di Reggio e la monopolizzerebbe), il terzo
+ * è il più recente tra i rimanenti.
+ */
 export async function getVideoHome(): Promise<Video[]> {
   const feeds = await Promise.all(CANALI.map(feedCanale));
-  return feeds
-    .flatMap((f) => f.slice(0, 1))
+  const garantiti = feeds.flatMap((f) => f.slice(0, 1));
+  const resto = feeds
+    .flat()
+    .filter((v) => !garantiti.includes(v))
     .sort((a, b) => +b.publishedAt - +a.publishedAt);
+  return [...garantiti, ...resto.slice(0, 1)].sort(
+    (a, b) => +b.publishedAt - +a.publishedAt,
+  );
 }

@@ -1,9 +1,17 @@
 // Letture per le schede giocatori: roster per stagione e dettaglio.
 
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, exists, or, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 import { db } from "@/src/db";
-import { clubs, players, playerStints, teamSeasons } from "@/src/db/schema";
+import {
+  clubs,
+  matches,
+  playerMatchStats,
+  players,
+  playerStints,
+  teamSeasons,
+} from "@/src/db/schema";
 import type { StatisticheStagione } from "@/src/ingestion/sources/lba";
 
 // Il roster del club di casa per una stagione (tutte le permanenze,
@@ -142,4 +150,173 @@ export async function statisticheStagionaliDaDb(
     puntiMax: r.punti_max,
     ratingMax: Number(r.rating_max),
   }));
+}
+
+// ---- Quintetto e leader (pagina squadra) ----
+
+// Ordine campo: dal regista al centro. Decide la posizione sul disegno.
+const PRIORITA_RUOLO: Record<string, number> = {
+  Playmaker: 0,
+  "Play/Guardia": 1,
+  Guardia: 2,
+  Ala: 3,
+  Centro: 4,
+};
+
+/**
+ * Il quintetto base del club di casa nell'ultima partita con tabellino,
+ * col risultato per il contesto. null finché non c'è un tabellino.
+ */
+export async function getQuintettoUltima() {
+  const casa = alias(teamSeasons, "casa");
+  const ospite = alias(teamSeasons, "ospite");
+  const clubCasa = alias(clubs, "club_casa");
+  const clubOspite = alias(clubs, "club_ospite");
+
+  const [partita] = await db
+    .select({
+      id: matches.id,
+      startsAt: matches.startsAt,
+      homeTeam: casa.displayName,
+      awayTeam: ospite.displayName,
+      homeScore: matches.homeScore,
+      awayScore: matches.awayScore,
+      seasonYear: casa.seasonYear,
+      reggioTeamSeasonId: sql<string>`case when ${clubCasa.isHomeClub} then ${matches.homeTeamSeasonId} else ${matches.awayTeamSeasonId} end`,
+    })
+    .from(matches)
+    .innerJoin(casa, eq(casa.id, matches.homeTeamSeasonId))
+    .innerJoin(ospite, eq(ospite.id, matches.awayTeamSeasonId))
+    .innerJoin(clubCasa, eq(clubCasa.id, casa.clubId))
+    .innerJoin(clubOspite, eq(clubOspite.id, ospite.clubId))
+    .where(
+      and(
+        eq(matches.status, "finished"),
+        or(eq(clubCasa.isHomeClub, true), eq(clubOspite.isHomeClub, true)),
+        exists(
+          db
+            .select({ uno: sql`1` })
+            .from(playerMatchStats)
+            .where(
+              and(
+                eq(playerMatchStats.matchId, matches.id),
+                eq(playerMatchStats.starter, true),
+              ),
+            ),
+        ),
+      ),
+    )
+    .orderBy(desc(matches.startsAt))
+    .limit(1);
+  if (!partita) return null;
+
+  // distinct: un doppio stint nella stessa stagione non deve duplicare
+  const titolari = await db
+    .selectDistinctOn([players.id], {
+      id: players.id,
+      firstName: players.firstName,
+      lastName: players.lastName,
+      photoKey: players.photoKey,
+      jerseyNumber: playerStints.jerseyNumber,
+      role: playerStints.role,
+      punti: playerMatchStats.points,
+    })
+    .from(playerMatchStats)
+    .innerJoin(players, eq(players.id, playerMatchStats.playerId))
+    .innerJoin(
+      playerStints,
+      and(
+        eq(playerStints.playerId, players.id),
+        eq(playerStints.teamSeasonId, partita.reggioTeamSeasonId),
+      ),
+    )
+    .where(
+      and(
+        eq(playerMatchStats.matchId, partita.id),
+        eq(playerMatchStats.starter, true),
+      ),
+    )
+    .orderBy(players.id);
+
+  return {
+    partita,
+    titolari: titolari
+      .sort(
+        (a, b) =>
+          (PRIORITA_RUOLO[a.role ?? ""] ?? 5) - (PRIORITA_RUOLO[b.role ?? ""] ?? 5),
+      )
+      .slice(0, 5),
+  };
+}
+
+export interface LeaderStagione {
+  id: string;
+  firstName: string;
+  lastName: string;
+  photoKey: string | null;
+  partite: number;
+  punti: number;
+  rimbalzi: number;
+  assist: number;
+}
+
+/**
+ * Leader stagionali del club di casa: il migliore per media punti,
+ * rimbalzi e assist. Le partite giocate sono quelle con minuti > 0
+ * (il tabellino include anche chi è a referto senza entrare).
+ */
+export async function getLeaderStagione(seasonYear: number) {
+  const [ts] = await db
+    .select({ id: teamSeasons.id })
+    .from(teamSeasons)
+    .innerJoin(clubs, eq(clubs.id, teamSeasons.clubId))
+    .where(and(eq(clubs.isHomeClub, true), eq(teamSeasons.seasonYear, seasonYear)));
+  if (!ts) return null;
+
+  const righe: LeaderStagione[] = await db
+    .select({
+      id: players.id,
+      firstName: players.firstName,
+      lastName: players.lastName,
+      photoKey: players.photoKey,
+      partite: sql<number>`count(*)::int`,
+      punti: sql<number>`round(avg(${playerMatchStats.points}), 1)::float`,
+      rimbalzi: sql<number>`round(avg(coalesce(${playerMatchStats.rebOff}, 0) + coalesce(${playerMatchStats.rebDef}, 0)), 1)::float`,
+      assist: sql<number>`round(avg(${playerMatchStats.assists}), 1)::float`,
+    })
+    .from(playerMatchStats)
+    .innerJoin(
+      matches,
+      and(
+        eq(matches.id, playerMatchStats.matchId),
+        eq(matches.status, "finished"),
+        or(
+          eq(matches.homeTeamSeasonId, ts.id),
+          eq(matches.awayTeamSeasonId, ts.id),
+        ),
+      ),
+    )
+    .innerJoin(players, eq(players.id, playerMatchStats.playerId))
+    .where(
+      and(
+        sql`${playerMatchStats.minutes} > 0`,
+        exists(
+          db
+            .select({ uno: sql`1` })
+            .from(playerStints)
+            .where(
+              and(
+                eq(playerStints.playerId, players.id),
+                eq(playerStints.teamSeasonId, ts.id),
+              ),
+            ),
+        ),
+      ),
+    )
+    .groupBy(players.id, players.firstName, players.lastName, players.photoKey);
+
+  if (righe.length === 0) return null;
+  const top = (chiave: "punti" | "rimbalzi" | "assist") =>
+    [...righe].sort((a, b) => b[chiave] - a[chiave])[0];
+  return { punti: top("punti"), rimbalzi: top("rimbalzi"), assist: top("assist") };
 }

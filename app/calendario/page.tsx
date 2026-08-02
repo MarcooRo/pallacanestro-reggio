@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { PartitaCard } from "@/src/components/partita-card";
 import { Pillola } from "@/src/components/pillola";
@@ -54,6 +55,15 @@ export default async function CalendarioPage({
           Solo Reggio
         </Pillola>
       </div>
+
+      {/* CTA classifica: il calendario è dove uno si chiede "come siamo messi" */}
+      <Link
+        href="/classifica"
+        className="taglio-sm card flex items-baseline justify-between px-4 py-3 transition-colors hover:border-brand"
+      >
+        <span className="display text-lg">Classifica</span>
+        <span className="eyebrow text-brand-vivid">vedi →</span>
+      </Link>
 
       <p className="eyebrow">{partite.length} partite · dalla più recente</p>
 

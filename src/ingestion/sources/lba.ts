@@ -526,3 +526,66 @@ export async function getTabellino(
     ],
   };
 }
+
+// ---- Classifica campionato ----
+// Endpoint individuato il 02/08/2026 nei chunk del sito:
+// championships/get-championship-ranking?id={championship}&d={giornata}.
+// Senza "d" standings è null: la giornata va indicata, e per quelle non
+// ancora giocate torna null/vuoto — il chiamante passa l'ultima giocata.
+
+interface LbaRigaClassifica {
+  team_id: number;
+  team_name: string;
+  logo_key: string | null;
+  position: number;
+  points: number;
+  penalty_points: number;
+  wins: number;
+  defeats: number;
+  game_played: number;
+  points_made: number;
+  points_suffered: number;
+  day_name: string | null;
+}
+
+export interface RigaClassifica {
+  lbaTeamId: number;
+  teamName: string;
+  logoKey: string | null;
+  position: number;
+  points: number;
+  penaltyPoints: number;
+  wins: number;
+  defeats: number;
+  gamesPlayed: number;
+  pointsMade: number;
+  pointsSuffered: number;
+}
+
+export async function getClassifica(
+  lbaChampionshipId: number,
+  giornata: number,
+  revalidateSecondi?: number,
+): Promise<{ giornata: string | null; righe: RigaClassifica[] } | null> {
+  const data = await fetchLba<{ standings: LbaRigaClassifica[] | null }>(
+    `championships/get-championship-ranking?id=${lbaChampionshipId}&d=${giornata}`,
+    revalidateSecondi,
+  );
+  if (!data.standings?.length) return null;
+  return {
+    giornata: data.standings[0].day_name,
+    righe: data.standings.map((r) => ({
+      lbaTeamId: r.team_id,
+      teamName: r.team_name,
+      logoKey: r.logo_key,
+      position: r.position,
+      points: r.points,
+      penaltyPoints: r.penalty_points,
+      wins: r.wins,
+      defeats: r.defeats,
+      gamesPlayed: r.game_played,
+      pointsMade: r.points_made,
+      pointsSuffered: r.points_suffered,
+    })),
+  };
+}

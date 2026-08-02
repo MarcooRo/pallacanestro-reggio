@@ -13,7 +13,8 @@ import { MarchioR } from "@/src/components/marchio-r";
 const voci = [
   { href: "/", label: "Home" },
   { href: "/calendario", label: "Partite" },
-  { href: "/voto", label: "Voto e classifiche" },
+  { href: "/classifica", label: "Classifica" },
+  { href: "/voto", label: "Voto e pagelle" },
   { href: "/news", label: "News" },
   { href: "/video", label: "Video" },
   { href: "/giocatori", label: "La squadra" },

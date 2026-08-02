@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 
 import { getClassificaCampionato } from "@/src/lib/classifica/campionato";
 import { fotoUrl } from "@/src/lib/immagini";
@@ -30,9 +31,10 @@ export default async function ClassificaPage() {
             {classifica.righe.map((r) => {
               const url = fotoUrl(r.logoKey, "thumb");
               return (
-                <li
-                  key={r.lbaTeamId}
-                  className={`flex items-center gap-3 border-b border-border py-2.5 pl-1 pr-2 last:border-b-0 ${
+                <li key={r.lbaTeamId} className="border-b border-border last:border-b-0">
+                <Link
+                  href={r.reggio ? "/giocatori" : `/squadre/${r.lbaTeamId}`}
+                  className={`flex items-center gap-3 py-2.5 pl-1 pr-2 transition-colors hover:bg-surface ${
                     r.reggio ? "border-l-2 border-l-brand-vivid bg-brand-tint" : ""
                   }`}
                 >
@@ -72,6 +74,7 @@ export default async function ClassificaPage() {
                   >
                     {r.points}
                   </span>
+                </Link>
                 </li>
               );
             })}

@@ -123,12 +123,16 @@ interface LbaRosterPlayer {
   player_picture_key: string | null;
 }
 
-export async function getRoster(lbaTeamId: number): Promise<{
+export async function getRoster(
+  lbaTeamId: number,
+  revalidateSecondi?: number,
+): Promise<{
   giocatori: GiocatoreCanonico[];
   permanenze: PermanenzaCanonica[];
 }> {
   const data = await fetchLba<{ players: LbaRosterPlayer[] }>(
     `teams/get-team-roster?id=${lbaTeamId}`,
+    revalidateSecondi,
   );
 
   const giocatori = data.players.map<GiocatoreCanonico>((p) => ({

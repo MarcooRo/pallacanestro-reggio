@@ -34,8 +34,10 @@ const colonnePartita = {
   quarterScores: matches.quarterScores,
   homeTeam: casa.displayName,
   homeLogoKey: casa.logoKey,
+  homeLbaTeamId: casa.lbaTeamId,
   awayTeam: ospite.displayName,
   awayLogoKey: ospite.logoKey,
+  awayLbaTeamId: ospite.lbaTeamId,
   // Da che lato gioca il club di casa (per logo società e accenti UI)
   homeIsReggio: sql<boolean>`exists (
     select 1 from clubs c where c.is_home_club and c.id = ${casa.clubId}

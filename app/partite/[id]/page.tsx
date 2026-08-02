@@ -65,9 +65,17 @@ export default async function PartitaPage({
             <LogoSocieta partita={partita} />
           </div>
           {[
-            { squadra: partita.homeTeam, punti: partita.homeScore },
-            { squadra: partita.awayTeam, punti: partita.awayScore },
-          ].map(({ squadra, punti }, i) => {
+            {
+              squadra: partita.homeTeam,
+              punti: partita.homeScore,
+              scheda: partita.homeIsReggio ? "/giocatori" : `/squadre/${partita.homeLbaTeamId}`,
+            },
+            {
+              squadra: partita.awayTeam,
+              punti: partita.awayScore,
+              scheda: partita.awayIsReggio ? "/giocatori" : `/squadre/${partita.awayLbaTeamId}`,
+            },
+          ].map(({ squadra, punti, scheda }, i) => {
             const vince =
               giocata &&
               partita.homeScore !== null &&
@@ -77,13 +85,15 @@ export default async function PartitaPage({
                 : partita.awayScore > partita.homeScore);
             return (
               <div key={squadra} className="flex items-center justify-between gap-3">
-                <span
-                  className={`display min-w-0 truncate text-xl ${
+                {/* Il nome apre la scheda squadra (Reggio: la sua pagina) */}
+                <Link
+                  href={scheda}
+                  className={`display min-w-0 truncate text-xl transition-colors hover:text-brand-vivid ${
                     giocata && !vince ? "text-muted" : ""
                   }`}
                 >
                   {squadra}
-                </span>
+                </Link>
                 {giocata && (
                   <span
                     className={`score text-3xl font-bold ${

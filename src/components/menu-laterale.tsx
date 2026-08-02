@@ -49,7 +49,8 @@ export function MenuLaterale({ admin = false }: { admin?: boolean }) {
             onClick={() => setAperto(false)}
             className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm"
           />
-          <nav className="absolute inset-y-0 left-0 flex w-64 flex-col gap-1 border-r border-border bg-background px-5 py-6">
+          {/* Superficie più chiara dello sfondo pagina, sennò si confonde */}
+          <nav className="absolute inset-y-0 left-0 flex w-64 flex-col gap-1 border-r border-border-strong bg-surface px-5 py-6 shadow-[8px_0_30px_rgba(0,0,0,0.5)]">
             <button
               type="button"
               onClick={() => setAperto(false)}

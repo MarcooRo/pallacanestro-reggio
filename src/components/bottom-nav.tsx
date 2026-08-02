@@ -13,6 +13,7 @@ const voci = [
   { href: "/voto", label: "Voto e classifiche", icona: IconaVoto },
   { href: "/news", label: "News", icona: IconaNews },
   { href: "/video", label: "Video", icona: IconaVideo },
+  { href: "/giocatori", label: "La squadra", icona: IconaSquadra },
 ] as const;
 
 export function BottomNav() {
@@ -91,6 +92,17 @@ function IconaVideo({ attiva }: { attiva: boolean }) {
     <svg viewBox="0 0 24 24" className={`h-6 w-6 ${attiva ? "text-brand-vivid" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <rect x="3" y="5" width="18" height="14" rx="2" />
       <path d="m10 9 5 3-5 3Z" />
+    </svg>
+  );
+}
+
+function IconaSquadra({ attiva }: { attiva: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" className={`h-6 w-6 ${attiva ? "text-brand-vivid" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="9" cy="8" r="3.5" />
+      <path d="M2.5 20a6.5 6.5 0 0 1 13 0" />
+      <circle cx="17" cy="9" r="2.5" />
+      <path d="M16 15.5a5.5 5.5 0 0 1 5.5 4.5" />
     </svg>
   );
 }

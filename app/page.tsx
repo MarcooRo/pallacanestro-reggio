@@ -33,11 +33,16 @@ export default async function HomePage() {
         <span className="sale sale-3 text-brand-vivid">ogni partita.</span>
       </h1>
 
-      <ul className="sale sale-3 flex flex-col gap-2.5 border-l-2 border-brand pl-4 text-sm text-muted">
-        <li>News e comunicati della squadra, tutti in un posto</li>
-        <li>Calendario, risultati e classifiche sempre aggiornati</li>
-        <li>E a fine partita voti il migliore in campo</li>
-      </ul>
+      {/* Due livelli di lettura: la promessa, poi il dettaglio nudo */}
+      <div className="sale sale-3 flex flex-col gap-4">
+        <p className="border-l-2 border-brand pl-4 text-base font-bold">
+          Vota i tuoi preferiti in campo
+        </p>
+        <p className="text-sm leading-relaxed text-muted">
+          News e comunicati della squadra, calendario, statistiche, risultati
+          e classifiche sempre aggiornati in tempo reale.
+        </p>
+      </div>
 
       <div className="sale sale-4 flex flex-col gap-3">
         <Link

@@ -25,7 +25,7 @@ export function NewsCard({ item }: { item: typeof news.$inferSelect }) {
           alt=""
           width={96}
           height={64}
-          className="hidden shrink-0 object-cover grayscale transition-[filter] group-hover:grayscale-0 sm:block"
+          className="shrink-0 self-center object-cover"
           style={{ width: 96, height: 64 }}
         />
       )}

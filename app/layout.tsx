@@ -61,7 +61,8 @@ export default function RootLayout({
         <RegistraSw />
         <header className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur">
           <div className="mx-auto flex max-w-lg flex-col px-4 pt-3">
-            <Link href="/" className="display self-start text-xl text-foreground">
+            {/* text-lg sotto sm: il nome per esteso deve stare su una riga */}
+            <Link href="/" className="display self-start text-lg text-foreground sm:text-xl">
               {branding.appName}
               <span className="text-brand">.</span>
             </Link>

@@ -34,8 +34,8 @@ interface Branding {
 const configs: Record<BrandingMode, Branding> = {
   official: {
     mode: "official",
-    appName: "RE-Pallacanestro",
-    appShortName: "RE-Basket",
+    appName: "Pallacanestro Reggiana",
+    appShortName: "Reggiana",
     tagline: "Segui Reggio: news, partite e la pagella della curva",
     logoUrl: null,
     colori: {
@@ -48,8 +48,8 @@ const configs: Record<BrandingMode, Branding> = {
   },
   generic: {
     mode: "generic",
-    appName: "RE-Pallacanestro",
-    appShortName: "RE-Basket",
+    appName: "Pallacanestro Reggiana",
+    appShortName: "Reggiana",
     tagline: "Segui la tua squadra: news, partite e pagelle",
     logoUrl: null,
     colori: {

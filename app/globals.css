@@ -2,7 +2,7 @@
 @import "../src/branding/tokens.css";
 
 /*
- * Design system "La Pagella" — dark only.
+ * Design system "Pallacanestro Reggiana" — dark only.
  * Nero fumo + grafite, rosso Reggio, tipografia da maglia da gioco
  * (Archivo nero espanso corsivo) e numeri da tabellone (mono).
  * Firma: il "taglio" — spigoli mozzati in diagonale.
@@ -15,7 +15,8 @@
   --superficie-2: #1b1b1f;
   --linea: #26262b;
   --testo: #f5f4f2;
-  --muted: #93939b;
+  /* Abbastanza chiaro da leggersi sul grigio delle card (surface #131316) */
+  --muted: #aeaeb6;
 }
 
 @theme inline {

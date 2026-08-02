@@ -61,7 +61,7 @@ export default function RootLayout({
       <body className="flex min-h-dvh flex-col">
         <RegistraSw />
         <header className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur">
-          <div className="mx-auto flex max-w-lg px-4 py-3">
+          <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3">
             {/* text-lg sotto sm: il nome per esteso deve stare su una riga */}
             <Link
               href="/"
@@ -72,6 +72,16 @@ export default function RootLayout({
                 {branding.appName}
                 <span className="text-brand">.</span>
               </span>
+            </Link>
+            <Link
+              href="/profilo"
+              aria-label="Profilo"
+              className="-m-2 p-2 text-muted transition-colors hover:text-foreground"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="8" r="4" />
+                <path d="M4.5 21a7.5 7.5 0 0 1 15 0" />
+              </svg>
             </Link>
           </div>
         </header>

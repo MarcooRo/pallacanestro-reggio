@@ -76,9 +76,24 @@ export default async function GiocatoriPage({
         <section className="flex flex-col gap-2">
           <h2 className="display text-2xl">Leader stagionali</h2>
           <div className="grid grid-cols-3 gap-2.5">
-            <TesseraLeader etichetta="Punti" leader={leader.punti} valore={leader.punti.punti} />
-            <TesseraLeader etichetta="Rimbalzi" leader={leader.rimbalzi} valore={leader.rimbalzi.rimbalzi} />
-            <TesseraLeader etichetta="Assist" leader={leader.assist} valore={leader.assist.assist} />
+            <TesseraLeader etichetta="Punti" leader={leader.punti} valore={media(leader.punti.punti)} />
+            <TesseraLeader etichetta="Rimbalzi" leader={leader.rimbalzi} valore={media(leader.rimbalzi.rimbalzi)} />
+            <TesseraLeader etichetta="Assist" leader={leader.assist} valore={media(leader.assist.assist)} />
+            <TesseraLeader etichetta="Stoppate" leader={leader.stoppate} valore={media(leader.stoppate.stoppate)} />
+            {leader.tiri2 && (
+              <TesseraLeader
+                etichetta="Tiri da 2"
+                leader={leader.tiri2}
+                valore={percentuale(leader.tiri2.t2m, leader.tiri2.t2a)}
+              />
+            )}
+            {leader.tiri3 && (
+              <TesseraLeader
+                etichetta="Tiri da 3"
+                leader={leader.tiri3}
+                valore={percentuale(leader.tiri3.t3m, leader.tiri3.t3a)}
+              />
+            )}
           </div>
         </section>
       )}
@@ -117,7 +132,15 @@ export default async function GiocatoriPage({
   );
 }
 
-// Tessera compatta: media a grandi cifre, il giocatore sotto.
+function media(n: number): string {
+  return n.toLocaleString("it-IT", { minimumFractionDigits: 1 });
+}
+
+function percentuale(fatti: number, tentati: number): string {
+  return `${Math.round((fatti / tentati) * 100)}%`;
+}
+
+// Tessera compatta: il numero a grandi cifre, il giocatore sotto.
 function TesseraLeader({
   etichetta,
   leader,
@@ -125,14 +148,12 @@ function TesseraLeader({
 }: {
   etichetta: string;
   leader: LeaderStagione;
-  valore: number;
+  valore: string;
 }) {
   return (
     <div className="taglio-sm flex flex-col items-center gap-1.5 border border-border bg-surface px-2 py-3 text-center">
       <span className="eyebrow">{etichetta}</span>
-      <span className="score text-2xl font-bold text-brand-vivid">
-        {valore.toLocaleString("it-IT", { minimumFractionDigits: 1 })}
-      </span>
+      <span className="score text-2xl font-bold text-brand-vivid">{valore}</span>
       <AvatarGiocatore
         firstName={leader.firstName}
         lastName={leader.lastName}

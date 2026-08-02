@@ -258,7 +258,16 @@ export interface LeaderStagione {
   punti: number;
   rimbalzi: number;
   assist: number;
+  stoppate: number;
+  t2m: number;
+  t2a: number;
+  t3m: number;
+  t3a: number;
 }
+
+// Sotto questa soglia di tentativi stagionali la percentuale non dice
+// niente (un 1/1 varrebbe 100%): il giocatore non concorre al titolo.
+const MIN_TENTATIVI = 20;
 
 /**
  * Leader stagionali del club di casa: il migliore per media punti,
@@ -283,6 +292,11 @@ export async function getLeaderStagione(seasonYear: number) {
       punti: sql<number>`round(avg(${playerMatchStats.points}), 1)::float`,
       rimbalzi: sql<number>`round(avg(coalesce(${playerMatchStats.rebOff}, 0) + coalesce(${playerMatchStats.rebDef}, 0)), 1)::float`,
       assist: sql<number>`round(avg(${playerMatchStats.assists}), 1)::float`,
+      stoppate: sql<number>`round(avg(${playerMatchStats.blocks}), 1)::float`,
+      t2m: sql<number>`coalesce(sum(${playerMatchStats.fg2m}), 0)::int`,
+      t2a: sql<number>`coalesce(sum(${playerMatchStats.fg2a}), 0)::int`,
+      t3m: sql<number>`coalesce(sum(${playerMatchStats.fg3m}), 0)::int`,
+      t3a: sql<number>`coalesce(sum(${playerMatchStats.fg3a}), 0)::int`,
     })
     .from(playerMatchStats)
     .innerJoin(
@@ -316,7 +330,18 @@ export async function getLeaderStagione(seasonYear: number) {
     .groupBy(players.id, players.firstName, players.lastName, players.photoKey);
 
   if (righe.length === 0) return null;
-  const top = (chiave: "punti" | "rimbalzi" | "assist") =>
+  const top = (chiave: "punti" | "rimbalzi" | "assist" | "stoppate") =>
     [...righe].sort((a, b) => b[chiave] - a[chiave])[0];
-  return { punti: top("punti"), rimbalzi: top("rimbalzi"), assist: top("assist") };
+  const topPercentuale = (fatti: "t2m" | "t3m", tentati: "t2a" | "t3a") =>
+    righe
+      .filter((r) => r[tentati] >= MIN_TENTATIVI)
+      .sort((a, b) => b[fatti] / b[tentati] - a[fatti] / a[tentati])[0] ?? null;
+  return {
+    punti: top("punti"),
+    rimbalzi: top("rimbalzi"),
+    assist: top("assist"),
+    stoppate: top("stoppate"),
+    tiri2: topPercentuale("t2m", "t2a"),
+    tiri3: topPercentuale("t3m", "t3a"),
+  };
 }

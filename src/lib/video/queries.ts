@@ -1,27 +1,39 @@
-// Video dai feed RSS pubblici di YouTube: niente API key, niente DB.
-// La cache di Next (revalidate) basta: i canali pubblicano poche volte
-// al giorno. Se un feed non risponde, la sezione sparisce senza rompere.
-// Solo server: arriva ai client component già parsato (tipo Video).
+// Video dai feed RSS pubblici di YouTube (canali E playlist tematiche):
+// niente API key, niente DB. La cache di Next (revalidate) basta: le
+// fonti pubblicano poche volte al giorno. Feed giù = fonte assente.
+//
+// L'ordine di FONTI conta: è la priorità del dedup (un highlight sta
+// sia nella playlist che nel canale LBA → vince il tag più specifico).
 
-const CANALI = [
+const FONTI = [
   {
     fonte: "pr_youtube",
-    canale: "Pallacanestro Reggiana",
-    channelId: "UCSWK9ximwWQ56itm56CBT7A",
+    tag: "Reggiana",
+    feed: "channel_id=UCSWK9ximwWQ56itm56CBT7A",
+  },
+  {
+    fonte: "backboard",
+    tag: "Backboard Podcast",
+    feed: "playlist_id=PLcFxAEcZXG4r9I18CQ2v6rfZ8LW6vW6ER",
+  },
+  {
+    fonte: "lba_highlights",
+    tag: "Highlights LBA",
+    feed: "playlist_id=PLY-s_C0dtivEf9Q1fgsIpUBgsR_sAL1it",
   },
   {
     fonte: "lba",
-    canale: "Lega Basket",
-    channelId: "UCKuhExlRMWgfcaD__HtN1yw",
+    tag: "Serie A",
+    feed: "channel_id=UCKuhExlRMWgfcaD__HtN1yw",
   },
 ] as const;
 
-export type FonteVideo = (typeof CANALI)[number]["fonte"];
+export type FonteVideo = (typeof FONTI)[number]["fonte"];
 
 export interface Video {
   videoId: string;
   fonte: FonteVideo;
-  canale: string;
+  tag: string;
   titolo: string;
   publishedAt: Date;
   /** Sempre su i.ytimg.com (host stabile), derivata dal videoId */
@@ -30,7 +42,7 @@ export interface Video {
 
 // Il feed è XML semplice e controllato: entry piatte, niente nesting.
 // Un parser vero sarebbe una dipendenza in più per quattro campi.
-function parseFeed(xml: string, canale: (typeof CANALI)[number]): Video[] {
+function parseFeed(xml: string, fonte: (typeof FONTI)[number]): Video[] {
   return xml
     .split("<entry>")
     .slice(1)
@@ -42,8 +54,8 @@ function parseFeed(xml: string, canale: (typeof CANALI)[number]): Video[] {
       return [
         {
           videoId,
-          fonte: canale.fonte,
-          canale: canale.canale,
+          fonte: fonte.fonte,
+          tag: fonte.tag,
           titolo: decodificaEntita(titolo),
           publishedAt: new Date(published),
           thumbnailUrl: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
@@ -61,39 +73,40 @@ function decodificaEntita(testo: string): string {
     .replaceAll("&amp;", "&");
 }
 
-async function feedCanale(canale: (typeof CANALI)[number]): Promise<Video[]> {
+async function feedFonte(fonte: (typeof FONTI)[number]): Promise<Video[]> {
   try {
     const res = await fetch(
-      `https://www.youtube.com/feeds/videos.xml?channel_id=${canale.channelId}`,
+      `https://www.youtube.com/feeds/videos.xml?${fonte.feed}`,
       { next: { revalidate: 1800 } },
     );
     if (!res.ok) return [];
-    return parseFeed(await res.text(), canale);
+    return parseFeed(await res.text(), fonte).sort(
+      (a, b) => +b.publishedAt - +a.publishedAt,
+    );
   } catch {
     return [];
   }
 }
 
-/** Tutti i video disponibili (i feed espongono gli ultimi ~15 a canale). */
-export async function getVideo(fonte?: FonteVideo): Promise<Video[]> {
-  const canali = fonte ? CANALI.filter((c) => c.fonte === fonte) : CANALI;
-  const feeds = await Promise.all(canali.map(feedCanale));
-  return feeds.flat().sort((a, b) => +b.publishedAt - +a.publishedAt);
+function dedup(video: Video[]): Video[] {
+  const visti = new Set<string>();
+  return video.filter((v) =>
+    visti.has(v.videoId) ? false : (visti.add(v.videoId), true),
+  );
 }
 
-/**
- * Per la home: 3 video. L'ultimo di ciascun canale è garantito (LBA
- * pubblica molto più spesso di Reggio e la monopolizzerebbe), il terzo
- * è il più recente tra i rimanenti.
- */
+/** Tutti i video disponibili (i feed espongono gli ultimi ~15 a fonte). */
+export async function getVideo(fonte?: FonteVideo): Promise<Video[]> {
+  const fonti = fonte ? FONTI.filter((f) => f.fonte === fonte) : FONTI;
+  const feeds = await Promise.all(fonti.map(feedFonte));
+  // dedup PRIMA di ordinare: nell'ordine di FONTI vince il tag specifico
+  return dedup(feeds.flat()).sort((a, b) => +b.publishedAt - +a.publishedAt);
+}
+
+/** Per la home: il più recente di ogni fonte, poi i 3 più freschi. */
 export async function getVideoHome(): Promise<Video[]> {
-  const feeds = await Promise.all(CANALI.map(feedCanale));
-  const garantiti = feeds.flatMap((f) => f.slice(0, 1));
-  const resto = feeds
-    .flat()
-    .filter((v) => !garantiti.includes(v))
-    .sort((a, b) => +b.publishedAt - +a.publishedAt);
-  return [...garantiti, ...resto.slice(0, 1)].sort(
-    (a, b) => +b.publishedAt - +a.publishedAt,
-  );
+  const feeds = await Promise.all(FONTI.map(feedFonte));
+  return dedup(feeds.flatMap((f) => f.slice(0, 1)))
+    .sort((a, b) => +b.publishedAt - +a.publishedAt)
+    .slice(0, 3);
 }

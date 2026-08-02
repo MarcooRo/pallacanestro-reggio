@@ -37,6 +37,16 @@ export function VideoCard({ video, className = "" }: { video: Video; className?:
               sizes="(max-width: 32rem) 100vw, 32rem"
               className="object-cover"
             />
+            {/* Tag della fonte: rosso pieno per la Reggiana */}
+            <span
+              className={`absolute left-2 top-2 -skew-x-[14deg] px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${
+                video.fonte === "pr_youtube"
+                  ? "bg-brand text-on-brand"
+                  : "bg-black/75 text-foreground"
+              }`}
+            >
+              <span className="inline-block skew-x-[14deg]">{video.tag}</span>
+            </span>
             {/* Play col taglio: cuneo inclinato, firma del design system */}
             <span className="absolute inset-0 flex items-center justify-center bg-black/25 transition-colors group-hover:bg-black/10">
               <span className="flex h-12 w-16 -skew-x-[14deg] items-center justify-center bg-brand transition-colors group-hover:bg-brand-hover">
@@ -50,13 +60,7 @@ export function VideoCard({ video, className = "" }: { video: Video; className?:
       </div>
 
       <div className="flex flex-col gap-1 p-3">
-        <span className="eyebrow">
-          <span className={video.fonte === "pr_youtube" ? "font-bold !text-brand-vivid" : ""}>
-            {video.canale}
-          </span>
-          {" · "}
-          {soloOra(video.publishedAt)}
-        </span>
+        <span className="eyebrow">{soloOra(video.publishedAt)}</span>
         <span className="font-bold leading-snug">{video.titolo}</span>
       </div>
     </div>

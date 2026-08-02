@@ -6,10 +6,12 @@ import { getVideo, type FonteVideo } from "@/src/lib/video/queries";
 
 export const metadata: Metadata = { title: "Video" };
 
-// Come le news: tutto mescolato di default, i tag scelgono il canale.
+// Come le news: tutto mescolato di default, i tag scelgono la fonte.
 const FILTRI: { chiave: string; etichetta: string; fonte?: FonteVideo }[] = [
   { chiave: "tutti", etichetta: "Tutti" },
-  { chiave: "reggio", etichetta: "Reggio", fonte: "pr_youtube" },
+  { chiave: "reggio", etichetta: "Reggiana", fonte: "pr_youtube" },
+  { chiave: "highlights", etichetta: "Highlights", fonte: "lba_highlights" },
+  { chiave: "podcast", etichetta: "Podcast", fonte: "backboard" },
   { chiave: "seriea", etichetta: "Serie A", fonte: "lba" },
 ];
 

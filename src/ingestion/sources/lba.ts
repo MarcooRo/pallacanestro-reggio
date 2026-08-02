@@ -493,9 +493,13 @@ function versoRigaCanonica(
   };
 }
 
-export async function getTabellino(lbaMatchId: number): Promise<TabellinoCanonico> {
+export async function getTabellino(
+  lbaMatchId: number,
+  revalidateSecondi?: number,
+): Promise<TabellinoCanonico> {
   const data = await fetchLba<LbaTabellinoResponse>(
     `championships/get-championships-matches-by-id?id=${lbaMatchId}`,
+    revalidateSecondi,
   );
   const m = data.match;
 

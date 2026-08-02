@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
 import { FormVoto } from "@/src/components/form-voto";
 import { Pagella } from "@/src/components/pagella";
@@ -18,6 +19,7 @@ import {
   getVotabili,
   haVotato,
 } from "@/src/lib/partite/queries";
+import { getTabellinoLive } from "@/src/lib/partite/tabellino-live";
 import { finestraAperta } from "@/src/lib/voto/regole";
 
 export async function generateMetadata({
@@ -138,12 +140,27 @@ export default async function PartitaPage({
         </p>
       )}
 
-      <SezioneTabellino
-        matchId={partita.id}
-        nomeCasa={partita.homeTeam}
-        nomeOspiti={partita.awayTeam}
-      />
+      {/* Suspense: la pagina esce subito, il tabellino arriva dopo
+          (per le gare non di Reggio si legge al volo dalla fonte) */}
+      <Suspense fallback={<AttesaTabellino />}>
+        <SezioneTabellino
+          matchId={partita.id}
+          lbaMatchId={partita.lbaMatchId}
+          giocata={giocata || partita.status === "live"}
+          nomeCasa={partita.homeTeam}
+          nomeOspiti={partita.awayTeam}
+        />
+      </Suspense>
     </main>
+  );
+}
+
+function AttesaTabellino() {
+  return (
+    <section className="flex flex-col gap-3" aria-busy>
+      <h2 className="display text-2xl">Tabellino</h2>
+      <div className="taglio-sm card h-44 animate-pulse" />
+    </section>
   );
 }
 
@@ -248,14 +265,23 @@ async function SezioneVoto({
 
 async function SezioneTabellino({
   matchId,
+  lbaMatchId,
+  giocata,
   nomeCasa,
   nomeOspiti,
 }: {
   matchId: string;
+  lbaMatchId: number | null;
+  giocata: boolean;
   nomeCasa: string;
   nomeOspiti: string;
 }) {
-  const righe = await getTabellinoPartita(matchId);
+  // Prima l'archivio (gare di Reggio); per le altre, lettura al volo
+  // dalla fonte, senza memorizzare.
+  let righe = await getTabellinoPartita(matchId);
+  if (righe.length === 0 && giocata && lbaMatchId) {
+    righe = await getTabellinoLive(lbaMatchId);
+  }
   if (righe.length === 0) return null;
   return (
     <>

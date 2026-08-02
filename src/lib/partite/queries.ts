@@ -18,6 +18,7 @@ const ospite = alias(teamSeasons, "ospite");
 
 const colonnePartita = {
   id: matches.id,
+  lbaMatchId: matches.lbaMatchId,
   startsAt: matches.startsAt,
   status: matches.status,
   homeScore: matches.homeScore,
@@ -221,7 +222,8 @@ export async function getUltimaPagella() {
 // ---- Tabellino ----
 
 export type RigaTabellino = {
-  player_id: string;
+  /** null per le righe lette al volo dalla fonte: niente scheda giocatore */
+  player_id: string | null;
   first_name: string;
   last_name: string;
   photo_key: string | null;

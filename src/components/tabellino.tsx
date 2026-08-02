@@ -49,13 +49,27 @@ function TabellaSquadra({
             </tr>
           </thead>
           <tbody>
-            {righe.map((r) => (
-              <tr key={r.player_id} className="border-b border-border last:border-b-0">
+            {righe.map((r) => {
+              const nome = (
+                <>
+                  {r.starter ? <strong>{r.last_name}</strong> : r.last_name}{" "}
+                  <span className="text-muted">{r.first_name?.[0]}.</span>
+                </>
+              );
+              return (
+              <tr
+                key={r.player_id ?? `${r.last_name}-${r.first_name}`}
+                className="border-b border-border last:border-b-0"
+              >
                 <td className="sticky left-0 whitespace-nowrap border-r border-border bg-background px-3 py-1.5">
-                  <Link href={`/giocatori/${r.player_id}`} className="hover:text-brand">
-                    {r.starter ? <strong>{r.last_name}</strong> : r.last_name}{" "}
-                    <span className="text-muted">{r.first_name?.[0]}.</span>
-                  </Link>
+                  {/* Righe lette al volo: nessuna scheda da linkare */}
+                  {r.player_id ? (
+                    <Link href={`/giocatori/${r.player_id}`} className="hover:text-brand">
+                      {nome}
+                    </Link>
+                  ) : (
+                    nome
+                  )}
                 </td>
                 <td className="px-2 py-1.5 text-right">{r.minutes?.toFixed(0) ?? "–"}</td>
                 <td className="px-2 py-1.5 text-right font-bold text-brand-vivid">{r.points ?? 0}</td>
@@ -71,7 +85,8 @@ function TabellaSquadra({
                 <td className="px-2 py-1.5 text-right font-semibold">{r.rating ?? 0}</td>
                 <td className="px-2 py-1.5 text-right">{r.plus_minus ?? 0}</td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>

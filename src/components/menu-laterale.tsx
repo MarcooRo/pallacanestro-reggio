@@ -6,6 +6,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 const voci = [
   { href: "/", label: "Home" },
@@ -41,8 +42,12 @@ export function MenuLaterale({ admin = false }: { admin?: boolean }) {
         </svg>
       </button>
 
-      {aperto && (
-        <div className="fixed inset-0 z-30">
+      {/* Portal sul body: il backdrop-blur dell'header crea un containing
+          block e intrappolerebbe il fixed dentro l'header — il pannello
+          risulterebbe alto quanto l'header, coi link senza sfondo sotto. */}
+      {aperto &&
+        createPortal(
+          <div className="fixed inset-0 z-50">
           <button
             type="button"
             aria-label="Chiudi il menu"
@@ -92,8 +97,9 @@ export function MenuLaterale({ admin = false }: { admin?: boolean }) {
               </Link>
             )}
           </nav>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

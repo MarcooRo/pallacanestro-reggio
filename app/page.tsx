@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { NewsCard } from "@/src/components/news-card";
 import { PartitaCard } from "@/src/components/partita-card";
 import { Pagella } from "@/src/components/pagella";
+import { VideoCard } from "@/src/components/video-card";
 import { getProfilo, getUtente } from "@/src/lib/auth/session";
 import { getNews } from "@/src/lib/news/queries";
 import {
@@ -11,6 +12,7 @@ import {
   getUltimaPagella,
   getVotazioneAperta,
 } from "@/src/lib/partite/queries";
+import { getVideoHome } from "@/src/lib/video/queries";
 
 export default async function HomePage() {
   const utente = await getUtente();
@@ -54,11 +56,12 @@ export default async function HomePage() {
 
 async function HomeLoggata() {
   const profilo = await getProfilo();
-  const [votazione, prossima, ultima, ultimeNews] = await Promise.all([
+  const [votazione, prossima, ultima, ultimeNews, video] = await Promise.all([
     getVotazioneAperta(),
     getProssimaPartita(),
     getUltimaPagella(),
     getNews(4),
+    getVideoHome(),
   ]);
 
   return (
@@ -93,6 +96,23 @@ async function HomeLoggata() {
             <span>Si vota, ora</span>
             <span className="eyebrow">vota il migliore →</span>
           </Link>
+        </section>
+      )}
+
+      {/* L'ultimo video di ciascun canale (Reggio + LBA), prima delle news */}
+      {video.length > 0 && (
+        <section className="sale sale-3 flex flex-col gap-3">
+          <div className="flex items-baseline justify-between">
+            <h2 className="display text-2xl">Video</h2>
+            <Link href="/video" className="eyebrow text-brand-vivid">
+              tutti →
+            </Link>
+          </div>
+          <div className="flex flex-col gap-3">
+            {video.map((v) => (
+              <VideoCard key={v.videoId} video={v} />
+            ))}
+          </div>
         </section>
       )}
 

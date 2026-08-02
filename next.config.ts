@@ -7,6 +7,8 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "lba-media.s3.eu-south-1.amazonaws.com" },
       // immagini delle news societarie
       { protocol: "https", hostname: "www.pallacanestroreggiana.it" },
+      // thumbnail dei video YouTube
+      { protocol: "https", hostname: "i.ytimg.com" },
     ],
   },
 };

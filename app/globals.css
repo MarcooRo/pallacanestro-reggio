@@ -87,17 +87,6 @@ body {
   );
 }
 
-/* Filo tricolore sotto il wordmark: l'unico richiamo heritage */
-.filo-tricolore {
-  height: 2px;
-  background: linear-gradient(
-    to right,
-    var(--brand-tricolore) 0 22%,
-    var(--testo) 22% 44%,
-    var(--brand-primary) 44% 100%
-  );
-}
-
 /* Reveal orchestrato della home */
 @keyframes sale {
   from {

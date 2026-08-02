@@ -3,6 +3,7 @@ import { Archivo, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 
 import { BottomNav } from "@/src/components/bottom-nav";
+import { LogoPalla } from "@/src/components/logo-palla";
 import { RegistraSw } from "@/src/components/registra-sw";
 import { branding } from "@/src/branding";
 
@@ -60,14 +61,18 @@ export default function RootLayout({
       <body className="flex min-h-dvh flex-col">
         <RegistraSw />
         <header className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur">
-          <div className="mx-auto flex max-w-lg flex-col px-4 pt-3">
+          <div className="mx-auto flex max-w-lg px-4 py-3">
             {/* text-lg sotto sm: il nome per esteso deve stare su una riga */}
-            <Link href="/" className="display self-start text-lg text-foreground sm:text-xl">
-              {branding.appName}
-              <span className="text-brand">.</span>
+            <Link
+              href="/"
+              className="display flex items-center gap-2 text-lg text-foreground sm:text-xl"
+            >
+              <LogoPalla className="h-5 w-5 shrink-0" />
+              <span>
+                {branding.appName}
+                <span className="text-brand">.</span>
+              </span>
             </Link>
-            <div className="filo-tricolore mt-2 w-24" aria-hidden />
-            <div className="pb-2" />
           </div>
         </header>
 

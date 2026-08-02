@@ -4,8 +4,8 @@
  * data-branding sull'<html>, valorizzato dal layout via env BRANDING.
  *
  * L'app è dark-only per scelta di design: nero fumo, grafite e il
- * rosso Reggio. Il verde tricolore compare in un solo punto (il filo
- * sotto il wordmark): Reggio Emilia è la città del Tricolore.
+ * rosso Reggio. Accanto al wordmark c'è il loghino palla (logo-palla.tsx),
+ * che prende --brand-vivid da qui.
  */
 
 [data-branding="official"] {
@@ -14,7 +14,6 @@
   --brand-vivid: #ff2440;        /* stati attivi, glow */
   --brand-on-primary: #ffffff;
   --brand-surface-tint: #2a0d13; /* rosso spento per sfondi */
-  --brand-tricolore: #009246;    /* SOLO nel filo tricolore */
 }
 
 /* Generico: nessun riferimento al club, per distribuzione senza accordo */
@@ -24,5 +23,4 @@
   --brand-vivid: #60a5fa;
   --brand-on-primary: #ffffff;
   --brand-surface-tint: #101a33;
-  --brand-tricolore: transparent; /* niente heritage nel modo generico */
 }

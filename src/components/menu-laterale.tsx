@@ -8,6 +8,8 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
+import { MarchioR } from "@/src/components/marchio-r";
+
 const voci = [
   { href: "/", label: "Home" },
   { href: "/calendario", label: "Partite" },
@@ -96,6 +98,9 @@ export function MenuLaterale({ admin = false }: { admin?: boolean }) {
                 Admin
               </Link>
             )}
+
+            {/* Richiamo al logo, in fondo */}
+            <MarchioR className="mt-auto h-8 w-auto self-start pl-1 text-brand" />
           </nav>
           </div>,
           document.body,

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { MarchioR } from "@/src/components/marchio-r";
 import { NewsCard } from "@/src/components/news-card";
 import { PartitaCard } from "@/src/components/partita-card";
 import { Pagella } from "@/src/components/pagella";
@@ -26,7 +27,9 @@ export default async function HomePage() {
   // pubbliche (pagelle, classifiche) restano apribili dal link condiviso,
   // come da principio "zero attrito" della spec.
   return (
-    <main className="flex flex-1 flex-col justify-center gap-10 px-5 py-12">
+    <main className="relative flex flex-1 flex-col justify-center gap-10 overflow-hidden px-5 py-12">
+      {/* Richiamo al logo: la R in negativo, watermark dietro il titolo */}
+      <MarchioR className="pointer-events-none absolute -right-8 top-10 h-52 w-auto text-foreground opacity-[0.05]" />
       <h1 className="display flex flex-col text-[17vw] leading-[0.92] sm:text-6xl">
         <span className="sale">Tutta Reggio,</span>
         <span className="sale sale-2">ogni news,</span>

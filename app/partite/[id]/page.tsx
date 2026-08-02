@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -9,6 +10,7 @@ import { Tabellino } from "@/src/components/tabellino";
 import { TornaIndietro } from "@/src/components/torna-indietro";
 import { getProfilo, getUtente } from "@/src/lib/auth/session";
 import { dataOra, soloOra } from "@/src/lib/date";
+import { fotoUrl } from "@/src/lib/immagini";
 import {
   getPagella,
   getPartita,
@@ -50,13 +52,16 @@ export default async function PartitaPage({
 
       {/* Scoreboard */}
       <header className="-mt-4 flex flex-col gap-3">
-        <p className="eyebrow">
-          {partita.competitionName}
-          {partita.dayName ? ` · ${partita.dayName}` : ""} ·{" "}
-          {dataOra(partita.startsAt)}
-        </p>
-
-        <div className="taglio flex flex-col gap-2 card p-4">
+        <div className="taglio flex flex-col gap-3 card p-4">
+          {/* Prima riga: contesto a sinistra, logo società a destra */}
+          <div className="flex items-start justify-between gap-3">
+            <p className="eyebrow">
+              {partita.competitionName}
+              {partita.dayName ? ` · ${partita.dayName}` : ""} ·{" "}
+              {dataOra(partita.startsAt)}
+            </p>
+            <LogoSocieta partita={partita} />
+          </div>
           {[
             { squadra: partita.homeTeam, punti: partita.homeScore },
             { squadra: partita.awayTeam, punti: partita.awayScore },
@@ -142,15 +147,49 @@ export default async function PartitaPage({
   );
 }
 
+// Il logo della società in alto a destra nella card: Reggio se gioca,
+// altrimenti la squadra di casa della gara.
+function LogoSocieta({
+  partita,
+}: {
+  partita: NonNullable<Awaited<ReturnType<typeof getPartita>>>;
+}) {
+  const logoKey = partita.awayIsReggio
+    ? partita.awayLogoKey
+    : partita.homeLogoKey;
+  const nome = partita.awayIsReggio ? partita.awayTeam : partita.homeTeam;
+  const url = fotoUrl(logoKey, "thumb");
+  if (!url) return null;
+  return (
+    <Image
+      src={url}
+      alt={`Logo ${nome}`}
+      width={32}
+      height={32}
+      className="h-8 w-8 shrink-0 object-contain"
+    />
+  );
+}
+
 // Parziali per quarto, dal tabellino (jsonb {"q1":{"h":25,"v":21},...}).
+// In evidenza: una cella per periodo, chi lo vince è in rosso.
 function Parziali({ quarterScores }: { quarterScores: unknown }) {
   if (!quarterScores || typeof quarterScores !== "object") return null;
   const periodi = Object.entries(quarterScores as Record<string, { h: number; v: number }>);
   if (periodi.length === 0) return null;
   return (
-    <p className="eyebrow mt-1 border-t border-border pt-2">
-      {periodi.map(([, p]) => `${p.h}-${p.v}`).join("  ·  ")}
-    </p>
+    <div className="mt-1 flex flex-wrap gap-x-5 gap-y-2 border-t border-border pt-3">
+      {periodi.map(([nome, p]) => (
+        <div key={nome} className="flex flex-col items-center gap-0.5">
+          <span className="eyebrow">{nome.toUpperCase()}</span>
+          <span className="score text-base font-bold">
+            <span className={p.h > p.v ? "text-brand-vivid" : ""}>{p.h}</span>
+            <span className="px-0.5 text-muted">-</span>
+            <span className={p.v > p.h ? "text-brand-vivid" : ""}>{p.v}</span>
+          </span>
+        </div>
+      ))}
+    </div>
   );
 }
 

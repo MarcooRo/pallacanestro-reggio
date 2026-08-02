@@ -35,6 +35,13 @@ const colonnePartita = {
   homeLogoKey: casa.logoKey,
   awayTeam: ospite.displayName,
   awayLogoKey: ospite.logoKey,
+  // Da che lato gioca il club di casa (per logo società e accenti UI)
+  homeIsReggio: sql<boolean>`exists (
+    select 1 from clubs c where c.is_home_club and c.id = ${casa.clubId}
+  )`.as("home_is_reggio"),
+  awayIsReggio: sql<boolean>`exists (
+    select 1 from clubs c where c.is_home_club and c.id = ${ospite.clubId}
+  )`.as("away_is_reggio"),
   competitionName: competitions.name,
   seasonYear: competitions.seasonYear,
   typeCode: competitions.typeCode,

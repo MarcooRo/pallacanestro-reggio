@@ -7,9 +7,9 @@
 // Appena hai risposto compare la distribuzione della tifoseria: è il pezzo
 // che fa tornare, e resta un aggregato — non si vede mai chi ha detto cosa.
 
-import Link from "next/link";
 import { useState, useTransition } from "react";
 
+import { useChiediAccesso } from "@/src/components/accesso-richiesto";
 import { rispondi } from "@/src/lib/pronostici/actions";
 import {
   distribuzioneVisibile,
@@ -65,11 +65,16 @@ function Domanda({
 }) {
   const [selezionata, setSelezionata] = useState<number | null>(null);
   const [inCorso, avvia] = useTransition();
+  const chiediAccesso = useChiediAccesso();
 
   const aperto = pronostico.status === "open";
   const risolto = pronostico.status === "resolved";
   const annullato = pronostico.status === "voided";
   const puoRispondere = aperto && loggato && pronostico.mia === null;
+  // Da ospite le opzioni restano toccabili: il tap chiede l'account invece
+  // di mostrare una domanda inerte (la distribuzione è nascosta comunque,
+  // finché non hai risposto).
+  const invitaAccesso = aperto && !loggato;
   const mostraDistribuzione = distribuzioneVisibile(pronostico);
 
   function conferma() {
@@ -102,14 +107,16 @@ function Domanda({
           const mia = pronostico.mia === i;
           const corretta = risolto && pronostico.corretta === i;
 
-          if (puoRispondere) {
+          if (puoRispondere || invitaAccesso) {
             return (
               <button
                 key={i}
                 type="button"
-                onClick={() => setSelezionata(i)}
+                onClick={() =>
+                  invitaAccesso ? chiediAccesso("pronosticare") : setSelezionata(i)
+                }
                 aria-pressed={selezionata === i}
-                className={`taglio-sm border px-3 py-2.5 text-left text-sm transition-colors ${
+                className={`taglio-sm cursor-pointer border px-3 py-2.5 text-left text-sm transition-colors ${
                   selezionata === i
                     ? "border-brand bg-brand-tint text-brand-vivid"
                     : "border-border hover:border-brand"
@@ -166,12 +173,9 @@ function Domanda({
         </button>
       )}
 
-      {aperto && !loggato && (
+      {invitaAccesso && (
         <p className="text-xs text-muted">
-          <Link href="/accesso" className="font-bold text-brand-vivid underline">
-            Accedi
-          </Link>{" "}
-          per pronosticare.
+          Tocca la tua risposta: serve un account per pronosticare.
         </p>
       )}
 

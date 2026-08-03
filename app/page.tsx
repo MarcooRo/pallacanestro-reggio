@@ -6,6 +6,8 @@ import { NewsCard } from "@/src/components/news-card";
 import { PartitaCard } from "@/src/components/partita-card";
 import { Pagella } from "@/src/components/pagella";
 import { VideoCard } from "@/src/components/video-card";
+import { entraComeOspite } from "@/src/lib/auth/actions";
+import { isOspite } from "@/src/lib/auth/ospite";
 import { getProfilo, getUtente } from "@/src/lib/auth/session";
 import { getNews } from "@/src/lib/news/queries";
 import {
@@ -21,7 +23,11 @@ export default async function HomePage() {
   // Loggato ma senza nickname: il profilo va completato prima di entrare.
   if (utente && !(await getProfilo())) redirect("/benvenuto");
 
-  if (utente) return <HomeLoggata />;
+  if (utente) return <HomeContenuti />;
+
+  // Chi ha scelto "Continua senza account" vede la home vera: legge tutto,
+  // e il dialog gli chiede l'account solo quando prova a partecipare.
+  if (await isOspite()) return <HomeContenuti />;
 
   // Splash per chi non è loggato. Solo la home fa da vetrina: le pagine
   // pubbliche (pagelle, classifiche) restano apribili dal link condiviso,
@@ -31,7 +37,7 @@ export default async function HomePage() {
       {/* Richiamo al logo: la R in negativo, watermark dietro il titolo */}
       <MarchioR className="pointer-events-none absolute -right-8 top-10 h-52 w-auto text-foreground opacity-[0.05]" />
       <h1 className="display flex flex-col text-[17vw] leading-[0.92] sm:text-6xl">
-        <span className="sale">Tutta Reggio,</span>
+        <span className="sale">Pall. Reggiana,</span>
         <span className="sale sale-2">ogni news,</span>
         <span className="sale sale-3 text-brand-vivid">ogni partita.</span>
       </h1>
@@ -54,6 +60,16 @@ export default async function HomePage() {
         >
           Entra
         </Link>
+        {/* Seconda via: si guarda tutto senza account. Il voto e le altre
+            azioni chiederanno l'accesso al momento del tap. */}
+        <form action={entraComeOspite}>
+          <button
+            type="submit"
+            className="taglio-sm display w-full cursor-pointer border border-border-strong px-6 py-3 text-center text-lg text-foreground transition-colors hover:border-brand hover:text-brand-vivid"
+          >
+            Continua senza account
+          </button>
+        </form>
         <p className="eyebrow text-center">
           registrazione in 10 secondi · è gratis
         </p>
@@ -62,7 +78,7 @@ export default async function HomePage() {
   );
 }
 
-async function HomeLoggata() {
+async function HomeContenuti() {
   const profilo = await getProfilo();
   const [votazione, prossima, ultima, ultimeNews, video] = await Promise.all([
     getVotazioneAperta(),
@@ -75,7 +91,16 @@ async function HomeLoggata() {
   return (
     // Ogni sezione dopo la prima è separata da un divisorio e respira.
     <main className="flex flex-1 flex-col gap-2 px-4 py-6 [&>section]:py-6 [&>section+section]:border-t [&>section+section]:border-border">
-      <p className="eyebrow sale">Ciao, {profilo!.nickname}</p>
+      {profilo ? (
+        <p className="eyebrow sale">Ciao, {profilo.nickname}</p>
+      ) : (
+        <p className="eyebrow sale flex items-baseline justify-between gap-2">
+          <span>Stai guardando come ospite</span>
+          <Link href="/accesso" className="text-brand-vivid">
+            entra →
+          </Link>
+        </p>
+      )}
 
       {/* Il primo blocco è sempre la prossima partita di Reggio. */}
       <section className="sale sale-2 flex flex-col gap-3">

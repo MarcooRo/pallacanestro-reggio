@@ -7,11 +7,13 @@
 // toggle in dashboard e non parte nessuna email di Supabase.
 // Email di benvenuto e recupero password arriveranno con l'SMTP (Resend).
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { db } from "@/src/db";
 import { profiles } from "@/src/db/schema";
+import { COOKIE_OSPITE } from "@/src/lib/auth/ospite";
 import { getProfilo, getUtente } from "@/src/lib/auth/session";
 import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/src/lib/supabase/server";
@@ -149,8 +151,21 @@ export async function creaProfilo(formData: FormData) {
   redirect("/");
 }
 
+// "Continua senza account": si guarda tutto, si partecipa a niente. Il
+// cookie è di sessione, così la vetrina torna alla prossima apertura.
+export async function entraComeOspite() {
+  (await cookies()).set(COOKIE_OSPITE, "1", {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+  });
+  redirect("/");
+}
+
 export async function esci() {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
+  // Chi esce torna alla vetrina: la scelta "da ospite" era di prima.
+  (await cookies()).delete(COOKIE_OSPITE);
   redirect("/");
 }

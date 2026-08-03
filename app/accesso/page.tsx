@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { CampoPassword } from "@/src/components/campo-password";
 import { accedi } from "@/src/lib/auth/actions";
 import { getUtente } from "@/src/lib/auth/session";
 
@@ -43,15 +44,7 @@ export default async function AccessoPage({
         <label className="eyebrow mt-1" htmlFor="password">
           Password
         </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          required
-          minLength={8}
-          autoComplete="current-password"
-          className="taglio-sm border border-border-strong bg-surface-2 px-3 py-3 outline-none transition-colors focus:border-brand-vivid"
-        />
+        <CampoPassword autoComplete="current-password" />
         <button
           type="submit"
           className="taglio-sm display mt-2 bg-brand px-4 py-3 text-xl text-on-brand transition-colors hover:bg-brand-hover"

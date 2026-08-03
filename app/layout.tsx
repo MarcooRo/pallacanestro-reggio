@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Archivo, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 
+import { ProviderAccesso } from "@/src/components/accesso-richiesto";
 import { BottomNav } from "@/src/components/bottom-nav";
 import { LogoPalla } from "@/src/components/logo-palla";
 import { MenuLaterale } from "@/src/components/menu-laterale";
@@ -90,8 +91,10 @@ export default async function RootLayout({
           </div>
         </header>
 
+        {/* ProviderAccesso: un solo dialog "serve l'account" per l'app,
+            lo aprono le CTA di qualunque pagina */}
         <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
-          {children}
+          <ProviderAccesso>{children}</ProviderAccesso>
         </div>
 
         <BottomNav />

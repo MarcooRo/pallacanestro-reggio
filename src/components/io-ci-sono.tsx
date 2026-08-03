@@ -6,6 +6,7 @@
 
 import { useState, useTransition } from "react";
 
+import { useChiediAccesso } from "@/src/components/accesso-richiesto";
 import { dichiaraPresenza } from "@/src/lib/presenza/actions";
 import type { StatoPresenza } from "@/src/lib/presenza/queries";
 
@@ -23,9 +24,12 @@ export function IoCiSono({
   const [stato, setStato] = useState(statoIniziale);
   const [errore, setErrore] = useState<string | null>(null);
   const [inCorso, avvia] = useTransition();
+  const chiediAccesso = useChiediAccesso();
 
   function tap() {
-    if (!loggato || inCorso) return;
+    // Da ospite il bottone non è spento: il tap spiega cosa serve.
+    if (!loggato) return chiediAccesso("dire che ci sarai");
+    if (inCorso) return;
     const precedente = stato;
     setStato({
       ciSono: !stato.ciSono,
@@ -48,13 +52,12 @@ export function IoCiSono({
       <button
         type="button"
         onClick={tap}
-        disabled={!loggato}
         aria-pressed={stato.ciSono}
-        className={`taglio-sm display px-5 py-2.5 text-lg transition-colors ${
+        className={`taglio-sm display cursor-pointer px-5 py-2.5 text-lg transition-colors ${
           stato.ciSono
             ? "border border-brand bg-brand-tint text-brand-vivid"
             : "bg-brand text-on-brand hover:bg-brand-hover"
-        } ${loggato ? "" : "cursor-default opacity-70"}`}
+        }`}
       >
         {stato.ciSono ? "Ci sarò ✓" : "Io ci sono"}
       </button>

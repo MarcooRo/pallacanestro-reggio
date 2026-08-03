@@ -11,9 +11,9 @@
 // dell'onda) vive dentro il ciclo del timer, non nel corpo del componente:
 // il render deve restare puro e uguale a sé stesso.
 
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
+import { useChiediAccesso } from "@/src/components/accesso-richiesto";
 import { mandaTap } from "@/src/lib/boato/actions";
 import {
   ANTICIPO_MS,
@@ -61,6 +61,7 @@ export function Boato({
   // devono far ridisegnare nulla.
   const daInviare = useRef(0);
   const timerPulsa = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const chiediAccesso = useChiediAccesso();
 
   const gioca = statoIniziale === "scheduled" || statoIniziale === "live";
 
@@ -135,7 +136,9 @@ export function Boato({
   if (!gioca || finestra !== "aperta") return null;
 
   function tap() {
-    if (!loggato) return;
+    // Da ospite il bottone si preme comunque: al primo tap parte la
+    // richiesta di account, così il boato non è un muro spento.
+    if (!loggato) return chiediAccesso("farti sentire");
     daInviare.current += 1;
     setMiei((n) => n + 1);
     setPulsa(true);
@@ -182,35 +185,25 @@ export function Boato({
         <button
           type="button"
           onClick={tap}
-          disabled={!loggato}
           aria-label="Fai sentire il boato"
-          className={`taglio display select-none bg-brand py-6 text-3xl text-on-brand transition-transform duration-100 ${
-            loggato ? "active:bg-brand-hover" : "cursor-default opacity-70"
-          } ${pulsa ? "scale-[1.03]" : "scale-100"}`}
+          className={`taglio display cursor-pointer select-none bg-brand py-6 text-3xl text-on-brand transition-transform duration-100 active:bg-brand-hover ${
+            pulsa ? "scale-[1.03]" : "scale-100"
+          }`}
         >
           BOATO
         </button>
 
         <p className="text-xs text-muted">
-          {loggato ? (
-            miei > 0 ? (
-              <>
-                Il tuo contributo:{" "}
-                <span className="score font-bold tabular-nums text-foreground">
-                  {miei}
-                </span>{" "}
-                — tappa a ripetizione nei momenti caldi.
-              </>
-            ) : (
-              "Tappa a ripetizione nei momenti caldi: l'onda è la somma di tutta la curva."
-            )
-          ) : (
+          {loggato && miei > 0 ? (
             <>
-              <Link href="/accesso" className="font-bold text-brand-vivid underline">
-                Accedi
-              </Link>{" "}
-              per farti sentire.
+              Il tuo contributo:{" "}
+              <span className="score font-bold tabular-nums text-foreground">
+                {miei}
+              </span>{" "}
+              — tappa a ripetizione nei momenti caldi.
             </>
+          ) : (
+            "Tappa a ripetizione nei momenti caldi: l'onda è la somma di tutta la curva."
           )}
         </p>
       </div>

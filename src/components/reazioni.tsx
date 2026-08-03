@@ -4,9 +4,9 @@
 // e poi si allinea a quello che dice il server: la reazione è un gesto da
 // mezzo secondo, aspettare il round trip la farebbe sembrare rotta.
 
-import Link from "next/link";
 import { useState, useTransition } from "react";
 
+import { useChiediAccesso } from "@/src/components/accesso-richiesto";
 import { reagisci } from "@/src/lib/reazioni/actions";
 import type { StatoReazioni } from "@/src/lib/reazioni/queries";
 import { REAZIONI } from "@/src/lib/reazioni/tipi";
@@ -23,9 +23,12 @@ export function Reazioni({
   const [stato, setStato] = useState(statoIniziale);
   const [errore, setErrore] = useState<string | null>(null);
   const [inCorso, avvia] = useTransition();
+  const chiediAccesso = useChiediAccesso();
 
   function tap(code: string) {
-    if (!loggato || inCorso) return;
+    // Da ospite le reazioni si vedono e si toccano: il tap chiede l'account.
+    if (!loggato) return chiediAccesso("dire la tua");
+    if (inCorso) return;
 
     // Ottimistico: si sposta il conteggio come farà il server.
     const precedente = stato;
@@ -62,15 +65,14 @@ export function Reazioni({
               key={r.code}
               type="button"
               onClick={() => tap(r.code)}
-              disabled={!loggato}
               aria-pressed={scelta}
               aria-label={r.etichetta}
               title={r.etichetta}
-              className={`taglio-sm flex items-center gap-1.5 border px-3 py-2 text-sm transition-colors ${
+              className={`taglio-sm flex cursor-pointer items-center gap-1.5 border px-3 py-2 text-sm transition-colors ${
                 scelta
                   ? "border-brand bg-brand-tint text-brand-vivid"
                   : "border-border hover:border-brand"
-              } ${loggato ? "" : "cursor-default opacity-70"}`}
+              }`}
             >
               <span aria-hidden className="text-base leading-none">
                 {r.emoji}
@@ -81,14 +83,6 @@ export function Reazioni({
         })}
       </div>
 
-      {!loggato && (
-        <p className="text-xs text-muted">
-          <Link href="/accesso" className="font-bold text-brand-vivid underline">
-            Accedi
-          </Link>{" "}
-          per dire la tua.
-        </p>
-      )}
       {errore && <p className="text-xs text-brand-vivid">{errore}</p>}
     </div>
   );

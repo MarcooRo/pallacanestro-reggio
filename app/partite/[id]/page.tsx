@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { Boato } from "@/src/components/boato";
+import { BottoneAccesso } from "@/src/components/bottone-accesso";
+import { CampoPartita } from "@/src/components/campo-partita";
 import { FormVoto } from "@/src/components/form-voto";
 import { IoCiSono } from "@/src/components/io-ci-sono";
 import { Pagella } from "@/src/components/pagella";
@@ -27,6 +28,7 @@ import {
   getVotabili,
   haVotato,
 } from "@/src/lib/partite/queries";
+import { getQuintettiPartita } from "@/src/lib/partite/quintetti";
 import { getTabellinoLive } from "@/src/lib/partite/tabellino-live";
 import { getStatoPresenza } from "@/src/lib/presenza/queries";
 import { getPronosticiPartita } from "@/src/lib/pronostici/queries";
@@ -73,34 +75,36 @@ export default async function PartitaPage({
       {/* Scoreboard: punteggio e parziali si aggiornano da soli durante
           la gara (PartitaLive), il resto è renderizzato dal server */}
       <header className="-mt-4 flex flex-col gap-3">
-        <div className="taglio flex flex-col gap-3 card p-4">
-          {/* Prima riga: contesto a sinistra, logo società a destra */}
-          <div className="flex items-start justify-between gap-3">
-            <p className="eyebrow">
-              {partita.competitionName}
-              {partita.dayName ? ` · ${partita.dayName}` : ""} ·{" "}
-              {dataOra(partita.startsAt)}
-            </p>
-            <LogoSocieta partita={partita} />
+        {/* Il tabellone: contesto sulla fascia in alto, poi le due squadre
+            coi parziali per quarto e il totale, come al palazzetto */}
+        <div className="tabellone taglio flex flex-col">
+          <p className="eyebrow truncate border-b border-border px-4 py-2.5">
+            {partita.competitionName}
+            {partita.dayName ? ` · ${partita.dayName}` : ""} ·{" "}
+            {dataOra(partita.startsAt)}
+          </p>
+          <div className="flex flex-col gap-2 px-4 py-3.5">
+            <ScoreboardLive
+              nomeCasa={partita.homeTeam}
+              schedaCasa={
+                partita.homeIsReggio
+                  ? "/giocatori"
+                  : `/squadre/${partita.homeLbaTeamId}`
+              }
+              logoCasa={fotoUrl(partita.homeLogoKey, "thumb")}
+              nomeOspiti={partita.awayTeam}
+              schedaOspiti={
+                partita.awayIsReggio
+                  ? "/giocatori"
+                  : `/squadre/${partita.awayLbaTeamId}`
+              }
+              logoOspiti={fotoUrl(partita.awayLogoKey, "thumb")}
+              punteggioCasa={partita.homeScore}
+              punteggioOspiti={partita.awayScore}
+              statoIniziale={partita.status}
+              parzialiIniziali={partita.quarterScores}
+            />
           </div>
-          <ScoreboardLive
-            nomeCasa={partita.homeTeam}
-            schedaCasa={
-              partita.homeIsReggio
-                ? "/giocatori"
-                : `/squadre/${partita.homeLbaTeamId}`
-            }
-            nomeOspiti={partita.awayTeam}
-            schedaOspiti={
-              partita.awayIsReggio
-                ? "/giocatori"
-                : `/squadre/${partita.awayLbaTeamId}`
-            }
-            punteggioCasa={partita.homeScore}
-            punteggioOspiti={partita.awayScore}
-            statoIniziale={partita.status}
-            parzialiIniziali={partita.quarterScores}
-          />
         </div>
 
         {(partita.venueName || partita.referees?.length) && (
@@ -169,6 +173,15 @@ export default async function PartitaPage({
         </p>
       )}
 
+      {/* Finché la gara non è finita, il posto del tabellino lo prendono le
+          due squadre schierate: prima della palla a due è l'unica cosa da
+          guardare, e a gara in corso dice chi ha aperto */}
+      {!giocata && (
+        <Suspense fallback={<AttesaCampo />}>
+          <SezioneQuintetti partita={partita} />
+        </Suspense>
+      )}
+
       {/* Suspense: la pagina esce subito, il tabellino arriva dopo
           (per le gare non di Reggio si legge al volo dalla fonte) */}
       <Suspense fallback={<AttesaTabellino />}>
@@ -194,27 +207,46 @@ function AttesaTabellino() {
   );
 }
 
-// Il logo della società in alto a destra nella card: Reggio se gioca,
-// altrimenti la squadra di casa della gara.
-function LogoSocieta({
+function AttesaCampo() {
+  return (
+    <section className="flex flex-col gap-3" aria-busy>
+      <h2 className="display text-2xl">In campo</h2>
+      <div className="taglio-sm card aspect-[300/620] animate-pulse" />
+    </section>
+  );
+}
+
+// I due quintetti: dalla fonte, quindi in Suspense come il tabellino.
+async function SezioneQuintetti({
   partita,
 }: {
   partita: NonNullable<Awaited<ReturnType<typeof getPartita>>>;
 }) {
-  const logoKey = partita.awayIsReggio
-    ? partita.awayLogoKey
-    : partita.homeLogoKey;
-  const nome = partita.awayIsReggio ? partita.awayTeam : partita.homeTeam;
-  const url = fotoUrl(logoKey, "thumb");
-  if (!url) return null;
+  const quintetti = await getQuintettiPartita(partita.id);
+  if (!quintetti) return null;
+
   return (
-    <Image
-      src={url}
-      alt={`Logo ${nome}`}
-      width={32}
-      height={32}
-      className="h-8 w-8 shrink-0 object-contain"
-    />
+    <section className="flex flex-col gap-3">
+      <h2 className="display text-2xl">In campo</h2>
+      <CampoPartita
+        casa={{
+          ...quintetti.casa,
+          nome: partita.homeTeam,
+          logoKey: partita.homeLogoKey,
+          scheda: partita.homeIsReggio
+            ? "/giocatori"
+            : `/squadre/${partita.homeLbaTeamId}`,
+        }}
+        ospiti={{
+          ...quintetti.ospiti,
+          nome: partita.awayTeam,
+          logoKey: partita.awayLogoKey,
+          scheda: partita.awayIsReggio
+            ? "/giocatori"
+            : `/squadre/${partita.awayLbaTeamId}`,
+        }}
+      />
+    </section>
   );
 }
 
@@ -291,12 +323,10 @@ async function SezioneVoto({
           <p className="text-sm">
             Per votare serve l&apos;accesso: registrarsi richiede 10 secondi.
           </p>
-          <Link
-            href="/accesso"
-            className="taglio-sm display self-start bg-brand px-5 py-2.5 text-lg text-on-brand transition-colors hover:bg-brand-hover"
-          >
-            Accedi e vota
-          </Link>
+          {/* Dialog e non link: chi guarda da ospite non perde la partita */}
+          <BottoneAccesso azione="votare il migliore in campo">
+            Registrati e vota
+          </BottoneAccesso>
         </div>
       ) : !profilo ? (
         <div className="taglio flex flex-col gap-3 card p-4">

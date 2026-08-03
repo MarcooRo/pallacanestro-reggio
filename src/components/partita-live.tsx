@@ -6,6 +6,7 @@
 // spettatori. Una sola richiesta per giro, condivisa dalle due sezioni
 // della pagina tramite contesto.
 
+import Image from "next/image";
 import Link from "next/link";
 import {
   createContext,
@@ -137,8 +138,10 @@ export function PartitaLive({
 export function ScoreboardLive({
   nomeCasa,
   schedaCasa,
+  logoCasa,
   nomeOspiti,
   schedaOspiti,
+  logoOspiti,
   punteggioCasa,
   punteggioOspiti,
   statoIniziale,
@@ -146,8 +149,11 @@ export function ScoreboardLive({
 }: {
   nomeCasa: string;
   schedaCasa: string;
+  /** URL già risolto: fotoUrl è puro, ma il confine lo attraversa una stringa */
+  logoCasa: string | null;
   nomeOspiti: string;
   schedaOspiti: string;
+  logoOspiti: string | null;
   punteggioCasa: number | null;
   punteggioOspiti: number | null;
   /** matches.status dal database (colonna text con check, non un enum TS) */
@@ -163,10 +169,23 @@ export function ScoreboardLive({
   const casa = dati?.homeScore ?? punteggioCasa;
   const ospiti = dati?.awayScore ?? punteggioOspiti;
   const mostraPunti = (finita || inCorso) && casa !== null && ospiti !== null;
+  const periodi = leggiParziali(dati?.parziali ?? parzialiIniziali);
 
   const squadre = [
-    { nome: nomeCasa, scheda: schedaCasa, punti: casa, avanti: mostraPunti && casa! > ospiti! },
-    { nome: nomeOspiti, scheda: schedaOspiti, punti: ospiti, avanti: mostraPunti && ospiti! > casa! },
+    {
+      nome: nomeCasa,
+      scheda: schedaCasa,
+      logo: logoCasa,
+      punti: casa,
+      avanti: mostraPunti && casa! > ospiti!,
+    },
+    {
+      nome: nomeOspiti,
+      scheda: schedaOspiti,
+      logo: logoOspiti,
+      punti: ospiti,
+      avanti: mostraPunti && ospiti! > casa!,
+    },
   ];
 
   return (
@@ -178,21 +197,34 @@ export function ScoreboardLive({
         </p>
       )}
 
-      {squadre.map(({ nome, scheda, punti, avanti }) => (
-        <div key={nome} className="flex items-center justify-between gap-3">
+      {/* Le due squadre col totale: senza punteggio il nome è il manifesto
+          della serata e prende tutto lo spazio */}
+      {squadre.map(({ nome, scheda, logo, punti, avanti }) => (
+        <div key={nome} className="flex items-center gap-2.5">
+          {logo ? (
+            <Image
+              src={logo}
+              alt=""
+              width={28}
+              height={28}
+              className="h-7 w-7 shrink-0 object-contain"
+            />
+          ) : (
+            <span aria-hidden className="h-7 w-7 shrink-0" />
+          )}
           {/* Il nome apre la scheda squadra (Reggio: la sua pagina) */}
           <Link
             href={scheda}
-            className={`display min-w-0 truncate text-xl transition-colors hover:text-brand-vivid ${
-              finita && !avanti ? "text-muted" : ""
-            }`}
+            className={`display min-w-0 flex-1 truncate transition-colors hover:text-brand-vivid ${
+              mostraPunti ? "text-xl" : "text-2xl"
+            } ${finita && !avanti ? "text-muted" : ""}`}
           >
             {nome}
           </Link>
           {mostraPunti && (
             <span
-              className={`score text-3xl font-bold ${
-                avanti ? "text-brand-vivid" : finita ? "text-muted" : ""
+              className={`score shrink-0 text-3xl font-bold tabular-nums ${
+                avanti ? "led text-brand-vivid" : finita ? "text-muted" : ""
               }`}
             >
               {punti}
@@ -201,7 +233,25 @@ export function ScoreboardLive({
         </div>
       ))}
 
-      <Parziali quarterScores={dati?.parziali ?? parzialiIniziali} />
+      {/* Fascia dei parziali: una cella per quarto, casa-ospiti come sopra */}
+      {periodi.length > 0 && (
+        <div className="mt-0.5 flex flex-wrap gap-x-5 gap-y-2 border-t border-border pt-2.5">
+          {periodi.map(([nome, p]) => (
+            <div key={nome} className="flex flex-col items-center gap-0.5">
+              <span className="eyebrow text-[10px]">{nome.toUpperCase()}</span>
+              <span className="score text-sm font-bold tabular-nums">
+                <span className={p.h > p.v ? "text-foreground" : "text-muted"}>
+                  {p.h}
+                </span>
+                <span className="px-0.5 text-muted">-</span>
+                <span className={p.v > p.h ? "text-foreground" : "text-muted"}>
+                  {p.v}
+                </span>
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </>
   );
 }
@@ -230,24 +280,15 @@ export function TabellinoLive({
 
 // Parziali per quarto, dal tabellino (jsonb {"q1":{"h":25,"v":21},...}).
 // In evidenza: una cella per periodo, chi lo vince è in rosso.
-function Parziali({ quarterScores }: { quarterScores: unknown }) {
-  if (!quarterScores || typeof quarterScores !== "object") return null;
-  const periodi = Object.entries(
+// I parziali dal jsonb (o dalla diretta): si validano qui, come il resto
+// di quello che arriva dal database senza tipo.
+function leggiParziali(
+  quarterScores: unknown,
+): [string, { h: number; v: number }][] {
+  if (!quarterScores || typeof quarterScores !== "object") return [];
+  return Object.entries(
     quarterScores as Record<string, { h: number; v: number }>,
-  );
-  if (periodi.length === 0) return null;
-  return (
-    <div className="mt-1 flex flex-wrap gap-x-5 gap-y-2 border-t border-border pt-3">
-      {periodi.map(([nome, p]) => (
-        <div key={nome} className="flex flex-col items-center gap-0.5">
-          <span className="eyebrow">{nome.toUpperCase()}</span>
-          <span className="score text-base font-bold">
-            <span className={p.h > p.v ? "text-brand-vivid" : ""}>{p.h}</span>
-            <span className="px-0.5 text-muted">-</span>
-            <span className={p.v > p.h ? "text-brand-vivid" : ""}>{p.v}</span>
-          </span>
-        </div>
-      ))}
-    </div>
+  ).filter(
+    ([, p]) => p && typeof p.h === "number" && typeof p.v === "number",
   );
 }

@@ -25,6 +25,16 @@ export function soloOra(d: Date): string {
   }).format(d);
 }
 
+// Solo l'orologio: si usa dove la data è già scritta accanto (il centro
+// del tabellone nella card partita).
+export function orario(d: Date): string {
+  return new Intl.DateTimeFormat("it-IT", {
+    timeZone: FUSO,
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(d);
+}
+
 export function nomeMese(meseIso: string): string {
   return new Intl.DateTimeFormat("it-IT", {
     timeZone: FUSO,

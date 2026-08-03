@@ -13,6 +13,7 @@ import {
   teamSeasons,
 } from "@/src/db/schema";
 import type { StatisticheStagione } from "@/src/ingestion/sources/lba";
+import { ordinaPerRuolo } from "@/src/lib/giocatori/ruoli";
 
 // Il roster del club di casa per una stagione (tutte le permanenze,
 // anche quelle concluse: chi è partito a gennaio resta nella stagione).
@@ -154,15 +155,6 @@ export async function statisticheStagionaliDaDb(
 
 // ---- Quintetto e leader (pagina squadra) ----
 
-// Ordine campo: dal regista al centro. Decide la posizione sul disegno.
-const PRIORITA_RUOLO: Record<string, number> = {
-  Playmaker: 0,
-  "Play/Guardia": 1,
-  Guardia: 2,
-  Ala: 3,
-  Centro: 4,
-};
-
 /**
  * Il quintetto base del club di casa nell'ultima partita con tabellino,
  * col risultato per il contesto. null finché non c'è un tabellino.
@@ -238,15 +230,7 @@ export async function getQuintettoUltima() {
     )
     .orderBy(players.id);
 
-  return {
-    partita,
-    titolari: titolari
-      .sort(
-        (a, b) =>
-          (PRIORITA_RUOLO[a.role ?? ""] ?? 5) - (PRIORITA_RUOLO[b.role ?? ""] ?? 5),
-      )
-      .slice(0, 5),
-  };
+  return { partita, titolari: ordinaPerRuolo(titolari).slice(0, 5) };
 }
 
 export interface LeaderStagione {

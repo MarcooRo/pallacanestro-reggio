@@ -3,9 +3,7 @@
 // decide la posizione sul disegno (regia in alto, lunghi sotto canestro).
 
 import { AvatarGiocatore } from "@/src/components/avatar-giocatore";
-import type { getQuintettoUltima } from "@/src/lib/giocatori/queries";
-
-type Quintetto = NonNullable<Awaited<ReturnType<typeof getQuintettoUltima>>>;
+import type { TitolareCampo } from "@/src/lib/partite/quintetti";
 
 // Coordinate % sul viewBox 300×282 del campo.
 const POSIZIONI = [
@@ -16,7 +14,11 @@ const POSIZIONI = [
   { x: 69, y: 21 }, // centro
 ] as const;
 
-export function CampoQuintetto({ titolari }: { titolari: Quintetto["titolari"] }) {
+export function CampoQuintetto({
+  titolari,
+}: {
+  titolari: readonly TitolareCampo[];
+}) {
   return (
     <div className="relative w-full">
       <svg viewBox="0 0 300 282" className="block w-full" aria-hidden>

@@ -3,10 +3,12 @@ import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
 
 import { AvatarGiocatore } from "@/src/components/avatar-giocatore";
+import { CampoQuintetto } from "@/src/components/campo-quintetto";
 import { TornaIndietro } from "@/src/components/torna-indietro";
 import { getClassificaCampionato } from "@/src/lib/classifica/campionato";
 import { etichettaStagione } from "@/src/lib/date";
 import { fotoUrl } from "@/src/lib/immagini";
+import { getQuintettoSquadra } from "@/src/lib/partite/quintetti";
 import { getRosterLive, getSquadra } from "@/src/lib/squadre/queries";
 
 export async function generateMetadata({
@@ -32,9 +34,10 @@ export default async function SquadraPage({
   if (!squadra) notFound();
   if (squadra.isReggio) redirect("/giocatori");
 
-  const [roster, classifica] = await Promise.all([
+  const [roster, classifica, quintetto] = await Promise.all([
     getRosterLive(lbaTeamId),
     getClassificaCampionato(),
+    getQuintettoSquadra(lbaTeamId),
   ]);
   const posizione = classifica?.righe.find((r) => r.lbaTeamId === lbaTeamId);
   const logo = fotoUrl(squadra.logoKey, "thumb");
@@ -63,6 +66,20 @@ export default async function SquadraPage({
           </p>
         </div>
       </header>
+
+      {/* Stessa struttura della pagina di Reggio: prima il campo con
+          l'ultimo quintetto, poi il roster */}
+      {quintetto && (
+        <section className="flex flex-col gap-2">
+          <h2 className="display text-2xl">L&apos;ultimo quintetto</h2>
+          <p className="eyebrow">{quintetto.fonte}</p>
+          <div className="taglio-sm border border-border-strong">
+            <CampoQuintetto titolari={quintetto.titolari} />
+          </div>
+        </section>
+      )}
+
+      <h2 className="display mt-2 text-2xl">Roster</h2>
 
       {roster.length === 0 ? (
         <p className="taglio-sm card p-4 text-sm text-muted">

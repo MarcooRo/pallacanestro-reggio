@@ -4,13 +4,21 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
+import { Boato } from "@/src/components/boato";
 import { FormVoto } from "@/src/components/form-voto";
+import { IoCiSono } from "@/src/components/io-ci-sono";
 import { Pagella } from "@/src/components/pagella";
-import { MiglioriPartita } from "@/src/components/migliori-partita";
-import { Tabellino } from "@/src/components/tabellino";
+import {
+  PartitaLive,
+  ScoreboardLive,
+  TabellinoLive,
+} from "@/src/components/partita-live";
+import { Pronostici } from "@/src/components/pronostici";
+import { Reazioni } from "@/src/components/reazioni";
 import { TornaIndietro } from "@/src/components/torna-indietro";
 import { getProfilo, getUtente } from "@/src/lib/auth/session";
 import { dataOra, soloOra } from "@/src/lib/date";
+import { getFlag } from "@/src/lib/flag";
 import { fotoUrl } from "@/src/lib/immagini";
 import {
   getPagella,
@@ -20,6 +28,9 @@ import {
   haVotato,
 } from "@/src/lib/partite/queries";
 import { getTabellinoLive } from "@/src/lib/partite/tabellino-live";
+import { getStatoPresenza } from "@/src/lib/presenza/queries";
+import { getPronosticiPartita } from "@/src/lib/pronostici/queries";
+import { getStatoReazioni } from "@/src/lib/reazioni/queries";
 import { finestraAperta } from "@/src/lib/voto/regole";
 
 export async function generateMetadata({
@@ -45,14 +56,22 @@ export default async function PartitaPage({
   const partita = await getPartita(id);
   if (!partita) notFound();
 
+  const [flag, profilo] = await Promise.all([getFlag(), getProfilo()]);
   const votazioneAperta = finestraAperta(partita, new Date());
   const giocata = partita.status === "finished";
+  const daGiocare = partita.status === "scheduled" && partita.startsAt > new Date();
 
   return (
+    <PartitaLive
+      lbaMatchId={partita.lbaMatchId}
+      inizio={partita.startsAt.toISOString()}
+      statoIniziale={partita.status}
+    >
     <main className="flex flex-1 flex-col gap-8 px-4 py-6">
       <TornaIndietro fallback="/calendario" etichetta="Partite" />
 
-      {/* Scoreboard */}
+      {/* Scoreboard: punteggio e parziali si aggiornano da soli durante
+          la gara (PartitaLive), il resto è renderizzato dal server */}
       <header className="-mt-4 flex flex-col gap-3">
         <div className="taglio flex flex-col gap-3 card p-4">
           {/* Prima riga: contesto a sinistra, logo società a destra */}
@@ -64,49 +83,24 @@ export default async function PartitaPage({
             </p>
             <LogoSocieta partita={partita} />
           </div>
-          {[
-            {
-              squadra: partita.homeTeam,
-              punti: partita.homeScore,
-              scheda: partita.homeIsReggio ? "/giocatori" : `/squadre/${partita.homeLbaTeamId}`,
-            },
-            {
-              squadra: partita.awayTeam,
-              punti: partita.awayScore,
-              scheda: partita.awayIsReggio ? "/giocatori" : `/squadre/${partita.awayLbaTeamId}`,
-            },
-          ].map(({ squadra, punti, scheda }, i) => {
-            const vince =
-              giocata &&
-              partita.homeScore !== null &&
-              partita.awayScore !== null &&
-              (i === 0
-                ? partita.homeScore > partita.awayScore
-                : partita.awayScore > partita.homeScore);
-            return (
-              <div key={squadra} className="flex items-center justify-between gap-3">
-                {/* Il nome apre la scheda squadra (Reggio: la sua pagina) */}
-                <Link
-                  href={scheda}
-                  className={`display min-w-0 truncate text-xl transition-colors hover:text-brand-vivid ${
-                    giocata && !vince ? "text-muted" : ""
-                  }`}
-                >
-                  {squadra}
-                </Link>
-                {giocata && (
-                  <span
-                    className={`score text-3xl font-bold ${
-                      vince ? "text-brand-vivid" : "text-muted"
-                    }`}
-                  >
-                    {punti}
-                  </span>
-                )}
-              </div>
-            );
-          })}
-          <Parziali quarterScores={partita.quarterScores} />
+          <ScoreboardLive
+            nomeCasa={partita.homeTeam}
+            schedaCasa={
+              partita.homeIsReggio
+                ? "/giocatori"
+                : `/squadre/${partita.homeLbaTeamId}`
+            }
+            nomeOspiti={partita.awayTeam}
+            schedaOspiti={
+              partita.awayIsReggio
+                ? "/giocatori"
+                : `/squadre/${partita.awayLbaTeamId}`
+            }
+            punteggioCasa={partita.homeScore}
+            punteggioOspiti={partita.awayScore}
+            statoIniziale={partita.status}
+            parzialiIniziali={partita.quarterScores}
+          />
         </div>
 
         {(partita.venueName || partita.referees?.length) && (
@@ -128,7 +122,32 @@ export default async function PartitaPage({
             Biglietti →
           </a>
         )}
+
+        {/* "Io ci sono": dichiarazione, subito sotto ai biglietti */}
+        {flag.ioCiSono && daGiocare && (
+          <SezionePresenza matchId={partita.id} userId={profilo?.id ?? null} />
+        )}
+
+        {/* La reazione al risultato sta attaccata al risultato */}
+        {flag.reazioni && giocata && (
+          <SezioneReazioni matchId={partita.id} userId={profilo?.id ?? null} />
+        )}
       </header>
+
+      {/* Il boato vive solo nella finestra della gara: il componente si
+          nasconde da sé fuori da quella */}
+      {flag.boato && (
+        <Boato
+          matchId={partita.id}
+          inizio={partita.startsAt.toISOString()}
+          statoIniziale={partita.status}
+          loggato={Boolean(profilo)}
+        />
+      )}
+
+      {flag.pronostici && (
+        <SezionePronostici matchId={partita.id} userId={profilo?.id ?? null} />
+      )}
 
       {/* Voto o pagella, a seconda dello stato */}
       {votazioneAperta && (
@@ -162,6 +181,7 @@ export default async function PartitaPage({
         />
       </Suspense>
     </main>
+    </PartitaLive>
   );
 }
 
@@ -198,25 +218,54 @@ function LogoSocieta({
   );
 }
 
-// Parziali per quarto, dal tabellino (jsonb {"q1":{"h":25,"v":21},...}).
-// In evidenza: una cella per periodo, chi lo vince è in rosso.
-function Parziali({ quarterScores }: { quarterScores: unknown }) {
-  if (!quarterScores || typeof quarterScores !== "object") return null;
-  const periodi = Object.entries(quarterScores as Record<string, { h: number; v: number }>);
-  if (periodi.length === 0) return null;
+async function SezionePresenza({
+  matchId,
+  userId,
+}: {
+  matchId: string;
+  userId: string | null;
+}) {
   return (
-    <div className="mt-1 flex flex-wrap gap-x-5 gap-y-2 border-t border-border pt-3">
-      {periodi.map(([nome, p]) => (
-        <div key={nome} className="flex flex-col items-center gap-0.5">
-          <span className="eyebrow">{nome.toUpperCase()}</span>
-          <span className="score text-base font-bold">
-            <span className={p.h > p.v ? "text-brand-vivid" : ""}>{p.h}</span>
-            <span className="px-0.5 text-muted">-</span>
-            <span className={p.v > p.h ? "text-brand-vivid" : ""}>{p.v}</span>
-          </span>
-        </div>
-      ))}
+    <IoCiSono
+      matchId={matchId}
+      statoIniziale={await getStatoPresenza(matchId, userId)}
+      loggato={Boolean(userId)}
+    />
+  );
+}
+
+async function SezioneReazioni({
+  matchId,
+  userId,
+}: {
+  matchId: string;
+  userId: string | null;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="eyebrow">Come l&apos;hai vissuta</p>
+      <Reazioni
+        matchId={matchId}
+        statoIniziale={await getStatoReazioni(matchId, userId)}
+        loggato={Boolean(userId)}
+      />
     </div>
+  );
+}
+
+async function SezionePronostici({
+  matchId,
+  userId,
+}: {
+  matchId: string;
+  userId: string | null;
+}) {
+  // Nessuna domanda per questa partita: il componente non rende nulla.
+  return (
+    <Pronostici
+      iniziali={await getPronosticiPartita(matchId, userId)}
+      loggato={Boolean(userId)}
+    />
   );
 }
 
@@ -292,11 +341,13 @@ async function SezioneTabellino({
   if (righe.length === 0 && giocata && lbaMatchId) {
     righe = await getTabellinoLive(lbaMatchId);
   }
-  if (righe.length === 0) return null;
+  // Nessuna uscita anticipata sul vuoto: a gara in corso le righe possono
+  // arrivare dalla diretta anche quando qui non c'è ancora niente.
   return (
-    <>
-      <MiglioriPartita righe={righe} nomeCasa={nomeCasa} nomeOspiti={nomeOspiti} />
-      <Tabellino righe={righe} nomeCasa={nomeCasa} nomeOspiti={nomeOspiti} />
-    </>
+    <TabellinoLive
+      righeIniziali={righe}
+      nomeCasa={nomeCasa}
+      nomeOspiti={nomeOspiti}
+    />
   );
 }

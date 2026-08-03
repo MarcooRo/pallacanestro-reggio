@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { NotifichePush } from "@/src/components/notifiche-push";
 import { esci } from "@/src/lib/auth/actions";
 import { getProfilo, getUtente } from "@/src/lib/auth/session";
+import { getPuntiUtente } from "@/src/lib/pronostici/queries";
 
 export default async function ProfiloPage() {
   const utente = await getUtente();
@@ -28,6 +29,9 @@ export default async function ProfiloPage() {
   const profilo = await getProfilo();
   if (!profilo) redirect("/benvenuto");
 
+  // I punti sono un dato personale: si leggono qui e in nessun altro posto.
+  const punti = await getPuntiUtente(profilo.id);
+
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col gap-6 px-4 py-8">
       <h1 className="display text-4xl">
@@ -43,6 +47,10 @@ export default async function ProfiloPage() {
         <div>
           <dt className="eyebrow">Email</dt>
           <dd className="font-bold">{utente.email}</dd>
+        </div>
+        <div>
+          <dt className="eyebrow">Punti</dt>
+          <dd className="score text-lg font-bold tabular-nums">{punti}</dd>
         </div>
       </dl>
 

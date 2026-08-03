@@ -167,6 +167,44 @@ Punti base per risposta corretta, con moltiplicatore inverso alla popolarità de
 
 ---
 
+## 5-bis. Partecipazione (dal 03/08/2026)
+
+Tre gesti leggeri oltre al voto, decisi per aumentare l'ingaggio senza esporre
+dati degli utenti. Le idee non ancora realizzate stanno in `IDEE.md`.
+
+**Regola comune, valida per tutte:** il pubblico legge SOLO aggregati; il dato
+personale si vede solo nel proprio profilo; il nickname compare unicamente
+dove l'utente lo sceglie (classifiche). Nessun elenco di "chi ha fatto cosa".
+
+| Feature | Tabella | Gesto | Cosa vede il pubblico |
+|---|---|---|---|
+| Io ci sono | `attendances` | tap prima della palla a due, modificabile | solo il contatore, e da 10 in su |
+| Reazioni al risultato | `match_reactions` | una reazione a gara finita, modificabile | conteggio per reazione |
+| Il boato | `roar_buckets` | tap ripetuti durante la gara | onda di intensità (bucket 10s) e totale |
+
+- **Interruttori.** `app_settings.feature_flags` (jsonb) accende e spegne ogni
+  feature dal pannello admin, senza redeploy: si costruisce una cosa e la si
+  mostra quando ha senso. `ioCiSono` nasce **spenta** (con pochi iscritti un
+  contatore basso scoraggia). Il flag si verifica anche nella server action,
+  non solo nell'interfaccia.
+- **Reazioni.** Il set vive in `src/lib/reazioni/tipi.ts` ed è provvisorio;
+  `kind` è `text` senza check constraint proprio per poterlo cambiare senza
+  migrazione. Devono funzionare sia in vittoria sia in sconfitta.
+- **Boato.** Scrittura via server action (tap accumulati e spediti ogni 5s,
+  con tetto per invio), lettura via `GET /api/boato/[matchId]` cacheata sulla
+  CDN: mille tifosi collegati fanno una query, non mille. L'istante del bucket
+  lo decide il server. `roar_buckets` non ha riferimenti all'utente: la riga
+  nasce già aggregata. A gara finita la curva è il racconto della serata (il
+  picco si correlerà al play-by-play, non ancora fatto).
+- **Pronostici.** Realizzati come domande libere (`kind = 'open'`, opzioni
+  scritte a mano, risoluzione dell'admin): sono la parte divertente, non il
+  "chi vince". La distribuzione delle risposte NON viene inviata al client
+  finché l'utente non ha risposto — nasconderla solo a schermo la lascerebbe
+  leggibile nel payload. Le opzioni non si modificano dopo la creazione: le
+  risposte sono salvate come indice (`{"opzione": n}`).
+
+---
+
 ## 6. Fonti dati
 
 ### Fonte primaria: API interna legabasket.it
@@ -733,6 +771,10 @@ Adapter LBA completo, mappa team→club, alias e riconciliazione, route handler 
 
 ### Fase 5 — Pronostici
 Creazione, risoluzione automatica e manuale, punti Visionario, classifica.
+**Fatto il 03/08/2026** nella forma "domande libere" (sezione 5-bis), insieme a
+reazioni, "Io ci sono" e boato. Restano: risoluzione automatica dai tabellini,
+classifica pubblica dei punti, push "pronostico aperto" (serve una categoria
+nuova in `push_subscriptions.categories`).
 
 ### Dopo la prima stagione
 Con i dati d'uso: gamification estesa, trasferte, statistiche live via websocket, shell Capacitor, contatto con la società.

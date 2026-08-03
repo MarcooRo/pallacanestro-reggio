@@ -29,6 +29,13 @@
       "when": 1785507933819,
       "tag": "0003_partite-solo-giocate",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1785777799721,
+      "tag": "0004_partecipazione",
+      "breakpoints": true
     }
   ]
 }

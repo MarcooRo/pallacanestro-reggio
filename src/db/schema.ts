@@ -387,6 +387,66 @@ export const pointsLedger = pgTable(
   ],
 );
 
+// ============ PARTECIPAZIONE ============
+
+// Tre gesti leggeri attorno alla partita. Il pubblico legge SOLO aggregati
+// (conteggi e curva): le righe individuali non lasciano mai le server action,
+// come già vale per votes → vote_tallies.
+
+// "Io ci sono": dichiarazione di intenti, non presenza verificata.
+export const attendances = pgTable(
+  "attendances",
+  {
+    matchId: uuid()
+      .notNull()
+      .references(() => matches.id, { onDelete: "cascade" }),
+    userId: uuid()
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  // La chiave composta è già il vincolo "uno per utente per partita".
+  (t) => [primaryKey({ columns: [t.matchId, t.userId] })],
+);
+
+// Reazione al risultato: una per utente per partita, modificabile — a
+// differenza del voto, che è immutabile per costruzione.
+export const matchReactions = pgTable(
+  "match_reactions",
+  {
+    matchId: uuid()
+      .notNull()
+      .references(() => matches.id, { onDelete: "cascade" }),
+    userId: uuid()
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    // Codice da REAZIONI (src/lib/reazioni/tipi.ts). Volutamente senza check
+    // constraint: cambiare il set di reazioni non deve essere una migrazione.
+    kind: text().notNull(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.matchId, t.userId] })],
+);
+
+// Il boato: intensità dei tap della tifoseria in bucket da 10 secondi.
+// Nessun riferimento all'utente — la riga nasce già aggregata, quindi
+// nemmeno volendo si potrebbe risalire a chi ha tappato.
+export const roarBuckets = pgTable(
+  "roar_buckets",
+  {
+    matchId: uuid()
+      .notNull()
+      .references(() => matches.id, { onDelete: "cascade" }),
+    // Inizio del bucket, allineato dal server: il client non decide il tempo.
+    bucketStart: timestamp({ withTimezone: true }).notNull(),
+    taps: integer().notNull().default(0),
+    // Invii che hanno contribuito al bucket (non utenti distinti): serve solo
+    // a dare la scala dell'onda, non a contare persone.
+    bursts: integer().notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.matchId, t.bucketStart] })],
+);
+
 // ============ CONTENUTI E SISTEMA ============
 
 export const news = pgTable(

@@ -5,14 +5,23 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { logIngestione } from "@/src/ingestion/sync";
 
+// Il segreto atteso. trim() perché un valore incollato nella dashboard
+// di Vercel può portarsi dietro uno spazio o un a-capo invisibili: senza
+// questo il confronto fallisce e dall'esterno è indistinguibile da un
+// segreto sbagliato.
+function segretoAtteso(): string | undefined {
+  const secret = process.env.CRON_SECRET?.trim();
+  return secret || undefined;
+}
+
 // Vercel Cron manda "Authorization: Bearer {CRON_SECRET}"; per le prove
 // manuali e per uno scheduler esterno va bene anche ?secret=.
 function autorizzato(request: NextRequest): boolean {
-  const secret = process.env.CRON_SECRET;
+  const secret = segretoAtteso();
   if (!secret) return false;
-  const header = request.headers.get("authorization");
+  const header = request.headers.get("authorization")?.trim();
   if (header === `Bearer ${secret}`) return true;
-  return new URL(request.url).searchParams.get("secret") === secret;
+  return new URL(request.url).searchParams.get("secret")?.trim() === secret;
 }
 
 export function handlerCron(
@@ -21,7 +30,14 @@ export function handlerCron(
 ) {
   return async function GET(request: NextRequest) {
     if (!autorizzato(request)) {
-      return NextResponse.json({ errore: "non autorizzato" }, { status: 401 });
+      // "configurato" dice se CRON_SECRET esiste nel runtime che ha
+      // risposto: distingue "segreto sbagliato" da "variabile assente in
+      // questo deployment", che dall'esterno danno lo stesso 401. Non
+      // rivela nulla del valore.
+      return NextResponse.json(
+        { errore: "non autorizzato", configurato: Boolean(segretoAtteso()) },
+        { status: 401 },
+      );
     }
 
     try {

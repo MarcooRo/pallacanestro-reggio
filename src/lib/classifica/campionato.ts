@@ -16,7 +16,12 @@ export interface ClassificaCampionato {
   righe: (RigaClassifica & { reggio: boolean })[];
 }
 
-export async function getClassificaCampionato(): Promise<ClassificaCampionato | null> {
+// Senza `seasonYear` si prende la stagione più recente che abbia dati:
+// con l'anno, invece, si resta su quello (mai ricadere di nascosto su
+// un'altra stagione, cfr. la CTA del calendario).
+export async function getClassificaCampionato(
+  seasonYear?: number,
+): Promise<ClassificaCampionato | null> {
   const regularSeasons = await db
     .select({
       id: competitions.id,
@@ -30,7 +35,15 @@ export async function getClassificaCampionato(): Promise<ClassificaCampionato | 
       matches,
       and(eq(matches.competitionId, competitions.id), eq(matches.status, "finished")),
     )
-    .where(and(eq(competitions.typeCode, "RS"), isNotNull(competitions.lbaChampionshipId)))
+    .where(
+      and(
+        eq(competitions.typeCode, "RS"),
+        isNotNull(competitions.lbaChampionshipId),
+        seasonYear !== undefined
+          ? eq(competitions.seasonYear, seasonYear)
+          : undefined,
+      ),
+    )
     .groupBy(competitions.id, competitions.lbaChampionshipId, competitions.name, competitions.seasonYear)
     .orderBy(desc(competitions.seasonYear));
 
@@ -65,4 +78,26 @@ export async function getClassificaCampionato(): Promise<ClassificaCampionato | 
     };
   }
   return null;
+}
+
+// Solo DB, nessuna chiamata alla fonte: serve una Regular Season agganciata
+// alla fonte e almeno una gara giocata. Chi mostra un rimando alla
+// classifica di una stagione lo chiede prima di renderlo.
+export async function stagioneHaClassifica(seasonYear: number): Promise<boolean> {
+  const righe = await db
+    .select({ id: competitions.id })
+    .from(competitions)
+    .innerJoin(
+      matches,
+      and(eq(matches.competitionId, competitions.id), eq(matches.status, "finished")),
+    )
+    .where(
+      and(
+        eq(competitions.typeCode, "RS"),
+        eq(competitions.seasonYear, seasonYear),
+        isNotNull(competitions.lbaChampionshipId),
+      ),
+    )
+    .limit(1);
+  return righe.length > 0;
 }

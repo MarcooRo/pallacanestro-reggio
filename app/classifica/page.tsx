@@ -3,27 +3,48 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { getClassificaCampionato } from "@/src/lib/classifica/campionato";
+import { etichettaStagione } from "@/src/lib/date";
 import { fotoUrl } from "@/src/lib/immagini";
 
 export const metadata: Metadata = { title: "Classifica" };
 
 // La classifica del campionato (quella di Serie A, non le pagelle:
 // quelle vivono in /voto). Dati al volo dalla fonte, cache 30 minuti.
-export default async function ClassificaPage() {
-  const classifica = await getClassificaCampionato();
+// Con `?s=` si chiede una stagione precisa (il calendario passa la sua);
+// senza, si mostra la più recente che abbia dati.
+export default async function ClassificaPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ s?: string }>;
+}) {
+  const { s } = await searchParams;
+  const richiesta = Number(s);
+  const stagione = Number.isInteger(richiesta) ? richiesta : undefined;
+  const classifica = await getClassificaCampionato(stagione);
 
   return (
     <main className="flex flex-1 flex-col gap-4 px-4 py-6">
       <h1 className="display text-3xl">Classifica</h1>
 
       {!classifica ? (
-        <p className="taglio-sm card p-4 text-sm text-muted">
-          La classifica arriva con la prima giornata di campionato.
-        </p>
+        <div className="taglio-sm card flex flex-col gap-3 p-4">
+          <p className="text-sm text-muted">
+            La classifica
+            {stagione ? ` ${etichettaStagione(stagione)}` : ""} arriva con la
+            prima giornata di campionato.
+          </p>
+          {stagione && (
+            <Link href="/classifica" className="eyebrow text-brand-vivid">
+              l&apos;ultima disponibile →
+            </Link>
+          )}
+        </div>
       ) : (
         <>
+          {/* La stagione va detta sempre: la fonte pubblica solo l'ultima
+              giornata giocata e senza etichetta si legge come "oggi" */}
           <p className="eyebrow">
-            {classifica.competizione}
+            {etichettaStagione(classifica.seasonYear)} · {classifica.competizione}
             {classifica.giornata ? ` · aggiornata alla ${classifica.giornata}` : ""}
           </p>
 

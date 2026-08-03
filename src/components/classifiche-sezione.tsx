@@ -4,6 +4,7 @@
 
 import { AvatarGiocatore } from "@/src/components/avatar-giocatore";
 import { Pillola } from "@/src/components/pillola";
+import { SelettoreStagione } from "@/src/components/selettore-stagione";
 import {
   classificaPerformance,
   classificaPreferito,
@@ -80,9 +81,41 @@ export async function ClassificheSezione({
     ? Math.max(...righe.map((r) => ("punti" in r ? r.punti : r.preferenze)))
     : 0;
 
+  // Etichetta della finestra temporale scelta: è il titolo del filtro a
+  // scomparsa, così da chiuso si sa comunque cosa si sta guardando.
+  const periodo = filtri.m
+    ? nomeMese(filtri.m)
+    : filtri.g === "1"
+      ? "Andata"
+      : filtri.g === "2"
+        ? "Ritorno"
+        : "Stagione";
+  const periodoRistretto = Boolean(filtri.g || filtri.m);
+
   return (
     <section className="flex flex-col gap-4">
-      <h2 className="display text-2xl">Classifiche</h2>
+      {/* La stagione vive sulla riga del titolo: da mobile i filtri
+          scendevano a quattro righe */}
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="display text-2xl">Classifiche</h2>
+        {stagioni.length > 1 ? (
+          <SelettoreStagione
+            attiva={String(stagione)}
+            opzioni={stagioni.map((anno) => ({
+              valore: String(anno),
+              etichetta: etichettaStagione(anno),
+              href: urlFiltri(filtri, {
+                s: String(anno),
+                m: undefined,
+                g: undefined,
+                c: undefined,
+              }),
+            }))}
+          />
+        ) : (
+          <span className="eyebrow">{etichettaStagione(stagione)}</span>
+        )}
+      </div>
 
       {/* Performance / Preferito */}
       <div className="flex gap-2.5 pl-1">
@@ -100,38 +133,51 @@ export async function ClassificheSezione({
         </Pillola>
       </div>
 
-      {/* Finestre */}
-      <div className="flex flex-wrap gap-2.5 pl-1">
-        {stagioni.map((anno) => (
-          <Pillola
-            key={anno}
-            href={urlFiltri(filtri, { s: String(anno), m: undefined, g: undefined, c: undefined })}
-            attiva={anno === stagione}
-          >
-            {etichettaStagione(anno)}
+      {/* Finestra temporale a scomparsa: aperta se si sta filtrando,
+          chiusa (una riga) nel caso normale "tutta la stagione" */}
+      <details open={periodoRistretto} className="group pl-1">
+        <summary className="w-fit cursor-pointer list-none -skew-x-[14deg] border border-border px-3 py-1.5 transition-colors hover:border-brand [&::-webkit-details-marker]:hidden">
+          <span className="flex skew-x-[14deg] items-center gap-2 text-xs font-black uppercase tracking-wide">
+            <span className="text-muted">Periodo</span>
+            <span className={periodoRistretto ? "text-brand-vivid" : "text-foreground"}>
+              {periodo}
+            </span>
+            <svg
+              aria-hidden
+              viewBox="0 0 24 24"
+              className="h-3 w-3 text-muted transition-transform group-open:rotate-180"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </span>
+        </summary>
+        <div className="mt-2.5 flex flex-wrap gap-2.5">
+          <Pillola href={urlFiltri(filtri, { g: undefined, m: undefined })} attiva={!filtri.g && !filtri.m}>
+            Stagione
           </Pillola>
-        ))}
-      </div>
-      <div className="flex flex-wrap gap-2.5 pl-1">
-        <Pillola href={urlFiltri(filtri, { g: undefined, m: undefined })} attiva={!filtri.g && !filtri.m}>
-          Stagione
-        </Pillola>
-        <Pillola href={urlFiltri(filtri, { g: "1", m: undefined })} attiva={filtri.g === "1"}>
-          Andata
-        </Pillola>
-        <Pillola href={urlFiltri(filtri, { g: "2", m: undefined })} attiva={filtri.g === "2"}>
-          Ritorno
-        </Pillola>
-        {mesi.map((mese) => (
-          <Pillola
-            key={mese}
-            href={urlFiltri(filtri, { m: mese, g: undefined })}
-            attiva={filtri.m === mese}
-          >
-            {nomeMese(mese)}
+          <Pillola href={urlFiltri(filtri, { g: "1", m: undefined })} attiva={filtri.g === "1"}>
+            Andata
           </Pillola>
-        ))}
-      </div>
+          <Pillola href={urlFiltri(filtri, { g: "2", m: undefined })} attiva={filtri.g === "2"}>
+            Ritorno
+          </Pillola>
+          {mesi.map((mese) => (
+            <Pillola
+              key={mese}
+              href={urlFiltri(filtri, { m: mese, g: undefined })}
+              attiva={filtri.m === mese}
+            >
+              {nomeMese(mese)}
+            </Pillola>
+          ))}
+        </div>
+      </details>
+
       {competizioni.length > 1 && (
         <div className="flex flex-wrap gap-2.5 pl-1">
           <Pillola href={urlFiltri(filtri, { c: undefined })} attiva={!filtri.c}>

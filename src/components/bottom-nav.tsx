@@ -11,9 +11,9 @@ const voci = [
   { href: "/", label: "Home", icona: IconaCasa },
   { href: "/calendario", label: "Partite", icona: IconaCalendario },
   { href: "/voto", label: "Voto e pagelle", icona: IconaVoto },
+  { href: "/giocatori", label: "La squadra", icona: IconaSquadra },
   { href: "/news", label: "News", icona: IconaNews },
   { href: "/video", label: "Video", icona: IconaVideo },
-  { href: "/giocatori", label: "La squadra", icona: IconaSquadra },
 ] as const;
 
 export function BottomNav() {

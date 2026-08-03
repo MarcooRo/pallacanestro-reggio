@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { PartitaCard } from "@/src/components/partita-card";
 import { Pillola } from "@/src/components/pillola";
+import { stagioneHaClassifica } from "@/src/lib/classifica/campionato";
 import { etichettaStagione } from "@/src/lib/date";
 import { getCalendario, getStagioni } from "@/src/lib/partite/queries";
 
@@ -27,7 +28,10 @@ export default async function CalendarioPage({
   const richiesta = Number(s);
   const stagione = stagioni.includes(richiesta) ? richiesta : stagioni[0];
   const soloReggio = f === "reggio";
-  const partite = await getCalendario(stagione, soloReggio);
+  const [partite, haClassifica] = await Promise.all([
+    getCalendario(stagione, soloReggio),
+    stagioneHaClassifica(stagione),
+  ]);
 
   const url = (patch: { s?: number; f?: string }) => {
     const query = new URLSearchParams();
@@ -56,14 +60,19 @@ export default async function CalendarioPage({
         </Pillola>
       </div>
 
-      {/* CTA classifica: il calendario è dove uno si chiede "come siamo messi" */}
-      <Link
-        href="/classifica"
-        className="taglio-sm card flex items-baseline justify-between px-4 py-3 transition-colors hover:border-brand"
-      >
-        <span className="display text-lg">Classifica</span>
-        <span className="eyebrow text-brand-vivid">vedi →</span>
-      </Link>
+      {/* CTA classifica: il calendario è dove uno si chiede "come siamo
+          messi". Porta la stagione scelta e sparisce se quella stagione non
+          ha ancora una classifica — altrimenti si finiva su quella di
+          un'altra annata senza accorgersene. */}
+      {haClassifica && (
+        <Link
+          href={`/classifica?s=${stagione}`}
+          className="taglio-sm card flex items-baseline justify-between px-4 py-3 transition-colors hover:border-brand"
+        >
+          <span className="display text-lg">Classifica</span>
+          <span className="eyebrow text-brand-vivid">vedi →</span>
+        </Link>
+      )}
 
       <p className="eyebrow">{partite.length} partite · dalla più recente</p>
 

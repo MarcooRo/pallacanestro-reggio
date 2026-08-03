@@ -64,7 +64,7 @@ describe("validaScelte", () => {
   });
 
   it("facoltativi diversi tra loro", () => {
-    expect(voto({ optionalAId: "v2", optionalBId: "v2" })).toMatch(/diversi tra loro/);
+    expect(voto({ optionalAId: "v2", optionalBId: "v2" })).toMatch(/due giocatori diversi/);
   });
 
   it("rifiuta giocatori non votabili per la partita", () => {

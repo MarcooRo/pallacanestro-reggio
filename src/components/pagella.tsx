@@ -6,6 +6,17 @@ import type { getPagella } from "@/src/lib/partite/queries";
 
 type Righe = Awaited<ReturnType<typeof getPagella>>;
 
+// Sempre "quante volte × che voto", scritto per esteso: "1× migliore,
+// 1× preferito" si legge, "1×B ♥1" no. Vale per il primo e per tutti.
+function vociVoto(r: Righe[number]): string[] {
+  const voci: string[] = [];
+  if (r.bestCount > 0) voci.push(`${r.bestCount}× migliore`);
+  if (r.secondCount > 0) voci.push(`${r.secondCount}× secondo`);
+  if (r.thirdCount > 0) voci.push(`${r.thirdCount}× terzo`);
+  if (r.favoriteCount > 0) voci.push(`${r.favoriteCount}× preferito`);
+  return voci;
+}
+
 export function Pagella({ righe, compatta = false }: { righe: Righe; compatta?: boolean }) {
   if (righe.length === 0) {
     return (
@@ -41,9 +52,7 @@ export function Pagella({ righe, compatta = false }: { righe: Righe; compatta?: 
           </span>
           {!compatta && (
             <span className="mt-0.5 text-xs text-white/80">
-              {migliore.bestCount}× migliore
-              {migliore.supportCount > 0 ? ` · ${migliore.supportCount} menzioni` : ""}
-              {migliore.favoriteCount > 0 ? ` · ♥ ${migliore.favoriteCount}` : ""}
+              {vociVoto(migliore).join(" · ")}
             </span>
           )}
         </div>
@@ -66,15 +75,18 @@ export function Pagella({ righe, compatta = false }: { righe: Righe; compatta?: 
               photoKey={r.photoKey}
               dimensione={compatta ? 30 : 36}
             />
-            <span className="min-w-0 flex-1 truncate text-sm font-bold uppercase tracking-tight">
-              {r.firstName} {r.lastName}
-            </span>
-            {!compatta && (
-              <span className="eyebrow">
-                {r.bestCount}×B{r.supportCount > 0 ? ` ${r.supportCount}M` : ""}
-                {r.favoriteCount > 0 ? ` ♥${r.favoriteCount}` : ""}
+            {/* Nome sopra, il dettaglio dei voti sotto: sulla riga stava
+                solo in sigle, e le sigle non si capivano */}
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate text-sm font-bold uppercase tracking-tight">
+                {r.firstName} {r.lastName}
               </span>
-            )}
+              {!compatta && (
+                <span className="mt-0.5 text-[11px] text-muted">
+                  {vociVoto(r).join(" · ")}
+                </span>
+              )}
+            </span>
             <span className="score text-base font-bold text-foreground">
               {r.performancePoints}
             </span>

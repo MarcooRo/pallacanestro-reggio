@@ -36,6 +36,13 @@
       "when": 1785777799721,
       "tag": "0004_partecipazione",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1785787558743,
+      "tag": "0005_podio-ordinato",
+      "breakpoints": true
     }
   ]
 }

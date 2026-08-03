@@ -1,8 +1,11 @@
 // Regole di dominio del voto (PROJECT_RE.md, sezione 4).
 // Funzioni pure: le applica la server action, il client le mostra soltanto.
 
+// Il podio è ordinato (PROJECT_RE.md sezione 4, scelta del 03/08/2026):
+// prima secondo e terzo valevano 1 punto pari.
 export const PUNTI_BEST = 3;
-export const PUNTI_SUPPORT = 1;
+export const PUNTI_SECONDO = 2;
+export const PUNTI_TERZO = 1;
 
 // Punti accreditati in points_ledger per aver votato (gamification minima
 // di v1; la formula può cambiare, il ledger permette il ricalcolo).
@@ -10,6 +13,11 @@ export const PUNTI_VOTO_ESPRESSO = 10;
 
 export const ORE_FINESTRA_DEFAULT = 24;
 
+/**
+ * Le colonne di `votes` conservano i nomi storici: `optionalAId` è il
+ * SECONDO del podio, `optionalBId` il TERZO. Non sono interscambiabili —
+ * pesano 2 e 1 punto.
+ */
 export interface ScelteVoto {
   bestPlayerId: string;
   optionalAId: string | null;
@@ -39,14 +47,14 @@ export function validaScelte(
 
   if (!bestPlayerId) return "Il migliore in campo è obbligatorio";
 
-  // Best, A e B devono essere tre giocatori distinti.
+  // I tre gradini del podio sono tre giocatori distinti.
   // Il Preferito può coincidere: prestazione e affetto sono domande diverse.
   if (optionalAId && optionalAId === bestPlayerId)
-    return "I voti facoltativi devono essere diversi dal migliore";
+    return "Secondo e terzo devono essere diversi dal migliore";
   if (optionalBId && optionalBId === bestPlayerId)
-    return "I voti facoltativi devono essere diversi dal migliore";
+    return "Secondo e terzo devono essere diversi dal migliore";
   if (optionalAId && optionalBId && optionalAId === optionalBId)
-    return "I due voti facoltativi devono essere diversi tra loro";
+    return "Secondo e terzo devono essere due giocatori diversi";
 
   for (const id of [bestPlayerId, optionalAId, optionalBId, favoritePlayerId]) {
     if (id && !votabili.has(id)) {

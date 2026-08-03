@@ -85,19 +85,12 @@ export async function apriVotazione(formData: FormData) {
   esitoAdmin(`Votazione aperta per ${ore} ore`);
 }
 
-export async function chiudiEPubblicaPagella(formData: FormData) {
-  await richiediAdmin();
-  const matchId = uuid.parse(formData.get("matchId"));
-
-  const partita = await db.query.matches.findFirst({
-    columns: { id: true, votingState: true },
-    where: (m, { eq }) => eq(m.id, matchId),
-  });
-  if (!partita) esitoAdmin("Partita non trovata");
-  if (partita.votingState !== "open") {
-    esitoAdmin("La votazione non è aperta: niente da chiudere");
-  }
-
+/**
+ * Rilegge i voti espressi e riscrive le righe di vote_tallies. Idempotente:
+ * cancella e ricalcola da zero, quindi serve sia alla chiusura sia al
+ * ricalcolo di una pagella già pubblicata (dopo un cambio di pesi).
+ */
+async function contaEScrivi(matchId: string, pubblica: boolean) {
   const votiEspressi = await db.query.votes.findMany({
     columns: {
       bestPlayerId: true,
@@ -111,7 +104,6 @@ export async function chiudiEPubblicaPagella(formData: FormData) {
   const tally = calcolaTally(votiEspressi);
 
   await db.transaction(async (tx) => {
-    // Idempotente: una richiusura ricalcola da zero.
     await tx.delete(voteTallies).where(eq(voteTallies.matchId, matchId));
     if (tally.length > 0) {
       await tx.insert(voteTallies).values(
@@ -119,17 +111,62 @@ export async function chiudiEPubblicaPagella(formData: FormData) {
           matchId,
           playerId: r.playerId,
           bestCount: r.bestCount,
+          secondCount: r.secondCount,
+          thirdCount: r.thirdCount,
           supportCount: r.supportCount,
           performancePoints: r.performancePoints,
           favoriteCount: r.favoriteCount,
         })),
       );
     }
-    await tx
-      .update(matches)
-      .set({ votingState: "tallied" })
-      .where(eq(matches.id, matchId));
+    if (pubblica) {
+      await tx
+        .update(matches)
+        .set({ votingState: "tallied" })
+        .where(eq(matches.id, matchId));
+    }
   });
+
+  return { tally, votiEspressi };
+}
+
+// Ricalcolo di una pagella già pubblicata: nessuna push, nessun cambio di
+// stato. Serve quando cambiano i pesi (es. il passaggio al podio 3-2-1).
+export async function ricalcolaPagella(formData: FormData) {
+  await richiediAdmin();
+  const matchId = uuid.parse(formData.get("matchId"));
+
+  const partita = await db.query.matches.findFirst({
+    columns: { id: true, votingState: true },
+    where: (m, { eq }) => eq(m.id, matchId),
+  });
+  if (!partita) esitoAdmin("Partita non trovata");
+  if (partita.votingState !== "tallied") {
+    esitoAdmin("La pagella non è pubblicata: niente da ricalcolare");
+  }
+
+  const { tally, votiEspressi } = await contaEScrivi(matchId, false);
+
+  revalidaPartita(matchId);
+  esitoAdmin(
+    `Pagella ricalcolata: ${votiEspressi.length} voti su ${tally.length} giocatori`,
+  );
+}
+
+export async function chiudiEPubblicaPagella(formData: FormData) {
+  await richiediAdmin();
+  const matchId = uuid.parse(formData.get("matchId"));
+
+  const partita = await db.query.matches.findFirst({
+    columns: { id: true, votingState: true },
+    where: (m, { eq }) => eq(m.id, matchId),
+  });
+  if (!partita) esitoAdmin("Partita non trovata");
+  if (partita.votingState !== "open") {
+    esitoAdmin("La votazione non è aperta: niente da chiudere");
+  }
+
+  const { tally, votiEspressi } = await contaEScrivi(matchId, true);
 
   if (tally.length > 0) {
     const [migliore] = await db

@@ -124,7 +124,8 @@ export async function getPagella(matchId: string) {
       lastName: players.lastName,
       photoKey: players.photoKey,
       bestCount: voteTallies.bestCount,
-      supportCount: voteTallies.supportCount,
+      secondCount: voteTallies.secondCount,
+      thirdCount: voteTallies.thirdCount,
       performancePoints: voteTallies.performancePoints,
       favoriteCount: voteTallies.favoriteCount,
     })
@@ -138,6 +139,7 @@ export async function getPagella(matchId: string) {
     .orderBy(
       desc(voteTallies.performancePoints),
       desc(voteTallies.bestCount),
+      desc(voteTallies.secondCount),
       desc(sql`${voteTallies.bestCount} + ${voteTallies.supportCount}`),
     );
 }

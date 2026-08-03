@@ -8,6 +8,7 @@ import {
   annullaPronostico,
   apriVotazione,
   chiudiEPubblicaPagella,
+  ricalcolaPagella,
   chiudiPronostico,
   creaPronostico,
   risolviPronostico,
@@ -264,6 +265,20 @@ function RigaAdmin({
               className="rounded-md bg-brand px-3 py-1.5 text-sm font-semibold text-on-brand hover:bg-brand-hover"
             >
               Chiudi e pubblica pagella
+            </button>
+          </form>
+        )}
+
+        {/* Rilegge i voti e riscrive i conteggi, senza push né cambi di
+            stato: serve quando cambiano i pesi delle classifiche */}
+        {partita.votingState === "tallied" && (
+          <form action={ricalcolaPagella}>
+            <input type="hidden" name="matchId" value={partita.id} />
+            <button
+              type="submit"
+              className="rounded-md border border-border-strong px-3 py-1.5 text-sm font-semibold hover:border-brand"
+            >
+              Ricalcola pagella
             </button>
           </form>
         )}

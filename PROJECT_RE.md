@@ -74,7 +74,7 @@ Conseguenza: **niente RLS da mantenere**, un solo percorso di accesso.
 ### In v1
 
 - Auth OTP email + nickname pubblico
-- Scheda voto post-partita: **Best + 2 facoltativi + Preferito**
+- Scheda voto post-partita: **podio (1°/2°/3°) + Preferito**
 - Pagella collettiva aggregata a votazione chiusa, **con immagine condivisibile**
 - Classifiche Performance e Preferito: mese / girone / stagione / competizione
 - Calendario con risultati, palazzetto, arbitri, link biglietteria
@@ -107,16 +107,16 @@ Una sola scheda per partita, quattro campi:
 | Campo | Obbligatorio | Peso classifica Performance |
 |---|---|---|
 | **Best** (migliore in campo) | Sì | 3 punti |
-| **Facoltativo A** | No | 1 punto |
-| **Facoltativo B** | No | 1 punto |
+| **Secondo** (`optional_a_id`) | No | 2 punti |
+| **Terzo** (`optional_b_id`) | No | 1 punto |
 | **Preferito** | No | — (classifica separata) |
 
 ### Regole
 
-- I due facoltativi **non sono ordinati**: nessuna distinzione 2°/3°.
+- Il podio **è ordinato** (scelta del 03/08/2026, prima i due facoltativi valevano 1 punto pari): `optional_a_id` è il secondo, `optional_b_id` il terzo. I nomi delle colonne restano quelli per non spostare dati già scritti.
 - **Un voto per utente per partita**, non modificabile. Vincolo unique a DB.
 - Valido anche col **solo Best** compilato.
-- **Best, A e B devono essere tre giocatori distinti.**
+- **Best, secondo e terzo devono essere tre giocatori distinti.**
 - Il **Preferito può coincidere** con Best o con un facoltativo: prestazione e affetto sono domande diverse.
 - **Votabili:** i giocatori a referto se il tabellino è disponibile; altrimenti i giocatori il cui `player_stints` copre la data della partita. Mai il roster corrente applicato retroattivamente.
 
@@ -131,7 +131,7 @@ Una sola scheda per partita, quattro campi:
 
 Due classifiche indipendenti su qualsiasi finestra:
 
-- **Performance** — da Best + facoltativi (3/1/1)
+- **Performance** — dal podio ordinato (3/2/1)
 - **Preferito** — conteggio puro
 
 Finestre: **partita** → **mese** → **girone (andata/ritorno)** → **stagione**, filtrabili per competizione e fase.
@@ -501,8 +501,10 @@ create table vote_tallies (
   match_id           uuid not null references matches(id) on delete cascade,
   player_id          uuid not null references players(id),
   best_count         int not null default 0,
-  support_count      int not null default 0,
-  performance_points int not null default 0,     -- best*3 + support*1
+  support_count      int not null default 0,     -- secondi + terzi, somma
+  second_count       int not null default 0,
+  third_count        int not null default 0,
+  performance_points int not null default 0,     -- best*3 + second*2 + third*1
   favorite_count     int not null default 0,
   computed_at        timestamptz not null default now(),
   primary key (match_id, player_id)

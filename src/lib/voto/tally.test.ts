@@ -20,17 +20,28 @@ describe("calcolaTally", () => {
     expect(calcolaTally([])).toEqual([]);
   });
 
-  it("pesa Best 3 e facoltativi 1", () => {
+  it("pesa il podio 3-2-1", () => {
     const tally = calcolaTally([voto("A", "B", "C")]);
     expect(tally.find((r) => r.playerId === "A")).toMatchObject({
       bestCount: 1,
-      supportCount: 0,
+      secondCount: 0,
       performancePoints: 3,
     });
     expect(tally.find((r) => r.playerId === "B")).toMatchObject({
-      supportCount: 1,
+      secondCount: 1,
+      performancePoints: 2,
+    });
+    expect(tally.find((r) => r.playerId === "C")).toMatchObject({
+      thirdCount: 1,
       performancePoints: 1,
     });
+  });
+
+  it("secondo e terzo non sono interscambiabili", () => {
+    const [x] = calcolaTally([voto("A", "B")]).filter((r) => r.playerId === "B");
+    const [y] = calcolaTally([voto("A", null, "B")]).filter((r) => r.playerId === "B");
+    expect(x.performancePoints).toBe(2);
+    expect(y.performancePoints).toBe(1);
   });
 
   it("aggrega più voti e ordina per punti, poi Best", () => {
@@ -40,17 +51,24 @@ describe("calcolaTally", () => {
       voto("B", "A"),
       voto("C", "A", "B"),
     ]);
-    // A: 2 best + 2 support = 8; B: 1 best + 2 support = 5; C: 1 best + 1 support = 4
+    // A: 2 best (6) + 2 secondi (4) = 10
+    // B: 1 best (3) + 1 secondo (2) + 1 terzo (1) = 6
+    // C: 1 best (3) + 1 secondo (2) = 5
     expect(tally.map((r) => r.playerId)).toEqual(["A", "B", "C"]);
-    expect(tally[0]).toMatchObject({ bestCount: 2, supportCount: 2, performancePoints: 8 });
+    expect(tally[0]).toMatchObject({
+      bestCount: 2,
+      secondCount: 2,
+      supportCount: 2,
+      performancePoints: 10,
+    });
   });
 
   it("a parità di punti vince chi ha più Best", () => {
-    // A: 1 best = 3 punti; B: 3 support = 3 punti
+    // A: 1 best = 3 punti; B: 3 terzi = 3 punti
     const tally = calcolaTally([
-      voto("A", "B"),
-      voto("C", "B"),
-      voto("C", "B"),
+      voto("A", null, "B"),
+      voto("C", null, "B"),
+      voto("C", null, "B"),
     ]);
     const a = tally.findIndex((r) => r.playerId === "A");
     const b = tally.findIndex((r) => r.playerId === "B");

@@ -274,6 +274,8 @@ export const votes = pgTable(
     bestPlayerId: uuid()
       .notNull()
       .references(() => players.id),
+    // Podio ordinato: A è il secondo (2 punti), B il terzo (1 punto).
+    // Nomi storici, tenuti per non spostare i dati già scritti.
     optionalAId: uuid().references(() => players.id),
     optionalBId: uuid().references(() => players.id),
     favoritePlayerId: uuid().references(() => players.id),
@@ -309,8 +311,11 @@ export const voteTallies = pgTable(
       .notNull()
       .references(() => players.id),
     bestCount: integer().notNull().default(0),
+    secondCount: integer().notNull().default(0),
+    thirdCount: integer().notNull().default(0),
+    // Secondi + terzi: la vista delle classifiche si appoggia a questa somma
     supportCount: integer().notNull().default(0),
-    performancePoints: integer().notNull().default(0), // best*3 + support*1
+    performancePoints: integer().notNull().default(0), // best*3 + second*2 + third*1
     favoriteCount: integer().notNull().default(0),
     computedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },

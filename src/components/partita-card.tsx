@@ -1,6 +1,10 @@
 // La card partita è un tabellone in miniatura: le due squadre affacciate,
 // i loghi ai bordi esterni, e nel mezzo quello che conta — il punteggio se
 // si è giocato, la palla a due se si deve giocare.
+//
+// Le squadre si leggono col nome breve (la città): a larghezza mobile lo
+// sponsor non ci sta e sborda sul logo. Il nome completo resta nel title e
+// nell'alt del logo, e la pagina partita lo mostra per intero.
 
 import Image from "next/image";
 import Link from "next/link";
@@ -8,6 +12,7 @@ import Link from "next/link";
 import type { PartitaLista } from "@/src/lib/partite/queries";
 import { dataOra, orario } from "@/src/lib/date";
 import { fotoUrl } from "@/src/lib/immagini";
+import { nomeBreve } from "@/src/lib/squadre/nome-breve";
 
 function LogoSquadra({ logoKey, nome }: { logoKey: string | null; nome: string }) {
   const url = fotoUrl(logoKey, "thumb");
@@ -61,11 +66,12 @@ export function PartitaCard({ partita }: { partita: PartitaLista }) {
         <div className="flex min-w-0 flex-1 items-center gap-2.5">
           <LogoSquadra logoKey={partita.homeLogoKey} nome={partita.homeTeam} />
           <span
-            className={`display min-w-0 text-[17px] leading-[0.95] ${
+            title={partita.homeTeam}
+            className={`display min-w-0 break-words text-[17px] leading-[1.05] ${
               giocata && !vinceCasa ? "text-muted" : "text-foreground"
             }`}
           >
-            {partita.homeTeam}
+            {nomeBreve(partita.homeTeam)}
           </span>
         </div>
 
@@ -80,11 +86,12 @@ export function PartitaCard({ partita }: { partita: PartitaLista }) {
 
         <div className="flex min-w-0 flex-1 items-center justify-end gap-2.5 text-right">
           <span
-            className={`display min-w-0 text-[17px] leading-[0.95] ${
+            title={partita.awayTeam}
+            className={`display min-w-0 break-words text-[17px] leading-[1.05] ${
               giocata && !vinceOspiti ? "text-muted" : "text-foreground"
             }`}
           >
-            {partita.awayTeam}
+            {nomeBreve(partita.awayTeam)}
           </span>
           <LogoSquadra logoKey={partita.awayLogoKey} nome={partita.awayTeam} />
         </div>

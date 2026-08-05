@@ -3,22 +3,27 @@
 // Serve finché non c'è un SMTP custom: senza SMTP i template email non
 // sono modificabili e l'email contiene solo questo tipo di link.
 // Il template custom userà invece /auth/confirm (token_hash).
+//
+// ?next=/percorso: dove portare a sessione aperta. Il recupero password lo
+// usa per andare diretto alla schermata della nuova password.
 
 import { redirect } from "next/navigation";
 import type { NextRequest } from "next/server";
 
 import { getProfilo } from "@/src/lib/auth/session";
 import { createSupabaseServerClient } from "@/src/lib/supabase/server";
+import { percorsoInterno } from "@/src/lib/url";
 
 export async function GET(request: NextRequest) {
-  const code = new URL(request.url).searchParams.get("code");
+  const parametri = new URL(request.url).searchParams;
+  const code = parametri.get("code");
 
   if (code) {
     const supabase = await createSupabaseServerClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
       const profilo = await getProfilo();
-      redirect(profilo ? "/" : "/benvenuto");
+      redirect(percorsoInterno(parametri.get("next"), profilo ? "/" : "/benvenuto"));
     }
   }
 

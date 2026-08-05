@@ -13,6 +13,7 @@ import {
   getStagioniRoster,
   type LeaderStagione,
 } from "@/src/lib/giocatori/queries";
+import { getStagioni } from "@/src/lib/partite/queries";
 
 export const metadata: Metadata = { title: "Giocatori" };
 
@@ -21,7 +22,18 @@ export default async function GiocatoriPage({
 }: {
   searchParams: Promise<{ s?: string }>;
 }) {
-  const stagioni = await getStagioniRoster();
+  // Le stagioni col roster e quelle col calendario non vanno in pari: la
+  // fonte pubblica il calendario mesi prima dei roster. Se manca quello
+  // dell'annata in corso lo si dice, invece di mostrare in silenzio la
+  // rosa dell'anno prima.
+  const [stagioni, stagioniPartite] = await Promise.all([
+    getStagioniRoster(),
+    getStagioni(),
+  ]);
+  const stagioneInCorso = stagioniPartite[0];
+  const rosterDaPubblicare =
+    stagioneInCorso !== undefined && !stagioni.includes(stagioneInCorso);
+
   if (stagioni.length === 0) {
     return (
       <main className="flex flex-1 flex-col gap-4 px-4 py-6">
@@ -56,6 +68,13 @@ export default async function GiocatoriPage({
           </Pillola>
         ))}
       </div>
+
+      {rosterDaPubblicare && (
+        <p className="taglio-sm card p-3 text-sm text-muted">
+          La rosa {etichettaStagione(stagioneInCorso)} non è ancora stata
+          pubblicata dalla Lega: appena esce arriva qui da sola.
+        </p>
+      )}
 
       {/* Il campo ha senso solo per la stagione dell'ultima partita */}
       {quintetto && quintetto.partita.seasonYear === stagione && (

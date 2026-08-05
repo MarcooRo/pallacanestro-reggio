@@ -17,6 +17,7 @@ import { COOKIE_OSPITE } from "@/src/lib/auth/ospite";
 import { getProfilo, getUtente } from "@/src/lib/auth/session";
 import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/src/lib/supabase/server";
+import { urlBase } from "@/src/lib/url";
 
 const emailSchema = z.string().trim().toLowerCase().email();
 const passwordSchema = z
@@ -123,6 +124,55 @@ export async function registrati(formData: FormData) {
   }
 
   redirect("/benvenuto");
+}
+
+// ---- Password dimenticata ----
+
+// Manda il link di recupero. La risposta è sempre la stessa, esista o no
+// l'account: da qui non si scopre chi è registrato.
+export async function inviaRecuperoPassword(formData: FormData) {
+  const email = emailSchema.safeParse(formData.get("email"));
+  if (!email.success) {
+    redirect(
+      `/accesso/recupera?errore=${encodeURIComponent("Inserisci una email valida")}`,
+    );
+  }
+
+  const supabase = await createSupabaseServerClient();
+  await supabase.auth.resetPasswordForEmail(email.data, {
+    redirectTo: `${await urlBase()}/auth/callback?next=/accesso/nuova-password`,
+  });
+
+  redirect("/accesso/recupera?inviata=1");
+}
+
+// Il link del recupero apre una sessione: qui si sfrutta per riscrivere la
+// password. Vale anche per chi è già dentro e la vuole cambiare.
+export async function impostaNuovaPassword(formData: FormData) {
+  const utente = await getUtente();
+  if (!utente) {
+    redirect(
+      `/accesso?errore=${encodeURIComponent("Link scaduto: chiedi un nuovo recupero")}`,
+    );
+  }
+
+  const password = passwordSchema.safeParse(formData.get("password"));
+  if (!password.success) {
+    redirect(
+      `/accesso/nuova-password?errore=${encodeURIComponent(password.error.issues[0].message)}`,
+    );
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.auth.updateUser({ password: password.data });
+  if (error) {
+    redirect(
+      `/accesso/nuova-password?errore=${encodeURIComponent("Password non aggiornata, riprova")}`,
+    );
+  }
+
+  const profilo = await getProfilo();
+  redirect(profilo ? "/profilo?password=1" : "/benvenuto");
 }
 
 export async function creaProfilo(formData: FormData) {

@@ -71,7 +71,26 @@ export async function getCalendario(seasonYear: number, soloReggio = false) {
           : undefined,
       ),
     )
-    .orderBy(desc(matches.startsAt));
+    .orderBy(ordineCalendario());
+}
+
+// Per l'etichetta del calendario: l'ordine dipende da cosa c'è dentro.
+// Sta qui e non nella pagina perché "adesso" in un componente è impuro.
+export function haPartiteDaGiocare(partite: { startsAt: Date }[]): boolean {
+  const adesso = Date.now();
+  return partite.some((p) => p.startsAt.getTime() > adesso);
+}
+
+// Il calendario si legge dal presente: prima le partite da giocare, la più
+// vicina in cima, poi quelle giocate dalla più recente. A stagione finita
+// resta il solo blocco delle giocate (ordine inverso, come prima); a stagione
+// non cominciata resta il solo blocco delle prossime, in ordine cronologico.
+function ordineCalendario() {
+  return sql`
+    (${matches.startsAt} < now()) asc,
+    case when ${matches.startsAt} >= now() then ${matches.startsAt} end asc,
+    ${matches.startsAt} desc
+  `;
 }
 
 export async function getPartita(id: string) {

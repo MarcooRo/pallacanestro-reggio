@@ -6,8 +6,13 @@ import { esci } from "@/src/lib/auth/actions";
 import { getProfilo, getUtente } from "@/src/lib/auth/session";
 import { getPuntiUtente } from "@/src/lib/pronostici/queries";
 
-export default async function ProfiloPage() {
+export default async function ProfiloPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ password?: string }>;
+}) {
   const utente = await getUtente();
+  const { password } = await searchParams;
 
   if (!utente) {
     return (
@@ -38,6 +43,13 @@ export default async function ProfiloPage() {
         {profilo.nickname}
         <span className="text-brand-vivid">.</span>
       </h1>
+
+      {/* Rientro dal recupero password: si dice che è andata */}
+      {password && (
+        <p className="border-l-2 border-brand-vivid bg-brand-tint px-3 py-2 text-sm text-brand-vivid">
+          Password aggiornata.
+        </p>
+      )}
 
       <dl className="flex flex-col gap-3 border-l-2 border-brand pl-4">
         <div>

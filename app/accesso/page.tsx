@@ -41,9 +41,17 @@ export default async function AccessoPage({
           placeholder="nome@esempio.it"
           className="taglio-sm border border-border-strong bg-surface-2 px-3 py-3 outline-none transition-colors focus:border-brand-vivid"
         />
-        <label className="eyebrow mt-1" htmlFor="password">
-          Password
-        </label>
+        <div className="mt-1 flex items-baseline justify-between gap-2">
+          <label className="eyebrow" htmlFor="password">
+            Password
+          </label>
+          <Link
+            href="/accesso/recupera"
+            className="text-xs text-muted underline transition-colors hover:text-foreground"
+          >
+            Non la ricordo
+          </Link>
+        </div>
         <CampoPassword autoComplete="current-password" />
         <button
           type="submit"

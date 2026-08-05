@@ -44,6 +44,11 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#0b0b0c",
+  // Installata da iPhone la web app è a tutto schermo (statusBarStyle
+  // black-translucent): senza viewport-fit=cover le safe area valgono 0 e
+  // sotto la fotocamera resta una striscia scoperta. Con cover le misure
+  // arrivano a header e bottom nav, che ci mettono il proprio fondo.
+  viewportFit: "cover",
 };
 
 export default async function RootLayout({
@@ -64,7 +69,9 @@ export default async function RootLayout({
     >
       <body className="flex min-h-dvh flex-col">
         <RegistraSw />
-        <header className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur">
+        {/* Il fondo dell'header sale fin sopra la fotocamera: la barra di
+            stato non deve mostrare la pagina che scorre sotto */}
+        <header className="sticky top-0 z-20 border-b border-border bg-background/90 pt-[env(safe-area-inset-top)] backdrop-blur">
           <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
             <MenuLaterale admin={profilo?.role === "admin"} />
             {/* text-lg sotto sm: il nome per esteso deve stare su una riga */}

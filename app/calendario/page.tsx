@@ -5,7 +5,11 @@ import { PartitaCard } from "@/src/components/partita-card";
 import { Pillola } from "@/src/components/pillola";
 import { stagioneHaClassifica } from "@/src/lib/classifica/campionato";
 import { etichettaStagione } from "@/src/lib/date";
-import { getCalendario, getStagioni } from "@/src/lib/partite/queries";
+import {
+  getCalendario,
+  getStagioni,
+  haPartiteDaGiocare,
+} from "@/src/lib/partite/queries";
 
 export const metadata: Metadata = { title: "Calendario" };
 
@@ -74,7 +78,10 @@ export default async function CalendarioPage({
         </Link>
       )}
 
-      <p className="eyebrow">{partite.length} partite · dalla più recente</p>
+      <p className="eyebrow">
+        {partite.length} partite ·{" "}
+        {haPartiteDaGiocare(partite) ? "prima le prossime" : "dalla più recente"}
+      </p>
 
       <div className="flex flex-col gap-2.5">
         {partite.map((p) => (

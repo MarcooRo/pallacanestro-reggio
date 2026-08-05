@@ -1,7 +1,9 @@
-// Card news: titolo, estratto, categoria, immagine. Link sempre alla
-// fonte originale (il testo integrale non si ripubblica).
+// Card news: titolo, estratto, categoria, immagine. Apre la lettura
+// in-app (/news/[id]), che incornicia la pagina della fonte originale:
+// il testo integrale continua a non essere ripubblicato.
 
 import Image from "next/image";
+import Link from "next/link";
 
 import type { news } from "@/src/db/schema";
 import { soloOra } from "@/src/lib/date";
@@ -13,10 +15,8 @@ const nomeFonte: Record<string, string> = {
 
 export function NewsCard({ item }: { item: typeof news.$inferSelect }) {
   return (
-    <a
-      href={item.url}
-      target="_blank"
-      rel="noopener noreferrer"
+    <Link
+      href={`/news/${item.id}`}
       className="taglio-sm group flex gap-3 card p-3 transition-colors hover:border-brand"
     >
       {item.imageUrl && (
@@ -42,6 +42,6 @@ export function NewsCard({ item }: { item: typeof news.$inferSelect }) {
           <span className="line-clamp-2 text-sm text-muted">{item.excerpt}</span>
         )}
       </span>
-    </a>
+    </Link>
   );
 }

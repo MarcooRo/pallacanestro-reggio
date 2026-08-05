@@ -14,3 +14,9 @@ export async function getNews(limite = 50, fonte?: FonteNews) {
     .orderBy(desc(news.isPinned), desc(news.publishedAt))
     .limit(limite);
 }
+
+// La singola news, per la pagina di lettura in-app.
+export async function getNewsById(id: string) {
+  const [riga] = await db.select().from(news).where(eq(news.id, id)).limit(1);
+  return riga ?? null;
+}

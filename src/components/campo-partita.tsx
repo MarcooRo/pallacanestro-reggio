@@ -11,8 +11,9 @@ import type { Formazione } from "@/src/lib/partite/quintetti";
 export interface LatoCampo extends Formazione {
   nome: string;
   logoKey: string | null;
-  /** Scheda squadra: /giocatori per Reggio, /squadre/[id] per le altre */
-  scheda: string;
+  /** Scheda squadra: /giocatori per Reggio, /squadre/[id] per le altre;
+      null per le squadre di coppa, che una scheda non ce l'hanno */
+  scheda: string | null;
 }
 
 // Coordinate % sul MEZZO campo (viewBox 300×282), come nella pagina
@@ -102,12 +103,18 @@ function Testata({ lato }: { lato: LatoCampo }) {
   return (
     <div className="flex items-center gap-2">
       <LogoClub logoKey={lato.logoKey} misura="md" />
-      <Link
-        href={lato.scheda}
-        className="display min-w-0 flex-1 break-words text-sm leading-[1.1] transition-colors hover:text-brand-vivid"
-      >
-        {lato.nome}
-      </Link>
+      {lato.scheda ? (
+        <Link
+          href={lato.scheda}
+          className="display min-w-0 flex-1 break-words text-sm leading-[1.1] transition-colors hover:text-brand-vivid"
+        >
+          {lato.nome}
+        </Link>
+      ) : (
+        <span className="display min-w-0 flex-1 break-words text-sm leading-[1.1]">
+          {lato.nome}
+        </span>
+      )}
       <span className="eyebrow shrink-0 text-[10px]">{lato.fonte}</span>
     </div>
   );

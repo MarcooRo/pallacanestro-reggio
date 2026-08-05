@@ -7,6 +7,7 @@ import { aggiornaNews } from "@/src/ingestion/news";
 import {
   logIngestione,
   sincronizzaAnagrafiche,
+  sincronizzaCalendarioBcl,
   sincronizzaCalendarioCorrente,
   sincronizzaTabellini,
 } from "@/src/ingestion/sync";
@@ -30,6 +31,25 @@ function revalidaTutto() {
 
 export async function jobCalendario() {
   const diffs = await sincronizzaCalendarioCorrente();
+
+  // La coppa europea viaggia sulla sua fonte: un fallimento FIBA non
+  // deve toccare il sync del campionato (last-known-good anche qui).
+  let bcl = null;
+  try {
+    bcl = await sincronizzaCalendarioBcl();
+    if (bcl) {
+      await logIngestione("bcl", "calendar", {
+        seen: bcl.totali,
+        changed: bcl.nuove + bcl.cambiate,
+        diff: bcl,
+      });
+    }
+  } catch (err) {
+    const messaggio = err instanceof Error ? err.message : String(err);
+    console.warn("Calendario BCL non disponibile:", messaggio);
+    await logIngestione("bcl", "calendar", { errore: messaggio });
+  }
+
   // Automatismo apertura voto (comodità, non dipendenza: regola 5).
   const votazioniAperte = await apriVotazioniAutomatiche();
 
@@ -40,7 +60,7 @@ export async function jobCalendario() {
   });
 
   revalidaTutto();
-  return { competizioni: diffs, votazioniAperte };
+  return { competizioni: diffs, bcl, votazioniAperte };
 }
 
 export async function jobTabellini(limite = 10) {

@@ -242,6 +242,22 @@ Come chiuderlo, in ordine di costo:
 
 **Confine (rivisto il 05/08/2026):** a database vanno solo titolo, estratto, data, categoria, immagine e link. Il corpo dell'articolo non si salva mai: la lettura in-app (`/news/[id]`) lo legge al volo dalle API delle fonti (WP REST per la società, `contents/get-content-by-id` per LBA) con cache di un'ora, ridotto a paragrafi di puro testo, citando e linkando sempre l'originale.
 
+### Fonte coppa europea: API FIBA (Basketball Champions League)
+
+Aggiunta il 05/08/2026. Base: `https://digital-api.fiba.basketball/hapi`. Obbligatori l'header `ocp-apim-subscription-key` (chiave PUBBLICA, sta nel bundle JS di championsleague.basketball — stessa natura del token WebSocket LBA) e uno User-Agent da browser. Nota: il SITO è dietro una protezione bot che blocca curl e headless (403); l'API no.
+
+**Endpoint verificati** (adapter `src/ingestion/sources/bcl.ts`)
+
+| Endpoint | Parametri | Cosa dà |
+|---|---|---|
+| `getgdapcompetitionsbyseasonsandcompetitionmarketingname` | `seasons={annoFiba}&competitionMarketingNameId=112` | Le edizioni BCL. 112 = BCL (costante di vocabolario, come `cs_id=1`). FIBA numera con l'anno FINALE: la nostra 2026 è la loro 2027 |
+| `getgdapcompetitionteamsbycompetitionid` | `gdapCompetitionId={id}&profile=true` | Le squadre con `organisationId` (stabile tra stagioni; Reggio = 2102) |
+| `getgdapgameswithleaderdetailsbyteamid` | `gdapTeamId={teamId}` | Le partite della squadra: data UTC, venue, punteggi, `statusCode` |
+
+Stati: INIT→scheduled, PROGR→live, VALID/CLOS→finished, CANCEL→cancelled; i codici mai visti (CONFL, N, DEL) finiscono in `ingestion_runs` come partial. Loghi: `assets.fiba.basketball/image/upload/w_200/f_auto/q_auto/.logoflag--light--organisation_{orgId}` (URL pieno in `team_seasons.logo_key`; `fotoUrl` passa gli URL `https://` così come sono).
+
+**Confine:** solo le partite di Reggio. Le avversarie entrano come club/team_season con `fiba_*` e `lba_team_id` NULL → nessuna scheda `/squadre`, niente roster, niente tabellino. Endpoint utili per un domani: `getgdapgamebyid`, `getgdapcompetitionteamrosterbyteamid`, `getgdapteamrankingincompetitionbycompetitionid`, `getgdapplayergamestatisticsbyplayerid`.
+
 ### Piano B
 
 **Highlightly** copre Lega A, free tier 100 req/giorno, piani a pagamento da ~8 USD/mese. Se l'API interna LBA si chiude o cambia in modo ingestibile, è il rimpiazzo. Il pattern adapter esiste per rendere questo cambio indolore.

@@ -65,6 +65,11 @@ export default async function PartitaPage({
   const giocata = partita.status === "finished";
   const daGiocare = partita.status === "scheduled" && partita.startsAt > new Date();
 
+  // Scheda squadra: Reggio ha la sua pagina; le avversarie LBA la loro;
+  // le avversarie di coppa (BCL, senza lbaTeamId) nessuna, per scelta.
+  const scheda = (isReggio: boolean, lbaTeamId: number | null) =>
+    isReggio ? "/giocatori" : lbaTeamId ? `/squadre/${lbaTeamId}` : null;
+
   return (
     <PartitaLive
       lbaMatchId={partita.lbaMatchId}
@@ -89,18 +94,10 @@ export default async function PartitaPage({
           <div className="flex flex-col gap-2 px-4 py-3.5">
             <ScoreboardLive
               nomeCasa={partita.homeTeam}
-              schedaCasa={
-                partita.homeIsReggio
-                  ? "/giocatori"
-                  : `/squadre/${partita.homeLbaTeamId}`
-              }
+              schedaCasa={scheda(partita.homeIsReggio, partita.homeLbaTeamId)}
               logoCasa={partita.homeLogoKey}
               nomeOspiti={partita.awayTeam}
-              schedaOspiti={
-                partita.awayIsReggio
-                  ? "/giocatori"
-                  : `/squadre/${partita.awayLbaTeamId}`
-              }
+              schedaOspiti={scheda(partita.awayIsReggio, partita.awayLbaTeamId)}
               logoOspiti={partita.awayLogoKey}
               punteggioCasa={partita.homeScore}
               punteggioOspiti={partita.awayScore}
@@ -253,7 +250,9 @@ async function SezioneQuintetti({
           logoKey: partita.homeLogoKey,
           scheda: partita.homeIsReggio
             ? "/giocatori"
-            : `/squadre/${partita.homeLbaTeamId}`,
+            : partita.homeLbaTeamId
+              ? `/squadre/${partita.homeLbaTeamId}`
+              : null,
         }}
         ospiti={{
           ...quintetti.ospiti,
@@ -261,7 +260,9 @@ async function SezioneQuintetti({
           logoKey: partita.awayLogoKey,
           scheda: partita.awayIsReggio
             ? "/giocatori"
-            : `/squadre/${partita.awayLbaTeamId}`,
+            : partita.awayLbaTeamId
+              ? `/squadre/${partita.awayLbaTeamId}`
+              : null,
         }}
       />
     </section>

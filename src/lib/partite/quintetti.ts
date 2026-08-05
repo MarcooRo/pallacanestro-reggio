@@ -158,7 +158,9 @@ async function righeTabellino(
  */
 async function quintettoUltima(
   clubId: string,
-  lbaTeamId: number,
+  // null per le squadre solo di coppa (BCL): niente roster LBA, i ruoli
+  // restano ignoti e il quintetto storico non esiste in archivio
+  lbaTeamId: number | null,
   stagioneCorrente: number,
   primaDi: Date,
 ): Promise<Formazione | null> {
@@ -210,10 +212,11 @@ async function quintettoUltima(
 // porta il ruolo, e senza ruolo il campo schiererebbe i lunghi in regia.
 async function conRuoli(
   righe: RigaTabellinoCanonica[],
-  lbaTeamId: number,
+  lbaTeamId: number | null,
   soloChiEInRosa = false,
 ): Promise<TitolareCampo[]> {
-  const roster = await getRosterLive(lbaTeamId);
+  // Squadra fuori dal mondo LBA (coppa): nessun roster da cui pescare.
+  const roster = lbaTeamId ? await getRosterLive(lbaTeamId) : [];
   const perLbaPlayerId = new Map(roster.map((g) => [g.lbaPlayerId, g]));
   // Roster non ancora pubblicato (succede da luglio a settembre): non si
   // può dire chi è rimasto, e allora si mostra il quintetto storico così

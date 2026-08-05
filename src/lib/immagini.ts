@@ -9,5 +9,8 @@ export function fotoUrl(
   variante: "large" | "thumb" = "thumb",
 ): string | null {
   if (!key) return null; // molti giovani non hanno foto: fallback a iniziali
+  // Le squadre di coppa (BCL) hanno il logo su un CDN diverso: in quel
+  // caso logo_key contiene l'URL pieno e passa così com'è.
+  if (key.startsWith("https://")) return key;
   return `${CDN}/variants/${key}/${variante}`;
 }

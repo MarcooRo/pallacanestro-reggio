@@ -20,6 +20,36 @@ export interface SquadraStagioneCanonica {
   logoKey: string | null;
 }
 
+// La coppa europea (BCL) vive nel vocabolario FIBA: id propri, niente LBA.
+export interface CompetizioneBclCanonica {
+  fibaCompetitionId: number;
+  seasonYear: number; // 2026 = stagione 2026-27 (FIBA la chiama "2027")
+  name: string;
+}
+
+export interface SquadraBclCanonica {
+  fibaTeamId: number;
+  fibaOrganisationId: number;
+  nome: string;
+  logoUrl: string | null;
+}
+
+export interface PartitaBclCanonica {
+  fibaGameId: number;
+  daySerial: number | null;
+  dayName: string | null;
+  startsAt: Date;
+  casa: SquadraBclCanonica;
+  ospite: SquadraBclCanonica;
+  status: StatoPartita;
+  statusCodeFonte: string; // per segnalare i codici mai visti
+  homeScore: number | null;
+  awayScore: number | null;
+  venueName: string | null;
+  townName: string | null;
+  ticketingUrl: string | null;
+}
+
 export interface GiocatoreCanonico {
   lbaPlayerId: number;
   lbaCode: string | null;

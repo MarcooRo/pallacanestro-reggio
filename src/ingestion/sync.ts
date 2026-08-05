@@ -7,6 +7,7 @@ import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 
 import { db } from "@/src/db";
 import {
+  clubs,
   ingestionRuns,
   matches,
   players,
@@ -17,8 +18,15 @@ import {
 } from "@/src/db/schema";
 import type {
   CompetizioneCanonica,
+  SquadraBclCanonica,
   SquadraStagioneCanonica,
 } from "@/src/ingestion/normalize";
+import {
+  getCompetizioneBcl,
+  getPartiteBcl,
+  getSquadreBcl,
+  STATUS_CODE_BCL_VERIFICATI,
+} from "@/src/ingestion/sources/bcl";
 import { riconciliaSquadre } from "@/src/ingestion/reconcile";
 import {
   getCalendario,
@@ -291,11 +299,13 @@ export async function sincronizzaCalendarioCompetizione(
 
 // Mappa lba_team_id → team_season dal database (le squadre le aggiorna
 // il sync anagrafiche): il calendario non richiama get-teams ogni volta.
+// Le squadre solo di coppa (lba_team_id null) qui non c'entrano.
 async function mappaSquadreDaDb(): Promise<Map<number, string>> {
   const righe = await db
     .select({ lbaTeamId: teamSeasons.lbaTeamId, id: teamSeasons.id })
-    .from(teamSeasons);
-  return new Map(righe.map((r) => [r.lbaTeamId, r.id]));
+    .from(teamSeasons)
+    .where(sql`${teamSeasons.lbaTeamId} is not null`);
+  return new Map(righe.map((r) => [r.lbaTeamId!, r.id]));
 }
 
 export async function sincronizzaCalendarioCorrente(): Promise<DiffCalendario[]> {
@@ -317,6 +327,235 @@ export async function sincronizzaCalendarioCorrente(): Promise<DiffCalendario[]>
     }
   }
   return diffs;
+}
+
+// ---- Coppa europea (BCL) ----
+//
+// Solo le partite di Reggio (scelta di prodotto): la fonte è l'API FIBA
+// dell'adapter bcl.ts. Le avversarie entrano come club/team_season senza
+// id LBA (lba_team_id null → niente scheda /squadre, per scelta).
+
+export interface DiffBcl {
+  competizione: string;
+  totali: number;
+  nuove: number;
+  cambiate: number;
+}
+
+// La stagione da sincronizzare è quella del campionato in corso nel
+// database: la BCL non fa da àncora temporale, il campionato sì.
+async function stagioneCorrenteDaDb(): Promise<number | null> {
+  const [riga] = await db
+    .select({ anno: sql<number | null>`max(${tabCompetizioni.seasonYear})` })
+    .from(tabCompetizioni)
+    .where(sql`${tabCompetizioni.lbaChampionshipId} is not null`);
+  return riga?.anno ?? null;
+}
+
+export async function sincronizzaCalendarioBcl(): Promise<DiffBcl | null> {
+  const seasonYear = await stagioneCorrenteDaDb();
+  if (!seasonYear) return null; // database ancora vergine: prima il seed LBA
+
+  const competizione = await getCompetizioneBcl(seasonYear);
+  if (!competizione) return null; // nessuna BCL per la stagione
+
+  // Reggio tra le squadre della competizione: per àncora FIBA se già
+  // nota, altrimenti per nome (prima volta), e l'àncora si persiste.
+  const [reggio] = await db
+    .select()
+    .from(clubs)
+    .where(eq(clubs.isHomeClub, true))
+    .limit(1);
+  if (!reggio) throw new Error("club di casa assente: eseguire prima il seed");
+
+  const squadre = await getSquadreBcl(competizione.fibaCompetitionId);
+  const somiglia = (nome: string) => {
+    const a = nome.toLowerCase();
+    const b = reggio.name.toLowerCase();
+    return a.includes(b) || b.includes(a);
+  };
+  const squadraReggio = squadre.find((s) =>
+    reggio.fibaOrganisationId
+      ? s.fibaOrganisationId === reggio.fibaOrganisationId
+      : somiglia(s.nome),
+  );
+  if (!squadraReggio) return null; // Reggio non gioca la BCL quest'anno
+
+  if (!reggio.fibaOrganisationId) {
+    await db
+      .update(clubs)
+      .set({ fibaOrganisationId: squadraReggio.fibaOrganisationId })
+      .where(eq(clubs.id, reggio.id));
+  }
+
+  // La team_season di Reggio la crea il sync LBA: qui si aggancia solo
+  // l'id FIBA della stagione. Il logo resta quello LBA.
+  const [tsReggio] = await db
+    .select({ id: teamSeasons.id, fibaTeamId: teamSeasons.fibaTeamId })
+    .from(teamSeasons)
+    .where(
+      and(
+        eq(teamSeasons.clubId, reggio.id),
+        eq(teamSeasons.seasonYear, seasonYear),
+      ),
+    )
+    .limit(1);
+  if (!tsReggio) {
+    throw new Error(
+      `team_season di Reggio per la ${seasonYear} assente: eseguire prima il sync LBA`,
+    );
+  }
+  if (tsReggio.fibaTeamId !== squadraReggio.fibaTeamId) {
+    await db
+      .update(teamSeasons)
+      .set({ fibaTeamId: squadraReggio.fibaTeamId })
+      .where(eq(teamSeasons.id, tsReggio.id));
+  }
+
+  const [rigaComp] = await db
+    .insert(tabCompetizioni)
+    .values({
+      fibaCompetitionId: competizione.fibaCompetitionId,
+      seasonYear: competizione.seasonYear,
+      seriesCode: "BCL",
+      typeCode: "BCL",
+      name: competizione.name,
+    })
+    .onConflictDoUpdate({
+      target: tabCompetizioni.fibaCompetitionId,
+      set: { name: competizione.name, seasonYear: competizione.seasonYear },
+    })
+    .returning({ id: tabCompetizioni.id });
+  const competitionId = rigaComp.id;
+
+  const partite = await getPartiteBcl(squadraReggio.fibaTeamId);
+
+  // Codici di stato mai visti: segnalati, non ingoiati (regola 4).
+  const ignoti = [
+    ...new Set(
+      partite
+        .map((p) => p.statusCodeFonte)
+        .filter((c) => !STATUS_CODE_BCL_VERIFICATI.has(c)),
+    ),
+  ];
+  for (const codice of ignoti) {
+    const nota = `statusCode FIBA sconosciuto "${codice}": verificarlo in sources/bcl.ts`;
+    console.warn(nota);
+    await logIngestione("bcl", "calendar", {
+      status: "partial",
+      seen: partite.length,
+      errore: nota,
+    });
+  }
+
+  // Le avversarie: club ancorato all'organisation FIBA, team_season alla
+  // squadra della stagione. Se un'avversaria fosse anche un club LBA
+  // (italiana in BCL) nascerebbe un doppione innocuo: senza lba_team_id
+  // non compare in nessuna scheda, e le gare BCL non esistono in LBA.
+  const teamSeasonDi = async (s: SquadraBclCanonica): Promise<string> => {
+    if (s.fibaTeamId === squadraReggio.fibaTeamId) return tsReggio.id;
+    const [club] = await db
+      .insert(clubs)
+      .values({
+        fibaOrganisationId: s.fibaOrganisationId,
+        name: s.nome,
+        shortName: s.nome,
+      })
+      .onConflictDoUpdate({
+        target: clubs.fibaOrganisationId,
+        set: { name: s.nome },
+      })
+      .returning({ id: clubs.id });
+    const [ts] = await db
+      .insert(teamSeasons)
+      .values({
+        clubId: club.id,
+        seasonYear,
+        fibaTeamId: s.fibaTeamId,
+        displayName: s.nome,
+        logoKey: s.logoUrl, // URL pieno FIBA: fotoUrl lo passa com'è
+      })
+      .onConflictDoUpdate({
+        target: teamSeasons.fibaTeamId,
+        set: { displayName: s.nome, logoKey: s.logoUrl },
+      })
+      .returning({ id: teamSeasons.id });
+    return ts.id;
+  };
+
+  // Diff su ciò che c'era prima, come per il calendario LBA.
+  const esistenti = await db
+    .select({
+      fibaGameId: matches.fibaGameId,
+      status: matches.status,
+      homeScore: matches.homeScore,
+      awayScore: matches.awayScore,
+      startsAt: matches.startsAt,
+    })
+    .from(matches)
+    .where(eq(matches.competitionId, competitionId));
+  const prima = new Map(esistenti.map((m) => [m.fibaGameId, m]));
+
+  const diff: DiffBcl = {
+    competizione: competizione.name,
+    totali: partite.length,
+    nuove: 0,
+    cambiate: 0,
+  };
+
+  for (const p of partite) {
+    const vecchia = prima.get(p.fibaGameId);
+    if (!vecchia) diff.nuove++;
+    else if (
+      vecchia.status !== p.status ||
+      vecchia.homeScore !== p.homeScore ||
+      vecchia.awayScore !== p.awayScore ||
+      vecchia.startsAt.getTime() !== p.startsAt.getTime()
+    ) {
+      diff.cambiate++;
+    }
+
+    const homeTeamSeasonId = await teamSeasonDi(p.casa);
+    const awayTeamSeasonId = await teamSeasonDi(p.ospite);
+
+    await db
+      .insert(matches)
+      .values({
+        fibaGameId: p.fibaGameId,
+        competitionId,
+        daySerial: p.daySerial,
+        dayName: p.dayName,
+        startsAt: p.startsAt,
+        homeTeamSeasonId,
+        awayTeamSeasonId,
+        status: p.status,
+        homeScore: p.homeScore,
+        awayScore: p.awayScore,
+        venueName: p.venueName,
+        townName: p.townName,
+        ticketingUrl: p.ticketingUrl,
+        lastSyncedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: matches.fibaGameId,
+        // Solo i campi di sincronizzazione: lo stato del voto non si tocca.
+        set: {
+          daySerial: p.daySerial,
+          dayName: p.dayName,
+          startsAt: p.startsAt,
+          status: p.status,
+          homeScore: p.homeScore,
+          awayScore: p.awayScore,
+          venueName: p.venueName,
+          townName: p.townName,
+          ticketingUrl: p.ticketingUrl,
+          lastSyncedAt: new Date(),
+        },
+        setWhere: sql`${matches.manualOverride} = false`,
+      });
+  }
+
+  return diff;
 }
 
 export async function sincronizzaAnagrafiche(

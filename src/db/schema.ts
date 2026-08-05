@@ -28,6 +28,9 @@ export const clubs = pgTable(
   {
     id: uuid().primaryKey().defaultRandom(),
     lbaClubId: integer().unique(),
+    // organisationId FIBA, stabile tra stagioni (Reggio = 2102): àncora
+    // delle avversarie di coppa che in LBA non esistono
+    fibaOrganisationId: integer().unique(),
     name: text().notNull(),
     shortName: text().notNull(),
     isHomeClub: boolean().notNull().default(false),
@@ -48,7 +51,10 @@ export const teamSeasons = pgTable(
       .notNull()
       .references(() => clubs.id),
     seasonYear: integer().notNull(), // 2026 = stagione 2026-27
-    lbaTeamId: integer().notNull(), // 1760 per Reggio 2026
+    // null per le squadre solo di coppa (avversarie BCL): niente scheda
+    // /squadre, niente roster LBA
+    lbaTeamId: integer(), // 1760 per Reggio 2026
+    fibaTeamId: integer().unique(), // team BCL della stagione (Reggio 2026 = 284938)
     displayName: text().notNull(), // "UNA Hotels Reggio Emilia"
     lbaClubCode: text(), // NON stabile tra stagioni, solo informativo
     logoKey: text(),
@@ -138,9 +144,10 @@ export const playerAliases = pgTable(
 export const competitions = pgTable("competitions", {
   id: uuid().primaryKey().defaultRandom(),
   lbaChampionshipId: integer().unique(),
+  fibaCompetitionId: integer().unique(), // BCL (2026-27 = 209123)
   seasonYear: integer().notNull(),
-  seriesCode: text().notNull(), // 'A1'
-  typeCode: text().notNull(), // 'RS' | 'PO' | 'CI' | 'SC' | 'NGC'
+  seriesCode: text().notNull(), // 'A1' | 'BCL'
+  typeCode: text().notNull(), // 'RS' | 'PO' | 'CI' | 'SC' | 'NGC' | 'BCL'
   name: text().notNull(),
   logoKey: text(),
 });
@@ -150,6 +157,7 @@ export const matches = pgTable(
   {
     id: uuid().primaryKey().defaultRandom(),
     lbaMatchId: integer().unique(),
+    fibaGameId: integer().unique(), // gara BCL: gemello di lba_match_id
     competitionId: uuid()
       .notNull()
       .references(() => competitions.id),

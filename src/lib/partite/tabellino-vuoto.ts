@@ -94,9 +94,12 @@ type Rosa = Awaited<ReturnType<typeof getRosterLive>>[number];
 // pubblicata, quella dell'ultima stagione dello stesso club.
 async function rosaConRipiego(
   clubId: string,
-  lbaTeamId: number,
+  // null per le avversarie di coppa (BCL): la fonte LBA non le conosce,
+  // il loro lato della tabella resta vuoto
+  lbaTeamId: number | null,
   seasonYear: number,
 ): Promise<{ giocatori: Rosa[]; stagione: number | null }> {
+  if (!lbaTeamId) return { giocatori: [], stagione: null };
   const attuale = await getRosterLive(lbaTeamId);
   if (attuale.length > 0) return { giocatori: attuale, stagione: null };
 
@@ -114,7 +117,7 @@ async function rosaConRipiego(
     )
     .orderBy(desc(teamSeasons.seasonYear))
     .limit(1);
-  if (!precedente) return { giocatori: [], stagione: null };
+  if (!precedente?.lbaTeamId) return { giocatori: [], stagione: null };
 
   const vecchia = await getRosterLive(precedente.lbaTeamId);
   return {

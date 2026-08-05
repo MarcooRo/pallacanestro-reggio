@@ -148,11 +148,12 @@ export function ScoreboardLive({
   parzialiIniziali,
 }: {
   nomeCasa: string;
-  schedaCasa: string;
+  /** null = squadra senza scheda (avversarie di coppa): nome non cliccabile */
+  schedaCasa: string | null;
   /** logo_key del CDN: l'URL lo compone LogoClub */
   logoCasa: string | null;
   nomeOspiti: string;
-  schedaOspiti: string;
+  schedaOspiti: string | null;
   logoOspiti: string | null;
   punteggioCasa: number | null;
   punteggioOspiti: number | null;
@@ -202,17 +203,18 @@ export function ScoreboardLive({
       {squadre.map(({ nome, scheda, logo, punti, avanti }) => (
         <div key={nome} className="flex items-center gap-2.5">
           <LogoClub logoKey={logo} />
-          {/* Il nome apre la scheda squadra (Reggio: la sua pagina) */}
+          {/* Il nome apre la scheda squadra (Reggio: la sua pagina); le
+              squadre di coppa non ne hanno una e restano testo */}
           {/* Il nome va a capo, non in "…": sul telefono "Bertram Derthona
               Tortona" a text-2xl diventava "BERTRAM DERTH…" */}
-          <Link
-            href={scheda}
-            className={`display min-w-0 flex-1 break-words leading-[1.05] transition-colors hover:text-brand-vivid ${
+          <NomeSquadra
+            scheda={scheda}
+            className={`display min-w-0 flex-1 break-words leading-[1.05] ${
               mostraPunti ? "text-lg sm:text-xl" : "text-xl sm:text-2xl"
             } ${finita && !avanti ? "text-muted" : ""}`}
           >
             {nome}
-          </Link>
+          </NomeSquadra>
           {mostraPunti && (
             <span
               className={`score shrink-0 text-3xl font-bold tabular-nums ${
@@ -246,6 +248,26 @@ export function ScoreboardLive({
         </div>
       )}
     </>
+  );
+}
+
+function NomeSquadra({
+  scheda,
+  className,
+  children,
+}: {
+  scheda: string | null;
+  className: string;
+  children: ReactNode;
+}) {
+  if (!scheda) return <span className={className}>{children}</span>;
+  return (
+    <Link
+      href={scheda}
+      className={`${className} transition-colors hover:text-brand-vivid`}
+    >
+      {children}
+    </Link>
   );
 }
 

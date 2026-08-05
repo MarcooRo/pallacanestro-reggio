@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       // CDN immagini LBA (foto giocatori, loghi, news)
       { protocol: "https", hostname: "lba-media.s3.eu-south-1.amazonaws.com" },
+      // loghi delle squadre di coppa (BCL)
+      { protocol: "https", hostname: "assets.fiba.basketball" },
       // immagini delle news societarie
       { protocol: "https", hostname: "www.pallacanestroreggiana.it" },
       // thumbnail dei video YouTube

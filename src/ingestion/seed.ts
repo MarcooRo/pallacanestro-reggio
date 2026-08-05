@@ -5,7 +5,11 @@
 // Uso: bun run seed [anno ...]   (env da .env.local; richiede HOME_CLUB_LBA_ID)
 
 import { getCompetizioniCorrenti } from "@/src/ingestion/sources/lba";
-import { sincronizzaStagione, sincronizzaTabellini } from "@/src/ingestion/sync";
+import {
+  sincronizzaCalendarioBcl,
+  sincronizzaStagione,
+  sincronizzaTabellini,
+} from "@/src/ingestion/sync";
 
 async function main() {
   const homeClubLbaId = Number(process.env.HOME_CLUB_LBA_ID);
@@ -27,6 +31,14 @@ async function main() {
   for (const anno of stagioni) {
     await sincronizzaStagione(anno, homeClubLbaId);
   }
+
+  console.log("\nCoppa europea (BCL)…");
+  const bcl = await sincronizzaCalendarioBcl();
+  console.log(
+    bcl
+      ? `  ${bcl.competizione}: ${bcl.totali} partite (${bcl.nuove} nuove, ${bcl.cambiate} cambiate)`
+      : "  Reggio non gioca la BCL in questa stagione.",
+  );
 
   console.log("\nTabellini delle partite giocate…");
   const diff = await sincronizzaTabellini(1000);

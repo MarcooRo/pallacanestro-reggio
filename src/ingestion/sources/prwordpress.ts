@@ -1,6 +1,7 @@
 // Adapter per il WordPress della società (PROJECT_RE.md, sezione 6).
-// Confine: titolo, estratto, data, categoria, immagine e link — si linka
-// sempre alla fonte, non si ripubblica il testo integrale.
+// Confine: a database vanno solo titolo, estratto, data, categoria,
+// immagine e link. Il corpo si legge al volo per la lettura in-app
+// (getCorpoWordPress), mai salvato, sempre citando la fonte.
 
 import type { NewsCanonica } from "@/src/ingestion/normalize";
 
@@ -29,6 +30,20 @@ function pulisciHtml(html: string): string {
     .replace(/\[…\]|\[&hellip;\]|&hellip;/g, "…")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+// Il corpo dell'articolo, per la lettura in-app: letto al volo con la
+// cache di Next, non passa mai dal database.
+export async function getCorpoWordPress(
+  sourceId: string,
+): Promise<string | null> {
+  const res = await fetch(`${BASE_URL}/posts/${sourceId}`, {
+    headers: { accept: "application/json" },
+    next: { revalidate: 3600 },
+  });
+  if (!res.ok) return null;
+  const post = (await res.json()) as { content?: { rendered?: string } };
+  return post.content?.rendered || null;
 }
 
 export async function getNewsWordPress(items = 20): Promise<NewsCanonica[]> {

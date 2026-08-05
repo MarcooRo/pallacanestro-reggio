@@ -404,6 +404,26 @@ export async function getNewsLba(
   }));
 }
 
+// Il corpo dell'articolo, per la lettura in-app: stesso endpoint che usa
+// la pagina news del sito (individuato il 05/08/2026 sniffando le sue
+// chiamate). I blocchi di testo stanno in content_items, fuori da content.
+interface LbaContentItem {
+  position: number;
+  text_content: string | null;
+}
+
+export async function getCorpoNewsLba(sourceId: string): Promise<string | null> {
+  const data = await fetchLba<{ content_items?: LbaContentItem[] }>(
+    `contents/get-content-by-id?id=${sourceId}`,
+    3600,
+  );
+  const blocchi = (data.content_items ?? [])
+    .filter((r) => r.text_content)
+    .sort((a, b) => a.position - b.position)
+    .map((r) => r.text_content as string);
+  return blocchi.length > 0 ? blocchi.join("\n") : null;
+}
+
 // ---- Tabellino per partita ----
 // Endpoint individuato il 31/07/2026 con la sonda della sezione 6:
 // championships/get-championships-matches-by-id?id={lba_match_id}.

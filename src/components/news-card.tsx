@@ -1,6 +1,6 @@
 // Card news: titolo, estratto, categoria, immagine. Apre la lettura
-// in-app (/news/[id]), che incornicia la pagina della fonte originale:
-// il testo integrale continua a non essere ripubblicato.
+// in-app (/news/[id]): corpo dell'articolo letto al volo dalla fonte,
+// impaginato col design dell'app.
 
 import Image from "next/image";
 import Link from "next/link";
@@ -8,7 +8,7 @@ import Link from "next/link";
 import type { news } from "@/src/db/schema";
 import { soloOra } from "@/src/lib/date";
 
-const nomeFonte: Record<string, string> = {
+export const nomeFonte: Record<string, string> = {
   lba: "Lega Basket",
   pr_wordpress: "Pallacanestro Reggiana",
 };

@@ -240,7 +240,7 @@ Come chiuderlo, in ordine di costo:
 
 `https://www.pallacanestroreggiana.it/wp-json/wp/v2/posts` e `/feed/`. JSON stabile, categorie già segmentate (PR News, Giovanili, Academy, Sponsor).
 
-**Confine:** si salvano titolo, estratto, data, categoria, immagine e link, e si linka sempre alla fonte. Non si ripubblica il testo integrale.
+**Confine (rivisto il 05/08/2026):** a database vanno solo titolo, estratto, data, categoria, immagine e link. Il corpo dell'articolo non si salva mai: la lettura in-app (`/news/[id]`) lo legge al volo dalle API delle fonti (WP REST per la società, `contents/get-content-by-id` per LBA) con cache di un'ora, ridotto a paragrafi di puro testo, citando e linkando sempre l'originale.
 
 ### Piano B
 

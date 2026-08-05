@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { PartitaCard } from "@/src/components/partita-card";
 import { Pillola } from "@/src/components/pillola";
+import { SelettoreStagione } from "@/src/components/selettore-stagione";
 import { stagioneHaClassifica } from "@/src/lib/classifica/campionato";
 import { etichettaStagione } from "@/src/lib/date";
 import {
@@ -31,7 +32,10 @@ export default async function CalendarioPage({
   const { s, f } = await searchParams;
   const richiesta = Number(s);
   const stagione = stagioni.includes(richiesta) ? richiesta : stagioni[0];
-  const soloReggio = f === "reggio";
+  // "Solo Reggio" è il default: chi apre il calendario cerca le partite
+  // della Pallacanestro Reggiana, il resto del girone è il caso raro.
+  // I vecchi link con f=reggio restano validi (qualsiasi cosa ≠ "tutte").
+  const soloReggio = f !== "tutte";
   const [partite, haClassifica] = await Promise.all([
     getCalendario(stagione, soloReggio),
     stagioneHaClassifica(stagione),
@@ -41,26 +45,36 @@ export default async function CalendarioPage({
     const query = new URLSearchParams();
     query.set("s", String(patch.s ?? stagione));
     const filtro = "f" in patch ? patch.f : f;
-    if (filtro) query.set("f", filtro);
+    if (filtro === "tutte") query.set("f", "tutte");
     return `/calendario?${query.toString()}`;
   };
 
   return (
     <main className="flex flex-1 flex-col gap-4 px-4 py-6">
-      <h1 className="display text-3xl">Partite</h1>
+      {/* La stagione vive sulla riga del titolo come tendina: le pillole
+          degli anni su schermi stretti mandavano a capo "Solo Reggio" */}
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="display text-3xl">Partite</h1>
+        {stagioni.length > 1 ? (
+          <SelettoreStagione
+            attiva={String(stagione)}
+            opzioni={stagioni.map((anno) => ({
+              valore: String(anno),
+              etichetta: etichettaStagione(anno),
+              href: url({ s: anno }),
+            }))}
+          />
+        ) : (
+          <span className="eyebrow">{etichettaStagione(stagione)}</span>
+        )}
+      </div>
 
       <div className="flex flex-wrap gap-2.5 pl-1">
-        {stagioni.map((anno) => (
-          <Pillola key={anno} href={url({ s: anno })} attiva={anno === stagione}>
-            {etichettaStagione(anno)}
-          </Pillola>
-        ))}
-        <span aria-hidden className="mx-1 w-px bg-border" />
-        <Pillola href={url({ f: undefined })} attiva={!soloReggio}>
-          Tutte
-        </Pillola>
-        <Pillola href={url({ f: "reggio" })} attiva={soloReggio}>
+        <Pillola href={url({ f: undefined })} attiva={soloReggio}>
           Solo Reggio
+        </Pillola>
+        <Pillola href={url({ f: "tutte" })} attiva={!soloReggio}>
+          Tutte
         </Pillola>
       </div>
 

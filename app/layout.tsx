@@ -74,10 +74,11 @@ export default async function RootLayout({
         <header className="sticky top-0 z-20 border-b border-border bg-background/90 pt-[env(safe-area-inset-top)] backdrop-blur">
           <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
             <MenuLaterale admin={profilo?.role === "admin"} />
-            {/* text-lg sotto sm: il nome per esteso deve stare su una riga */}
+            {/* Il nome per esteso deve stare su una riga: a 390px con text-lg
+                andava a capo ("PALLACANESTRO / REGGIANA") */}
             <Link
               href="/"
-              className="display flex flex-1 items-center gap-2 text-lg text-foreground sm:text-xl"
+              className="display flex flex-1 items-center gap-2 text-base text-foreground sm:text-xl"
             >
               <LogoPalla className="h-5 w-5 shrink-0" />
               <span>

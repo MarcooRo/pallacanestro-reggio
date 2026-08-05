@@ -1,18 +1,18 @@
-// La card partita è un tabellone in miniatura: le due squadre affacciate,
-// i loghi ai bordi esterni, e nel mezzo quello che conta — il punteggio se
-// si è giocato, la palla a due se si deve giocare.
+// La card partita è il pannello del segnapunti: le due squadre incolonnate
+// una per riga, il logo a sinistra, il punteggio in fondo a destra.
 //
-// Le squadre si leggono col nome breve (la città): a larghezza mobile lo
-// sponsor non ci sta e sborda sul logo. Il nome completo resta nel title e
-// nell'alt del logo, e la pagina partita lo mostra per intero.
+// L'affaccio orizzontale (casa | punti | ospiti) era bello sul desktop e
+// inservibile sul telefono: a 390px ogni nome aveva 85px e "Milano" andava a
+// capo come "MILAN / O". Incolonnate, le squadre hanno tutta la larghezza
+// della card e il nome per esteso ci sta su una riga.
 
 import Image from "next/image";
 import Link from "next/link";
 
 import type { PartitaLista } from "@/src/lib/partite/queries";
-import { dataOra, orario } from "@/src/lib/date";
+import { dataBreve } from "@/src/lib/date";
+import { contestoPartita } from "@/src/lib/partite/etichette";
 import { fotoUrl } from "@/src/lib/immagini";
-import { nomeBreve } from "@/src/lib/squadre/nome-breve";
 
 function LogoSquadra({ logoKey, nome }: { logoKey: string | null; nome: string }) {
   const url = fotoUrl(logoKey, "thumb");
@@ -25,6 +25,52 @@ function LogoSquadra({ logoKey, nome }: { logoKey: string | null; nome: string }
       height={36}
       className="h-9 w-9 shrink-0 object-contain"
     />
+  );
+}
+
+// Una riga del tabellone. Il filo rosso a sinistra segna Reggio: in una
+// lista di "tutte" le partite dice a colpo d'occhio dov'è la nostra.
+function RigaSquadra({
+  nome,
+  logoKey,
+  punti,
+  mostraPunti,
+  vince,
+  spenta,
+  reggio,
+}: {
+  nome: string;
+  logoKey: string | null;
+  punti: number | null;
+  mostraPunti: boolean;
+  vince: boolean;
+  spenta: boolean;
+  reggio: boolean;
+}) {
+  return (
+    <div
+      className={`flex items-center gap-2.5 border-l-2 px-3 py-2.5 ${
+        reggio ? "border-brand" : "border-transparent"
+      }`}
+    >
+      <LogoSquadra logoKey={logoKey} nome={nome} />
+      <span
+        className={`display min-w-0 flex-1 break-words text-[15px] leading-[1.1] sm:text-[17px] ${
+          spenta ? "text-muted" : "text-foreground"
+        }`}
+      >
+        {nome}
+      </span>
+      {mostraPunti && (
+        <span
+          className={`score min-w-[2.25rem] shrink-0 text-right text-2xl font-bold tabular-nums ${
+            vince ? "led text-brand-vivid" : "text-muted"
+          }`}
+        >
+          {punti}
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -43,12 +89,11 @@ export function PartitaCard({ partita }: { partita: PartitaLista }) {
       href={`/partite/${partita.id}`}
       className="tabellone taglio-sm group flex flex-col transition-colors hover:border-brand"
     >
-      {/* Riga di contesto: competizione a sinistra, palla a due a destra */}
+      {/* Riga di contesto: dove siamo a sinistra, palla a due a destra.
+          Prima la giornata e poi la competizione: se lo spazio finisce si
+          taglia la parte che si sapeva già, non "Quarti di finale". */}
       <div className="flex items-baseline justify-between gap-2 border-b border-border px-3 py-2">
-        <span className="eyebrow truncate">
-          {partita.competitionName}
-          {partita.dayName ? ` · ${partita.dayName}` : ""}
-        </span>
+        <span className="eyebrow truncate">{contestoPartita(partita)}</span>
         <span className="eyebrow shrink-0">
           {inCorso ? (
             <span className="flex items-center gap-1.5 text-brand-vivid">
@@ -56,45 +101,30 @@ export function PartitaCard({ partita }: { partita: PartitaLista }) {
               Diretta
             </span>
           ) : (
-            dataOra(partita.startsAt)
+            dataBreve(partita.startsAt)
           )}
         </span>
       </div>
 
-      {/* Corpo: casa | centro | ospiti, coi loghi verso l'esterno */}
-      <div className="flex items-stretch gap-2 px-3 py-3">
-        <div className="flex min-w-0 flex-1 items-center gap-2.5">
-          <LogoSquadra logoKey={partita.homeLogoKey} nome={partita.homeTeam} />
-          <span
-            title={partita.homeTeam}
-            className={`display min-w-0 break-words text-[17px] leading-[1.05] ${
-              giocata && !vinceCasa ? "text-muted" : "text-foreground"
-            }`}
-          >
-            {nomeBreve(partita.homeTeam)}
-          </span>
-        </div>
-
-        <Centro
-          punti={punti}
-          casa={partita.homeScore}
-          ospiti={partita.awayScore}
-          vinceCasa={vinceCasa}
-          vinceOspiti={vinceOspiti}
-          ora={orario(partita.startsAt)}
+      <div className="flex flex-col py-0.5">
+        <RigaSquadra
+          nome={partita.homeTeam}
+          logoKey={partita.homeLogoKey}
+          punti={partita.homeScore}
+          mostraPunti={punti}
+          vince={vinceCasa}
+          spenta={giocata && !vinceCasa}
+          reggio={partita.homeIsReggio}
         />
-
-        <div className="flex min-w-0 flex-1 items-center justify-end gap-2.5 text-right">
-          <span
-            title={partita.awayTeam}
-            className={`display min-w-0 break-words text-[17px] leading-[1.05] ${
-              giocata && !vinceOspiti ? "text-muted" : "text-foreground"
-            }`}
-          >
-            {nomeBreve(partita.awayTeam)}
-          </span>
-          <LogoSquadra logoKey={partita.awayLogoKey} nome={partita.awayTeam} />
-        </div>
+        <RigaSquadra
+          nome={partita.awayTeam}
+          logoKey={partita.awayLogoKey}
+          punti={partita.awayScore}
+          mostraPunti={punti}
+          vince={vinceOspiti}
+          spenta={giocata && !vinceOspiti}
+          reggio={partita.awayIsReggio}
+        />
       </div>
 
       {partita.votingState !== "closed" && (
@@ -113,55 +143,5 @@ export function PartitaCard({ partita }: { partita: PartitaLista }) {
         </div>
       )}
     </Link>
-  );
-}
-
-// Il centro del tabellone: i punti se ci sono, altrimenti l'ora della palla
-// a due tra due fili verticali — il posto dove guarderà l'occhio comunque.
-function Centro({
-  punti,
-  casa,
-  ospiti,
-  vinceCasa,
-  vinceOspiti,
-  ora,
-}: {
-  punti: boolean;
-  casa: number | null;
-  ospiti: number | null;
-  vinceCasa: boolean;
-  vinceOspiti: boolean;
-  ora: string;
-}) {
-  if (!punti) {
-    return (
-      <div className="flex shrink-0 items-center gap-2 px-1">
-        <span aria-hidden className="filo-verticale w-px self-stretch" />
-        <span className="score text-xs text-muted">{ora}</span>
-        <span aria-hidden className="filo-verticale w-px self-stretch" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex shrink-0 items-center gap-1.5 px-1">
-      <span
-        className={`score text-2xl font-bold tabular-nums ${
-          vinceCasa ? "led text-brand-vivid" : "text-muted"
-        }`}
-      >
-        {casa}
-      </span>
-      <span aria-hidden className="text-sm text-muted">
-        –
-      </span>
-      <span
-        className={`score text-2xl font-bold tabular-nums ${
-          vinceOspiti ? "led text-brand-vivid" : "text-muted"
-        }`}
-      >
-        {ospiti}
-      </span>
-    </div>
   );
 }

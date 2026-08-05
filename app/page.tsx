@@ -36,7 +36,9 @@ export default async function HomePage() {
     <main className="relative flex flex-1 flex-col justify-center gap-10 overflow-hidden px-5 py-12">
       {/* Richiamo al logo: la R in negativo, watermark dietro il titolo */}
       <MarchioR className="pointer-events-none absolute -right-8 top-10 h-52 w-auto text-foreground opacity-[0.05]" />
-      <h1 className="display flex flex-col text-[17vw] leading-[0.92] sm:text-6xl">
+      {/* 17vw sfondava: su un iPhone "REGGIANA," da sola era più larga della
+          pagina e l'overflow-hidden la tagliava a metà parola */}
+      <h1 className="display flex flex-col text-[13vw] leading-[0.95] sm:text-6xl">
         <span className="sale">Pall. Reggiana,</span>
         <span className="sale sale-2">ogni news,</span>
         <span className="sale sale-3 text-brand-vivid">ogni partita.</span>

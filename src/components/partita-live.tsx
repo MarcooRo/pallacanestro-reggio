@@ -213,10 +213,12 @@ export function ScoreboardLive({
             <span aria-hidden className="h-7 w-7 shrink-0" />
           )}
           {/* Il nome apre la scheda squadra (Reggio: la sua pagina) */}
+          {/* Il nome va a capo, non in "…": sul telefono "Bertram Derthona
+              Tortona" a text-2xl diventava "BERTRAM DERTH…" */}
           <Link
             href={scheda}
-            className={`display min-w-0 flex-1 truncate transition-colors hover:text-brand-vivid ${
-              mostraPunti ? "text-xl" : "text-2xl"
+            className={`display min-w-0 flex-1 break-words leading-[1.05] transition-colors hover:text-brand-vivid ${
+              mostraPunti ? "text-lg sm:text-xl" : "text-xl sm:text-2xl"
             } ${finita && !avanti ? "text-muted" : ""}`}
           >
             {nome}

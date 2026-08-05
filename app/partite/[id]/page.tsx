@@ -18,8 +18,9 @@ import { Pronostici } from "@/src/components/pronostici";
 import { Reazioni } from "@/src/components/reazioni";
 import { TornaIndietro } from "@/src/components/torna-indietro";
 import { getProfilo, getUtente } from "@/src/lib/auth/session";
-import { dataOra, soloOra } from "@/src/lib/date";
+import { dataBreve, soloOra } from "@/src/lib/date";
 import { getFlag } from "@/src/lib/flag";
+import { contestoPartita } from "@/src/lib/partite/etichette";
 import { fotoUrl } from "@/src/lib/immagini";
 import {
   getPagella,
@@ -78,10 +79,10 @@ export default async function PartitaPage({
         {/* Il tabellone: contesto sulla fascia in alto, poi le due squadre
             coi parziali per quarto e il totale, come al palazzetto */}
         <div className="tabellone taglio flex flex-col">
+          {/* Contesto compatto: sul telefono "Supercoppa 2026 · Semifinali ·
+              sab 19 set 2026, 00:00" veniva tagliato a metà */}
           <p className="eyebrow truncate border-b border-border px-4 py-2.5">
-            {partita.competitionName}
-            {partita.dayName ? ` · ${partita.dayName}` : ""} ·{" "}
-            {dataOra(partita.startsAt)}
+            {contestoPartita(partita)} · {dataBreve(partita.startsAt)}
           </p>
           <div className="flex flex-col gap-2 px-4 py-3.5">
             <ScoreboardLive

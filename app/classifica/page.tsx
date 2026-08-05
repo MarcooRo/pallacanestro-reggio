@@ -77,17 +77,21 @@ export default async function ClassificaPage({
                   ) : (
                     <span aria-hidden className="h-6 w-6 shrink-0" />
                   )}
-                  <span
-                    className={`min-w-0 flex-1 truncate text-sm font-bold uppercase tracking-tight ${
-                      r.reggio ? "text-brand-vivid" : ""
-                    }`}
-                  >
-                    {r.teamName}
-                  </span>
-                  <span className="eyebrow whitespace-nowrap">
-                    {r.wins}V {r.defeats}S
-                    {r.penaltyPoints > 0 ? ` · ${r.penaltyPoints} pen` : ""}
-                  </span>
+                  {/* Sul telefono nome e record si incolonnano: sulla stessa
+                      riga metà squadre finivano in "VIRTUS OLIDATA BOLO…" */}
+                  <div className="flex min-w-0 flex-1 flex-col sm:flex-row sm:items-baseline sm:gap-3">
+                    <span
+                      className={`min-w-0 flex-1 text-sm font-bold uppercase leading-tight tracking-tight ${
+                        r.reggio ? "text-brand-vivid" : ""
+                      }`}
+                    >
+                      {r.teamName}
+                    </span>
+                    <span className="eyebrow whitespace-nowrap">
+                      {r.wins}V {r.defeats}S
+                      {r.penaltyPoints > 0 ? ` · ${r.penaltyPoints} pen` : ""}
+                    </span>
+                  </div>
                   <span
                     className={`score w-8 text-right text-base font-bold ${
                       r.reggio ? "text-brand-vivid" : ""

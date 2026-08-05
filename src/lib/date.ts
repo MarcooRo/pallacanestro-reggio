@@ -35,6 +35,21 @@ export function orario(d: Date): string {
   }).format(d);
 }
 
+// Data compatta per la testata delle card: senza anno (la stagione la si è
+// già scelta a monte) e senza orologio quando la fonte non conosce ancora la
+// palla a due — la LBA pubblica quelle partite a mezzanotte, e "00:00" letto
+// su una card sembra un orario vero.
+export function dataBreve(d: Date): string {
+  const giorno = new Intl.DateTimeFormat("it-IT", {
+    timeZone: FUSO,
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  }).format(d);
+  const ora = orario(d);
+  return ora === "00:00" ? giorno : `${giorno} · ${ora}`;
+}
+
 export function nomeMese(meseIso: string): string {
   return new Intl.DateTimeFormat("it-IT", {
     timeZone: FUSO,

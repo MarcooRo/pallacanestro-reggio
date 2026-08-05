@@ -116,7 +116,7 @@ function Testata({ lato }: { lato: LatoCampo }) {
       )}
       <Link
         href={lato.scheda}
-        className="display min-w-0 flex-1 truncate text-sm transition-colors hover:text-brand-vivid"
+        className="display min-w-0 flex-1 break-words text-sm leading-[1.1] transition-colors hover:text-brand-vivid"
       >
         {lato.nome}
       </Link>

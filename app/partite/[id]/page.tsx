@@ -21,7 +21,6 @@ import { getProfilo, getUtente } from "@/src/lib/auth/session";
 import { dataBreve, soloOra } from "@/src/lib/date";
 import { getFlag } from "@/src/lib/flag";
 import { contestoPartita } from "@/src/lib/partite/etichette";
-import { fotoUrl } from "@/src/lib/immagini";
 import {
   getPagella,
   getPartita,
@@ -81,8 +80,9 @@ export default async function PartitaPage({
         <div className="tabellone taglio flex flex-col">
           {/* Contesto compatto: sul telefono "Supercoppa 2026 · Semifinali ·
               sab 19 set 2026, 00:00" veniva tagliato a metà */}
-          <p className="eyebrow truncate border-b border-border px-4 py-2.5">
-            {contestoPartita(partita)} · {dataBreve(partita.startsAt)}
+          <p className="fascia truncate border-b border-border px-4 py-2.5">
+            <span className="font-bold">{contestoPartita(partita)}</span> ·{" "}
+            {dataBreve(partita.startsAt)}
           </p>
           <div className="flex flex-col gap-2 px-4 py-3.5">
             <ScoreboardLive
@@ -92,14 +92,14 @@ export default async function PartitaPage({
                   ? "/giocatori"
                   : `/squadre/${partita.homeLbaTeamId}`
               }
-              logoCasa={fotoUrl(partita.homeLogoKey, "thumb")}
+              logoCasa={partita.homeLogoKey}
               nomeOspiti={partita.awayTeam}
               schedaOspiti={
                 partita.awayIsReggio
                   ? "/giocatori"
                   : `/squadre/${partita.awayLbaTeamId}`
               }
-              logoOspiti={fotoUrl(partita.awayLogoKey, "thumb")}
+              logoOspiti={partita.awayLogoKey}
               punteggioCasa={partita.homeScore}
               punteggioOspiti={partita.awayScore}
               statoIniziale={partita.status}

@@ -6,7 +6,6 @@
 // spettatori. Una sola richiesta per giro, condivisa dalle due sezioni
 // della pagina tramite contesto.
 
-import Image from "next/image";
 import Link from "next/link";
 import {
   createContext,
@@ -16,6 +15,7 @@ import {
   type ReactNode,
 } from "react";
 
+import { LogoClub } from "@/src/components/logo-club";
 import { MiglioriPartita } from "@/src/components/migliori-partita";
 import { Tabellino } from "@/src/components/tabellino";
 import type { StatoPartita } from "@/src/ingestion/normalize";
@@ -149,7 +149,7 @@ export function ScoreboardLive({
 }: {
   nomeCasa: string;
   schedaCasa: string;
-  /** URL già risolto: fotoUrl è puro, ma il confine lo attraversa una stringa */
+  /** logo_key del CDN: l'URL lo compone LogoClub */
   logoCasa: string | null;
   nomeOspiti: string;
   schedaOspiti: string;
@@ -201,17 +201,7 @@ export function ScoreboardLive({
           della serata e prende tutto lo spazio */}
       {squadre.map(({ nome, scheda, logo, punti, avanti }) => (
         <div key={nome} className="flex items-center gap-2.5">
-          {logo ? (
-            <Image
-              src={logo}
-              alt=""
-              width={28}
-              height={28}
-              className="h-7 w-7 shrink-0 object-contain"
-            />
-          ) : (
-            <span aria-hidden className="h-7 w-7 shrink-0" />
-          )}
+          <LogoClub logoKey={logo} />
           {/* Il nome apre la scheda squadra (Reggio: la sua pagina) */}
           {/* Il nome va a capo, non in "…": sul telefono "Bertram Derthona
               Tortona" a text-2xl diventava "BERTRAM DERTH…" */}

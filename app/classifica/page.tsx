@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 
+import { LogoClub } from "@/src/components/logo-club";
 import { getClassificaCampionato } from "@/src/lib/classifica/campionato";
 import { etichettaStagione } from "@/src/lib/date";
-import { fotoUrl } from "@/src/lib/immagini";
 
 export const metadata: Metadata = { title: "Classifica" };
 
@@ -49,9 +48,7 @@ export default async function ClassificaPage({
           </p>
 
           <ol className="flex flex-col">
-            {classifica.righe.map((r) => {
-              const url = fotoUrl(r.logoKey, "thumb");
-              return (
+            {classifica.righe.map((r) => (
                 <li key={r.lbaTeamId} className="border-b border-border last:border-b-0">
                 <Link
                   href={r.reggio ? "/giocatori" : `/squadre/${r.lbaTeamId}`}
@@ -66,17 +63,7 @@ export default async function ClassificaPage({
                   >
                     {r.position}
                   </span>
-                  {url ? (
-                    <Image
-                      src={url}
-                      alt=""
-                      width={24}
-                      height={24}
-                      className="h-6 w-6 shrink-0 object-contain"
-                    />
-                  ) : (
-                    <span aria-hidden className="h-6 w-6 shrink-0" />
-                  )}
+                  <LogoClub logoKey={r.logoKey} misura="sm" />
                   {/* Sul telefono nome e record si incolonnano: sulla stessa
                       riga metà squadre finivano in "VIRTUS OLIDATA BOLO…" */}
                   <div className="flex min-w-0 flex-1 flex-col sm:flex-row sm:items-baseline sm:gap-3">
@@ -101,8 +88,7 @@ export default async function ClassificaPage({
                   </span>
                 </Link>
                 </li>
-              );
-            })}
+            ))}
           </ol>
 
           <p className="eyebrow">PT punti · V vinte · S perse</p>

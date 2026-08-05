@@ -64,6 +64,19 @@ body {
   color: var(--muted);
 }
 
+/* La fascia in cima al tabellone: che gara è e quando si gioca. Col mono
+   grigio dell'occhiello si perdeva sul nero, quindi il fondo scende di un
+   tono e il testo sale a pieno contrasto — la gerarchia la fa il peso
+   (grassetto = la gara, tondo = la data), non il colore. */
+.fascia {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  color: var(--testo);
+  background: rgba(0, 0, 0, 0.3);
+}
+
 /* Numeri da tabellone */
 .score {
   font-family: var(--font-geist-mono), monospace;

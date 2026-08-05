@@ -2,11 +2,10 @@
 // (specchiati), come una distinta. Il mezzo campo è lo stesso disegno della
 // pagina squadra (campo-quintetto.tsx), ribaltato per la metà di sotto.
 
-import Image from "next/image";
 import Link from "next/link";
 
 import { AvatarGiocatore } from "@/src/components/avatar-giocatore";
-import { fotoUrl } from "@/src/lib/immagini";
+import { LogoClub } from "@/src/components/logo-club";
 import type { Formazione } from "@/src/lib/partite/quintetti";
 
 export interface LatoCampo extends Formazione {
@@ -100,20 +99,9 @@ export function CampoPartita({
 }
 
 function Testata({ lato }: { lato: LatoCampo }) {
-  const logo = fotoUrl(lato.logoKey, "thumb");
   return (
     <div className="flex items-center gap-2">
-      {logo ? (
-        <Image
-          src={logo}
-          alt=""
-          width={20}
-          height={20}
-          className="h-5 w-5 shrink-0 object-contain"
-        />
-      ) : (
-        <span aria-hidden className="h-5 w-5 shrink-0" />
-      )}
+      <LogoClub logoKey={lato.logoKey} misura="md" />
       <Link
         href={lato.scheda}
         className="display min-w-0 flex-1 break-words text-sm leading-[1.1] transition-colors hover:text-brand-vivid"

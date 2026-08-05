@@ -225,13 +225,14 @@ export function ScoreboardLive({
         </div>
       ))}
 
-      {/* Fascia dei parziali: una cella per quarto, casa-ospiti come sopra */}
+      {/* Fascia dei parziali: una cella per quarto, casa-ospiti come sopra.
+          Le celle si spartiscono tutta la larghezza della card (flex-1) */}
       {periodi.length > 0 && (
-        <div className="mt-0.5 flex flex-wrap gap-x-5 gap-y-2 border-t border-border pt-2.5">
+        <div className="mt-0.5 flex border-t border-border pt-2.5">
           {periodi.map(([nome, p]) => (
-            <div key={nome} className="flex flex-col items-center gap-0.5">
+            <div key={nome} className="flex flex-1 flex-col items-center gap-0.5">
               <span className="eyebrow text-[10px]">{nome.toUpperCase()}</span>
-              <span className="score text-sm font-bold tabular-nums">
+              <span className="score text-lg font-bold tabular-nums">
                 <span className={p.h > p.v ? "text-foreground" : "text-muted"}>
                   {p.h}
                 </span>

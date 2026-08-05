@@ -43,6 +43,13 @@
       "when": 1785787558743,
       "tag": "0005_podio-ordinato",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1785787558744,
+      "tag": "0006_porta-chiusa",
+      "breakpoints": true
     }
   ]
 }

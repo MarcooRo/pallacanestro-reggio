@@ -20,11 +20,29 @@ type Gradino = "best" | "secondo" | "terzo" | "preferito";
 // L'ordine in cui si chiede. Il preferito è l'ultimo: è un'altra domanda.
 const ORDINE: Gradino[] = ["best", "secondo", "terzo", "preferito"];
 
-const ETICHETTE: Record<Gradino, { breve: string; lunga: string }> = {
-  best: { breve: "1°", lunga: "il migliore in campo" },
-  secondo: { breve: "2°", lunga: "il secondo" },
-  terzo: { breve: "3°", lunga: "il terzo" },
-  preferito: { breve: "♥", lunga: "il tuo preferito" },
+// `lunga` nomina il gradino (aria-label, "hai scelto X come…"), `istruzione`
+// è l'ordine che si dà a chi vota: verbo davanti, così si capisce che tocca
+// a lui fare qualcosa e non è l'ennesimo titolino.
+const ETICHETTE: Record<
+  Gradino,
+  { breve: string; lunga: string; istruzione: string }
+> = {
+  best: {
+    breve: "1°",
+    lunga: "il migliore in campo",
+    istruzione: "Tocca il migliore in campo",
+  },
+  secondo: {
+    breve: "2°",
+    lunga: "il secondo",
+    istruzione: "Tocca il secondo migliore",
+  },
+  terzo: { breve: "3°", lunga: "il terzo", istruzione: "Tocca il terzo" },
+  preferito: {
+    breve: "♥",
+    lunga: "il tuo preferito",
+    istruzione: "Tocca il tuo preferito",
+  },
 };
 
 // Il campo del form per ciascun gradino: il contratto della server action
@@ -142,27 +160,43 @@ export function FormVoto({
         />
       </div>
 
-      {/* Riga di stato: cosa si sta scegliendo, e come saltarlo */}
-      <div className="flex min-h-8 items-center justify-between gap-3">
+      {/* L'istruzione del momento: una riga sola, in evidenza, con il passo a
+          cui siamo e la via d'uscita. Prima era un occhiello grigio e non si
+          leggeva come un ordine da eseguire. */}
+      <div
+        aria-live="polite"
+        className={`taglio-sm flex min-h-12 items-center justify-between gap-3 border-l-2 px-3 py-2 ${
+          passo
+            ? "border-brand-vivid bg-brand-tint"
+            : "border-brand bg-surface-2"
+        }`}
+      >
         {passo ? (
           <>
-            <p className="text-sm">
-              <span className="eyebrow">ora scegli</span>{" "}
-              <span className="font-bold">{ETICHETTE[passo].lunga}</span>
+            <p className="flex flex-col gap-0.5">
+              <span className="eyebrow">
+                passo {ORDINE.indexOf(passo) + 1} di {ORDINE.length}
+              </span>
+              <span className="text-[15px] font-bold leading-tight text-foreground">
+                {ETICHETTE[passo].istruzione}
+              </span>
             </p>
             {passo !== "best" && (
               <button
                 type="button"
                 onClick={() => setSaltati((s) => [...s, passo])}
-                className="eyebrow shrink-0 cursor-pointer underline decoration-dotted transition-colors hover:text-foreground"
+                className="taglio-sm eyebrow shrink-0 cursor-pointer border border-border-strong px-2.5 py-1.5 transition-colors hover:border-brand hover:text-foreground"
               >
                 salta
               </button>
             )}
           </>
         ) : (
-          <p className="text-sm text-brand-vivid">
-            Podio fatto. Tocca una casella per cambiarla.
+          <p className="flex flex-col gap-0.5">
+            <span className="eyebrow">fatto</span>
+            <span className="text-[15px] font-bold leading-tight text-foreground">
+              Tocca una casella per cambiare, poi vota
+            </span>
           </p>
         )}
       </div>
@@ -243,7 +277,9 @@ export function FormVoto({
 }
 
 // Un gradino del podio: vuoto è un invito, pieno è una scelta da poter
-// disfare. Il gradino di cui si sta parlando ha il bordo rosso.
+// disfare, saltato è una scelta da poter rifare — anche il gradino saltato
+// resta toccabile, altrimenti "salta" è una porta che si chiude alle spalle.
+// Il gradino di cui si sta parlando ha il bordo rosso.
 function Casella({
   gradino,
   scelto,
@@ -263,18 +299,22 @@ function Casella({
     <button
       type="button"
       onClick={onSvuota}
-      disabled={!scelto}
+      disabled={!scelto && !saltato}
       aria-label={
         scelto
           ? `Togli ${scelto.first_name} ${scelto.last_name} da ${etichetta.lunga}`
-          : etichetta.lunga
+          : saltato
+            ? `Rimetti in gioco ${etichetta.lunga}`
+            : etichetta.lunga
       }
       className={`taglio-sm flex flex-1 flex-col items-center justify-end gap-1 px-1 pb-1.5 pt-2 transition-colors ${ALTEZZA[gradino]} ${
         scelto
           ? "cursor-pointer border border-brand bg-brand-tint"
           : attivo
             ? "border border-dashed border-brand-vivid bg-surface-2"
-            : `border border-dashed border-border ${saltato ? "opacity-50" : ""}`
+            : saltato
+              ? "cursor-pointer border border-dashed border-border opacity-60 transition-opacity hover:border-brand hover:opacity-100"
+              : "border border-dashed border-border"
       }`}
     >
       <span
@@ -297,8 +337,18 @@ function Casella({
           </span>
         </>
       ) : (
-        <span className="text-[10px] text-muted">
-          {saltato ? "saltato" : "libero"}
+        <span className="text-balance text-center text-[10px] leading-tight text-muted">
+          {saltato ? (
+            <>
+              saltato
+              <br />
+              <span className="font-bold text-brand-vivid">rimetti</span>
+            </>
+          ) : gradino === "preferito" ? (
+            "seleziona preferito"
+          ) : (
+            "tab e seleziona"
+          )}
         </span>
       )}
     </button>

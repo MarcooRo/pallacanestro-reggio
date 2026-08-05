@@ -13,12 +13,13 @@ import {
   PartitaLive,
   ScoreboardLive,
   TabellinoLive,
+  TabellinoVuotoLive,
 } from "@/src/components/partita-live";
 import { Pronostici } from "@/src/components/pronostici";
 import { Reazioni } from "@/src/components/reazioni";
 import { TornaIndietro } from "@/src/components/torna-indietro";
 import { getProfilo, getUtente } from "@/src/lib/auth/session";
-import { dataBreve, soloOra } from "@/src/lib/date";
+import { dataBreve, etichettaStagione, soloOra } from "@/src/lib/date";
 import { getFlag } from "@/src/lib/flag";
 import { contestoPartita } from "@/src/lib/partite/etichette";
 import {
@@ -30,6 +31,7 @@ import {
 } from "@/src/lib/partite/queries";
 import { getQuintettiPartita } from "@/src/lib/partite/quintetti";
 import { getTabellinoLive } from "@/src/lib/partite/tabellino-live";
+import { getTabellinoVuoto } from "@/src/lib/partite/tabellino-vuoto";
 import { getStatoPresenza } from "@/src/lib/presenza/queries";
 import { getPronosticiPartita } from "@/src/lib/pronostici/queries";
 import { getStatoReazioni } from "@/src/lib/reazioni/queries";
@@ -183,9 +185,24 @@ export default async function PartitaPage({
         </Suspense>
       )}
 
+      {/* Gara da giocare: dopo i quintetti, la tabella del tabellino a zero
+          con le due rose intere. Si vede chi può giocare, e alla palla a due
+          la pagina non cambia forma — la stessa tabella si riempie */}
+      {daGiocare && (
+        <Suspense fallback={<AttesaTabellino />}>
+          <SezioneTabellinoVuoto
+            matchId={partita.id}
+            nomeCasa={partita.homeTeam}
+            nomeOspiti={partita.awayTeam}
+          />
+        </Suspense>
+      )}
+
       {/* Suspense: la pagina esce subito, il tabellino arriva dopo
-          (per le gare non di Reggio si legge al volo dalla fonte) */}
-      <Suspense fallback={<AttesaTabellino />}>
+          (per le gare non di Reggio si legge al volo dalla fonte). A gara da
+          giocare non c'è nulla da attendere qui — il posto lo tiene la
+          tabella a zero, e due scheletri uguali di fila sembravano un bug */}
+      <Suspense fallback={daGiocare ? null : <AttesaTabellino />}>
         <SezioneTabellino
           matchId={partita.id}
           lbaMatchId={partita.lbaMatchId}
@@ -248,6 +265,33 @@ async function SezioneQuintetti({
         }}
       />
     </section>
+  );
+}
+
+// Le due rose come tabellino a zero: la fonte va interrogata, quindi in
+// Suspense come le altre sezioni che dipendono da lei.
+async function SezioneTabellinoVuoto({
+  matchId,
+  nomeCasa,
+  nomeOspiti,
+}: {
+  matchId: string;
+  nomeCasa: string;
+  nomeOspiti: string;
+}) {
+  const { righe, stagionePrecedente } = await getTabellinoVuoto(matchId);
+
+  return (
+    <TabellinoVuotoLive
+      righe={righe}
+      etichettaRose={
+        stagionePrecedente
+          ? `Le rose nuove non sono ancora state pubblicate: questi sono i giocatori della ${etichettaStagione(stagionePrecedente)}`
+          : "Queste sono le due rose al completo"
+      }
+      nomeCasa={nomeCasa}
+      nomeOspiti={nomeOspiti}
+    />
   );
 }
 

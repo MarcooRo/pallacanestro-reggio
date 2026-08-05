@@ -17,7 +17,7 @@ import {
 
 import { LogoClub } from "@/src/components/logo-club";
 import { MiglioriPartita } from "@/src/components/migliori-partita";
-import { Tabellino } from "@/src/components/tabellino";
+import { LEGENDA, Tabellino } from "@/src/components/tabellino";
 import type { StatoPartita } from "@/src/ingestion/normalize";
 import type { RigaTabellino } from "@/src/lib/partite/queries";
 
@@ -268,6 +268,36 @@ export function TabellinoLive({
       <MiglioriPartita righe={righe} nomeCasa={nomeCasa} nomeOspiti={nomeOspiti} />
       <Tabellino righe={righe} nomeCasa={nomeCasa} nomeOspiti={nomeOspiti} />
     </>
+  );
+}
+
+// Il tabellino a zero delle due rose, prima della palla a due. Sta qui e
+// non nel server perché deve sparire da sé appena la diretta porta le righe
+// vere: chi tiene la pagina aperta fino alla palla a due vedrebbe altrimenti
+// due tabelle, quella a zero e quella che si riempie.
+export function TabellinoVuotoLive({
+  righe,
+  etichettaRose,
+  nomeCasa,
+  nomeOspiti,
+}: {
+  righe: RigaTabellino[];
+  /** Da dove arrivano le rose: "le due rose al completo" o la stagione da
+      cui si è ripiegato, già scritta in chiaro dal server */
+  etichettaRose: string;
+  nomeCasa: string;
+  nomeOspiti: string;
+}) {
+  const dati = useContext(ContestoLive);
+  if (dati?.righe.length) return null;
+  if (righe.length === 0) return null;
+  return (
+    <Tabellino
+      righe={righe}
+      nomeCasa={nomeCasa}
+      nomeOspiti={nomeOspiti}
+      nota={`Tutto a zero: la partita non è ancora cominciata. ${etichettaRose}. ${LEGENDA}`}
+    />
   );
 }
 

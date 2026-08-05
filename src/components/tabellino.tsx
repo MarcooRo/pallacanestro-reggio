@@ -94,23 +94,30 @@ function TabellaSquadra({
   );
 }
 
+// La legenda delle colonne, uguale in ogni uso della tabella.
+export const LEGENDA =
+  "MIN minuti · 2P/3P/TL tiri · RO/RD rimbalzi off/dif · AS assist · " +
+  "PR recuperi · PP perse · F falli · VAL valutazione";
+
 export function Tabellino({
   righe,
   nomeCasa,
   nomeOspiti,
+  titolo = "Tabellino",
+  /** Cosa dire sopra le tabelle: a gara da giocare non c'è un quintetto
+      base da segnare in grassetto, e conviene dire perché è tutto a zero */
+  nota = `In grassetto il quintetto base. ${LEGENDA}`,
 }: {
   righe: RigaTabellino[];
   nomeCasa: string;
   nomeOspiti: string;
+  titolo?: string;
+  nota?: string;
 }) {
   return (
     <section className="flex flex-col gap-4">
-      <h2 className="display text-2xl">Tabellino</h2>
-      <p className="text-xs text-muted">
-        In grassetto il quintetto base. MIN minuti · 2P/3P/TL tiri · RO/RD
-        rimbalzi off/dif · AS assist · PR recuperi · PP perse · F falli ·
-        VAL valutazione
-      </p>
+      <h2 className="display text-2xl">{titolo}</h2>
+      <p className="text-xs text-muted">{nota}</p>
       <TabellaSquadra nome={nomeCasa} righe={righe.filter((r) => r.lato === "home")} />
       <TabellaSquadra nome={nomeOspiti} righe={righe.filter((r) => r.lato === "away")} />
     </section>

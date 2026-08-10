@@ -112,9 +112,8 @@ export async function getQuintettiPartita(
       partita.startsAt,
     ),
   ]);
-  // Nessuna delle due schierabile (succede in pre-season, quando le rose
-  // nuove hanno mandato in pensione i quintetti dell'annata prima): il
-  // campo non ha niente da dire e la sezione sparisce. Le due rose al
+  // Nessuna delle due schierabile (nessuna gara in archivio per entrambe):
+  // il campo non ha niente da dire e la sezione sparisce. Le due rose al
   // completo restano nella sezione sotto.
   if (c.titolari.length === 0 && o.titolari.length === 0) return null;
 
@@ -161,9 +160,10 @@ async function righeTabellino(
 /**
  * Il quintetto schierato dalla società nella sua ultima gara giocata. La
  * ricerca è per club e non per stagione: a inizio campionato l'ultima
- * uscita è quella dell'annata prima. In quel caso i titolari si filtrano
- * su chi è ancora in rosa — chi è andato via non si schiera più — e
- * l'etichetta dice la stagione, non l'avversario.
+ * uscita è quella dell'annata prima. In quel caso il quintetto si mostra
+ * così com'era, anche se la rosa nuova è già pubblicata — meglio la
+ * squadra dell'annata scorsa che un campo vuoto — e l'etichetta dice la
+ * stagione, non l'avversario.
  *
  * Non restituisce mai null: quando non c'è un quintetto da schierare
  * torna una formazione vuota che dice perché, così la pagina partita può
@@ -217,15 +217,8 @@ async function quintettoUltima(
   if (righe.length === 0) return senzaQuintetto("Quintetto non disponibile.");
 
   const stessaStagione = ultima.seasonYear === stagioneCorrente;
-  const titolari = await conRuoli(righe, lbaTeamId, !stessaStagione);
-  // Di un'altra stagione: sotto i tre superstiti non è più un quintetto.
-  if (titolari.length === 0 || (!stessaStagione && titolari.length < 3)) {
-    return senzaQuintetto(
-      stessaStagione
-        ? "Quintetto non disponibile."
-        : `Rosa ${etichettaStagione(stagioneCorrente)} rinnovata: il quintetto non è ancora noto.`,
-    );
-  }
+  const titolari = await conRuoli(righe, lbaTeamId);
+  if (titolari.length === 0) return senzaQuintetto("Quintetto non disponibile.");
 
   return {
     fonte: stessaStagione
@@ -246,20 +239,15 @@ function senzaQuintetto(motivo: string): Formazione {
 async function conRuoli(
   righe: RigaTabellinoCanonica[],
   lbaTeamId: number | null,
-  soloChiEInRosa = false,
 ): Promise<TitolareCampo[]> {
   // Squadra fuori dal mondo LBA (coppa): nessun roster da cui pescare.
+  // Chi è uscito dal roster corrente resta schierabile: di lui si perdono
+  // solo ruolo e numero, e senza ruolo finisce in coda allo schieramento.
   const roster = lbaTeamId ? await getRosterLive(lbaTeamId) : [];
   const perLbaPlayerId = new Map(roster.map((g) => [g.lbaPlayerId, g]));
-  // Roster non ancora pubblicato (succede da luglio a settembre): non si
-  // può dire chi è rimasto, e allora si mostra il quintetto storico così
-  // com'era — l'etichetta dice a quale stagione appartiene.
-  const filtra = soloChiEInRosa && perLbaPlayerId.size > 0;
 
   return ordinaPerRuolo(
-    righe
-      .filter((r) => !filtra || perLbaPlayerId.has(r.lbaPlayerId))
-      .map((r) => {
+    righe.map((r) => {
       const g = perLbaPlayerId.get(r.lbaPlayerId);
       return {
         id: String(r.lbaPlayerId),

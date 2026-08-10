@@ -6,9 +6,9 @@ import { migliorePartita } from "./templates/migliore-partita";
 import { schedaGiocatore } from "./templates/scheda-giocatore";
 import { dimensioniTemplate, type TemplateOg } from "./tipi";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- il registry
-// cancella il tipo dei parametri: ogni template resta tipato nel suo file,
-// i consumatori validano con lo schema prima di chiamare render.
+// Il registry cancella il tipo dei parametri: ogni template resta tipato
+// nel suo file, i consumatori validano con lo schema prima di render.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const TEMPLATE_OG: Record<string, TemplateOg<any>> = {
   [migliorePartita.nome]: migliorePartita,
   [schedaGiocatore.nome]: schedaGiocatore,

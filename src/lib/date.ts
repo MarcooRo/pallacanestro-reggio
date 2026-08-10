@@ -50,6 +50,17 @@ export function dataBreve(d: Date): string {
   return ora === "00:00" ? giorno : `${giorno} · ${ora}`;
 }
 
+// Interpreta una stringa datetime-local (input admin, senza fuso) come ora
+// di Reggio Emilia. Il server gira in UTC: senza questa conversione "18:30"
+// programmato dall'admin diventerebbe le 18:30 UTC, cioè le 20:30 italiane.
+export function dataDaRoma(locale: string): Date {
+  const conSecondi = locale.length === 16 ? `${locale}:00` : locale;
+  const ipotetica = new Date(`${conSecondi}Z`); // come se fosse UTC
+  const romana = new Date(ipotetica.toLocaleString("en-US", { timeZone: FUSO }));
+  const anticipo = romana.getTime() - ipotetica.getTime(); // quanto Roma è avanti sull'UTC
+  return new Date(ipotetica.getTime() - anticipo);
+}
+
 export function nomeMese(meseIso: string): string {
   return new Intl.DateTimeFormat("it-IT", {
     timeZone: FUSO,

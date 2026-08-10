@@ -48,6 +48,13 @@ export default async function AdminPage({
         pubblicazione della pagella, correzione del risultato.
       </p>
 
+      <Link
+        href="/admin/social"
+        className="self-start text-sm font-semibold text-brand hover:underline"
+      >
+        Social → la coda dei post
+      </Link>
+
       {esito && (
         <p className="rounded-md bg-brand-tint px-3 py-2 text-sm font-semibold text-brand">
           {esito}

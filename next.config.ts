@@ -11,6 +11,8 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "www.pallacanestroreggiana.it" },
       // thumbnail dei video YouTube
       { protocol: "https", hostname: "i.ytimg.com" },
+      // JPEG dei post social sul bucket pubblico Supabase
+      { protocol: "https", hostname: "*.supabase.co" },
     ],
   },
 };

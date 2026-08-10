@@ -55,27 +55,17 @@ export default async function HomePage() {
         </p>
       </div>
 
-      <div className="sale sale-4 flex flex-col gap-3">
-        <Link
-          href="/accesso"
-          className="taglio display bg-brand px-6 py-4 text-center text-2xl text-on-brand transition-colors hover:bg-brand-hover"
+      {/* Una porta sola, senza account: si entra e si guarda tutto. Il
+          voto e le altre azioni chiederanno l'accesso al momento del tap
+          (dialog di accesso-richiesto), non prima. */}
+      <form action={entraComeOspite} className="sale sale-4">
+        <button
+          type="submit"
+          className="taglio display w-full cursor-pointer bg-brand px-6 py-4 text-center text-2xl text-on-brand transition-colors hover:bg-brand-hover"
         >
           Entra
-        </Link>
-        {/* Seconda via: si guarda tutto senza account. Il voto e le altre
-            azioni chiederanno l'accesso al momento del tap. */}
-        <form action={entraComeOspite}>
-          <button
-            type="submit"
-            className="taglio-sm display w-full cursor-pointer border border-border-strong px-6 py-3 text-center text-lg text-foreground transition-colors hover:border-brand hover:text-brand-vivid"
-          >
-            Continua senza account
-          </button>
-        </form>
-        <p className="eyebrow text-center">
-          registrazione in 10 secondi · è gratis
-        </p>
-      </div>
+        </button>
+      </form>
     </main>
   );
 }

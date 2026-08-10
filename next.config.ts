@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    serverActions: {
+      // Le foto dal telefono per la libreria media (default: 1mb)
+      bodySizeLimit: "25mb",
+    },
+  },
   images: {
     remotePatterns: [
       // CDN immagini LBA (foto giocatori, loghi, news)

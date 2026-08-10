@@ -48,12 +48,20 @@ export default async function AdminPage({
         pubblicazione della pagella, correzione del risultato.
       </p>
 
-      <Link
-        href="/admin/social"
-        className="self-start text-sm font-semibold text-brand hover:underline"
-      >
-        Social → la coda dei post
-      </Link>
+      <div className="flex flex-wrap gap-x-4">
+        <Link
+          href="/admin/social"
+          className="text-sm font-semibold text-brand hover:underline"
+        >
+          Social → la coda dei post
+        </Link>
+        <Link
+          href="/admin/media"
+          className="text-sm font-semibold text-brand hover:underline"
+        >
+          Foto → la libreria media
+        </Link>
+      </div>
 
       {esito && (
         <p className="rounded-md bg-brand-tint px-3 py-2 text-sm font-semibold text-brand">

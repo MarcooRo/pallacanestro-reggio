@@ -226,6 +226,32 @@ export async function elencaAssets(filtro: FiltroAssets = {}): Promise<MediaAsse
     .limit(Math.min(filtro.limite ?? 20, 100));
 }
 
+/**
+ * Per la pagina admin: TUTTI gli asset (anche i pending rimasti a metà,
+ * che l'admin deve poter vedere e cancellare) con il numero di post che
+ * li usano.
+ */
+export async function elencaAssetsAdmin(): Promise<
+  (MediaAsset & { usi: number })[]
+> {
+  const assets = await db
+    .select()
+    .from(mediaAssets)
+    .orderBy(desc(mediaAssets.createdAt))
+    .limit(200);
+  if (assets.length === 0) return [];
+
+  const usi = await db
+    .select({ assetId: socialMediaItems.assetId })
+    .from(mediaAssets)
+    .innerJoin(socialMediaItems, eq(socialMediaItems.assetId, mediaAssets.id));
+  const conteggio = new Map<string, number>();
+  for (const u of usi) {
+    if (u.assetId) conteggio.set(u.assetId, (conteggio.get(u.assetId) ?? 0) + 1);
+  }
+  return assets.map((a) => ({ ...a, usi: conteggio.get(a.id) ?? 0 }));
+}
+
 export async function aggiornaAsset(
   id: string,
   campi: { caption?: string | null; tags?: string[] },

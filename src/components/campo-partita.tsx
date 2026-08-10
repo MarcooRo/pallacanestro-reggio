@@ -65,32 +65,43 @@ export function CampoPartita({
           { lato: "ospiti" as const, formazione: ospiti },
           { lato: "casa" as const, formazione: casa },
         ].map(({ lato, formazione }) =>
-          formazione.titolari.map((g, i) => {
-            const dove = collocazione(i, lato);
-            if (!dove) return null;
-            return (
-              <div
-                key={`${lato}-${g.id}`}
-                className="absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1"
-                style={dove}
-              >
-                <AvatarGiocatore
-                  firstName={g.firstName}
-                  lastName={g.lastName}
-                  photoKey={g.photoKey}
-                  dimensione={44}
-                />
-                <span className="flex items-baseline gap-1 whitespace-nowrap bg-background/80 px-1.5 py-0.5">
-                  <span className="score text-[10px] text-brand-vivid">
-                    {g.jerseyNumber ?? ""}
+          // Mezzo campo senza quintetto: al centro il perché, mai bianco.
+          formazione.titolari.length === 0 ? (
+            <p
+              key={lato}
+              className="absolute left-1/2 w-4/5 max-w-64 -translate-x-1/2 -translate-y-1/2 text-balance bg-background/80 px-3 py-2 text-center text-xs leading-relaxed text-muted"
+              style={{ top: lato === "ospiti" ? "25%" : "75%" }}
+            >
+              {formazione.motivo ?? "Quintetto non disponibile."}
+            </p>
+          ) : (
+            formazione.titolari.map((g, i) => {
+              const dove = collocazione(i, lato);
+              if (!dove) return null;
+              return (
+                <div
+                  key={`${lato}-${g.id}`}
+                  className="absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1"
+                  style={dove}
+                >
+                  <AvatarGiocatore
+                    firstName={g.firstName}
+                    lastName={g.lastName}
+                    photoKey={g.photoKey}
+                    dimensione={44}
+                  />
+                  <span className="flex items-baseline gap-1 whitespace-nowrap bg-background/80 px-1.5 py-0.5">
+                    <span className="score text-[10px] text-brand-vivid">
+                      {g.jerseyNumber ?? ""}
+                    </span>
+                    <span className="text-[11px] font-bold uppercase tracking-tight">
+                      {g.lastName}
+                    </span>
                   </span>
-                  <span className="text-[11px] font-bold uppercase tracking-tight">
-                    {g.lastName}
-                  </span>
-                </span>
-              </div>
-            );
-          }),
+                </div>
+              );
+            })
+          ),
         )}
       </div>
 

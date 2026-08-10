@@ -35,6 +35,12 @@ export interface Formazione {
   /** Da dove arriva il quintetto, da scrivere in chiaro nella pagina */
   fonte: string;
   titolari: TitolareCampo[];
+  /**
+   * Perché il quintetto non c'è, da scrivere sul mezzo campo rimasto vuoto:
+   * un lato bianco senza spiegazione sembra la pagina rotta. Valorizzato
+   * solo quando `titolari` è vuoto.
+   */
+  motivo?: string;
 }
 
 export interface QuintettiPartita {
@@ -106,12 +112,13 @@ export async function getQuintettiPartita(
       partita.startsAt,
     ),
   ]);
-  if (!c && !o) return null;
+  // Nessuna delle due schierabile (succede in pre-season, quando le rose
+  // nuove hanno mandato in pensione i quintetti dell'annata prima): il
+  // campo non ha niente da dire e la sezione sparisce. Le due rose al
+  // completo restano nella sezione sotto.
+  if (c.titolari.length === 0 && o.titolari.length === 0) return null;
 
-  return {
-    casa: c ?? { fonte: "quintetto non disponibile", titolari: [] },
-    ospiti: o ?? { fonte: "quintetto non disponibile", titolari: [] },
-  };
+  return { casa: c, ospiti: o };
 }
 
 /**
@@ -129,12 +136,14 @@ export async function getQuintettoSquadra(
     .limit(1);
   if (!squadra) return null;
 
-  return quintettoUltima(
+  const formazione = await quintettoUltima(
     squadra.clubId,
     lbaTeamId,
     squadra.seasonYear,
     new Date(),
   );
+  // Qui il campo è da solo in pagina: senza titolari non si disegna.
+  return formazione.titolari.length > 0 ? formazione : null;
 }
 
 async function righeTabellino(
@@ -155,6 +164,10 @@ async function righeTabellino(
  * uscita è quella dell'annata prima. In quel caso i titolari si filtrano
  * su chi è ancora in rosa — chi è andato via non si schiera più — e
  * l'etichetta dice la stagione, non l'avversario.
+ *
+ * Non restituisce mai null: quando non c'è un quintetto da schierare
+ * torna una formazione vuota che dice perché, così la pagina partita può
+ * scriverlo sul mezzo campo invece di lasciarlo bianco.
  */
 async function quintettoUltima(
   clubId: string,
@@ -163,7 +176,7 @@ async function quintettoUltima(
   lbaTeamId: number | null,
   stagioneCorrente: number,
   primaDi: Date,
-): Promise<Formazione | null> {
+): Promise<Formazione> {
   const casa = alias(teamSeasons, "u_casa");
   const ospite = alias(teamSeasons, "u_ospite");
   const nostro = sql`${casa.clubId} = ${clubId}`;
@@ -188,17 +201,31 @@ async function quintettoUltima(
     )
     .orderBy(desc(matches.startsAt))
     .limit(1);
-  if (!ultima) return null;
+  // Neopromossa, squadra che la fonte ha ribattezzato con un club nuovo,
+  // o avversaria di coppa: in archivio non ha una gara da cui pescare.
+  if (!ultima) {
+    return senzaQuintetto(
+      lbaTeamId
+        ? "Nessuna gara in archivio per questa squadra."
+        : "Squadra di coppa: la fonte non ne pubblica il quintetto.",
+    );
+  }
 
   const righe = (await righeTabellino(ultima.lbaMatchId!, CACHE_ARCHIVIO)).filter(
     (r) => r.lato === ultima.lato && r.starter,
   );
-  if (righe.length === 0) return null;
+  if (righe.length === 0) return senzaQuintetto("Quintetto non disponibile.");
 
   const stessaStagione = ultima.seasonYear === stagioneCorrente;
   const titolari = await conRuoli(righe, lbaTeamId, !stessaStagione);
   // Di un'altra stagione: sotto i tre superstiti non è più un quintetto.
-  if (titolari.length === 0 || (!stessaStagione && titolari.length < 3)) return null;
+  if (titolari.length === 0 || (!stessaStagione && titolari.length < 3)) {
+    return senzaQuintetto(
+      stessaStagione
+        ? "Quintetto non disponibile."
+        : `Rosa ${etichettaStagione(stagioneCorrente)} rinnovata: il quintetto non è ancora noto.`,
+    );
+  }
 
   return {
     fonte: stessaStagione
@@ -206,6 +233,12 @@ async function quintettoUltima(
       : `quintetto ${etichettaStagione(ultima.seasonYear)}`,
     titolari,
   };
+}
+
+// Lato senza titolari: l'etichetta in testata tace (il motivo si legge sul
+// campo, dirlo due volte è rumore).
+function senzaQuintetto(motivo: string): Formazione {
+  return { fonte: "", titolari: [], motivo };
 }
 
 // Ruolo e numero dal roster della squadra (cache 1h): il tabellino non

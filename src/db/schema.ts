@@ -586,9 +586,43 @@ export const socialPosts = pgTable(
   ],
 );
 
-// Le singole immagini di un post, nell'ordine di pubblicazione.
-// params + template bastano a rigenerare l'immagine da zero: il JPEG su
-// storage è un derivato, mai la fonte di verità.
+// La libreria delle foto proprie (fase 1.6): materiale nostro, mai foto
+// scaricate da fonti esterne. Un asset via MCP nasce 'pending' (riga senza
+// file) e diventa 'ready' solo quando il file è sul bucket e i metadati
+// sono stati letti server-side, mai fidandosi del client.
+export const mediaAssets = pgTable(
+  "media_assets",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    status: text().notNull().default("ready"),
+    storageKey: text().notNull().unique(), // chiave nel bucket "media": serve a cancellare
+    url: text().notNull(), // URL pubblico su Supabase Storage
+    width: integer(),
+    height: integer(),
+    mime: text(),
+    bytes: integer(),
+    source: text().notNull(),
+    caption: text(), // ciò su cui l'AI si basa per scegliere: va scritta bene
+    takenAt: timestamp({ withTimezone: true }), // da EXIF, altrimenti data di upload
+    tags: text().array().notNull().default([]),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check("media_assets_status_check", sql`${t.status} in ('pending','ready')`),
+    check("media_assets_source_check", sql`${t.source} in ('admin','mcp')`),
+    // ready = metadati completi; pending può averli tutti null
+    check(
+      "media_assets_ready_check",
+      sql`${t.status} = 'pending' or (${t.width} is not null and ${t.height} is not null and ${t.mime} is not null and ${t.bytes} is not null)`,
+    ),
+  ],
+);
+
+// Le singole immagini di un post, nell'ordine di pubblicazione. Tre forme:
+// template (grafica da parametri), asset (foto della libreria così com'è),
+// asset + template (composizione: la foto entra come parametro del template).
+// Per i template, params + template bastano a rigenerare l'immagine da zero:
+// il JPEG su storage è un derivato, mai la fonte di verità.
 export const socialMediaItems = pgTable(
   "social_media_items",
   {
@@ -597,8 +631,11 @@ export const socialMediaItems = pgTable(
       .notNull()
       .references(() => socialPosts.id, { onDelete: "cascade" }),
     position: integer().notNull(),
-    template: text().notNull(), // nome dal registry OG (src/lib/og/registry.ts)
-    params: jsonb().notNull(), // validati con lo Zod del template
+    kind: text().notNull().default("template"),
+    // restrict: una foto usata in un post non si cancella dalla libreria
+    assetId: uuid().references(() => mediaAssets.id, { onDelete: "restrict" }),
+    template: text(), // nome dal registry OG (src/lib/og/registry.ts)
+    params: jsonb(), // validati con lo Zod del template
     renderedUrl: text(), // URL pubblico del JPEG finale
     renderedAt: timestamp({ withTimezone: true }),
     width: integer().notNull(),
@@ -606,6 +643,12 @@ export const socialMediaItems = pgTable(
   },
   (t) => [
     unique("social_media_items_post_position_unique").on(t.postId, t.position),
+    check("social_media_items_kind_check", sql`${t.kind} in ('template','asset')`),
+    // Le tre forme lecite, imposte anche qui e non solo nel service
+    check(
+      "social_media_items_forma_check",
+      sql`(${t.kind} = 'template' and ${t.template} is not null and ${t.params} is not null and ${t.assetId} is null) or (${t.kind} = 'asset' and ${t.assetId} is not null and ((${t.template} is null and ${t.params} is null) or (${t.template} is not null and ${t.params} is not null)))`,
+    ),
   ],
 );
 

@@ -70,10 +70,19 @@ export function VideoCard({ video, className = "" }: { video: Video; className?:
   );
 }
 
-// L'overlay col player a tutta larghezza. Portal sul body per gli stessi
-// motivi di accesso-richiesto: il backdrop-blur dell'header creerebbe un
-// containing block e il fixed resterebbe intrappolato.
+// Il dialog centrato col player. Tre geometrie:
+// - video orizzontale su desktop/tablet: box 16:9, largo;
+// - video orizzontale su telefono in verticale: il player si corica di
+//   90° e prende lo schermo intero, come girare il telefono;
+// - video verticale (Shorts/reel): box 9:16 alto l'80% dello schermo.
+// Portal sul body per gli stessi motivi di accesso-richiesto: il
+// backdrop-blur dell'header creerebbe un containing block e il fixed
+// resterebbe intrappolato.
 function Teatro({ video, chiudi }: { video: Video; chiudi: () => void }) {
+  // Coricato via stato (non via classi responsive): due rami CSS
+  // renderizzerebbero due iframe, cioè due player che suonano insieme.
+  const [coricato, setCoricato] = useState(false);
+
   useEffect(() => {
     const onEsc = (e: KeyboardEvent) => e.key === "Escape" && chiudi();
     window.addEventListener("keydown", onEsc);
@@ -86,8 +95,21 @@ function Teatro({ video, chiudi }: { video: Video; chiudi: () => void }) {
     };
   }, [chiudi]);
 
+  useEffect(() => {
+    if (video.verticale) return;
+    const mq = window.matchMedia(
+      "(max-width: 1023px) and (orientation: portrait)",
+    );
+    const aggiorna = () => setCoricato(mq.matches);
+    aggiorna();
+    // Se l'utente gira il telefono a metà video il box si raddrizza da
+    // solo (stesso nodo iframe: la riproduzione non si interrompe).
+    mq.addEventListener("change", aggiorna);
+    return () => mq.removeEventListener("change", aggiorna);
+  }, [video.verticale]);
+
   return createPortal(
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/95">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95">
       <button
         type="button"
         aria-label="Chiudi"
@@ -98,31 +120,53 @@ function Teatro({ video, chiudi }: { video: Video; chiudi: () => void }) {
         type="button"
         aria-label="Chiudi"
         onClick={chiudi}
-        className="absolute right-4 top-4 z-10 flex h-10 w-10 -skew-x-[14deg] cursor-pointer items-center justify-center border border-border-strong text-foreground transition-colors hover:border-brand hover:text-brand-vivid"
+        className="absolute right-4 top-4 z-20 flex h-10 w-10 -skew-x-[14deg] cursor-pointer items-center justify-center border border-border-strong bg-background/60 text-foreground transition-colors hover:border-brand hover:text-brand-vivid"
       >
         <svg viewBox="0 0 24 24" className="h-5 w-5 skew-x-[14deg]" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M6 6l12 12M18 6L6 18" />
         </svg>
       </button>
 
-      <div className="relative flex w-full max-w-4xl flex-col gap-3">
-        {/* In orizzontale il 16:9 a tutta larghezza sfonderebbe lo schermo:
-            il max-h lo contiene e il player si letterboxa da solo. */}
-        <div className="aspect-video max-h-[80dvh] w-full">
+      <div
+        className={
+          coricato
+            ? // shrink-0: senza, il flex schiaccia la larghezza (che qui è
+              // l'altezza dello schermo) dentro i 390px del viewport
+              "relative h-[100dvw] w-[100dvh] shrink-0 rotate-90"
+            : "taglio relative flex max-h-[94dvh] max-w-[94vw] flex-col gap-2 border border-border-strong bg-surface-2 p-2.5 lg:p-3"
+        }
+      >
+        <div
+          className={
+            coricato
+              ? "h-full w-full"
+              : video.verticale
+                ? // Reel: alto l'80% dello schermo, 9:16
+                  "aspect-[9/16] h-[80dvh] max-w-full"
+                : // 16:9: su schermi bassi il max-h contiene, il player
+                  // si letterboxa da solo
+                  "aspect-video max-h-[80dvh] w-[94vw] max-w-3xl lg:max-w-5xl"
+          }
+        >
           <iframe
-            src={`https://www.youtube-nocookie.com/embed/${video.videoId}?autoplay=1&playsinline=1&rel=0`}
+            // rel=0 e iv_load_policy=3 tolgono il togliibile: correlati di
+            // altri canali e annotazioni. La barra con titolo/Condividi è
+            // di YouTube e l'embed non permette più di spegnerla.
+            src={`https://www.youtube-nocookie.com/embed/${video.videoId}?autoplay=1&playsinline=1&rel=0&iv_load_policy=3`}
             title={video.titolo}
             allow="autoplay; encrypted-media; picture-in-picture"
             allowFullScreen
             className="h-full w-full border-0"
           />
         </div>
-        <div className="flex flex-col gap-1 px-4 pb-2">
-          <span className="eyebrow">
-            {video.tag} · {soloOra(video.publishedAt)}
-          </span>
-          <p className="font-bold leading-snug">{video.titolo}</p>
-        </div>
+        {!coricato && (
+          <div className="flex flex-col gap-1 px-1 pb-1">
+            <span className="eyebrow">
+              {video.tag} · {soloOra(video.publishedAt)}
+            </span>
+            <p className="font-bold leading-snug">{video.titolo}</p>
+          </div>
+        )}
       </div>
     </div>,
     document.body,

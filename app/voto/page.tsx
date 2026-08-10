@@ -25,7 +25,7 @@ export default async function VotoPage({
   ]);
 
   return (
-    <main className="flex flex-1 flex-col gap-2 px-4 py-6 [&>section]:py-5 [&>section+section]:border-t [&>section+section]:border-border">
+    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-2 px-4 py-6 lg:max-w-2xl [&>section]:py-5 [&>section+section]:border-t [&>section+section]:border-border">
       <h1 className="display pb-1 text-3xl">Voto</h1>
 
       <section className="flex flex-col gap-3">

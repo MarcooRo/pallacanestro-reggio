@@ -33,7 +33,7 @@ export default async function HomePage() {
   // pubbliche (pagelle, classifiche) restano apribili dal link condiviso,
   // come da principio "zero attrito" della spec.
   return (
-    <main className="relative flex flex-1 flex-col justify-center gap-10 overflow-hidden px-5 py-12">
+    <main className="relative mx-auto flex w-full max-w-lg flex-1 flex-col justify-center gap-10 overflow-hidden px-5 py-12">
       {/* Richiamo al logo: la R in negativo, watermark dietro il titolo */}
       <MarchioR className="pointer-events-none absolute -right-8 top-10 h-52 w-auto text-foreground opacity-[0.05]" />
       {/* 17vw sfondava: su un iPhone "REGGIANA," da sola era più larga della
@@ -82,7 +82,7 @@ async function HomeContenuti() {
 
   return (
     // Ogni sezione dopo la prima è separata da un divisorio e respira.
-    <main className="flex flex-1 flex-col gap-2 px-4 py-6 [&>section]:py-6 [&>section+section]:border-t [&>section+section]:border-border">
+    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-2 px-4 py-6 lg:max-w-5xl [&>section]:py-6 [&>section+section]:border-t [&>section+section]:border-border">
       {profilo ? (
         <p className="eyebrow sale">Ciao, {profilo.nickname}</p>
       ) : (
@@ -98,7 +98,10 @@ async function HomeContenuti() {
       <section className="sale sale-2 flex flex-col gap-3">
         <h2 className="display text-2xl">Prossima partita</h2>
         {prossima ? (
-          <PartitaCard partita={prossima} />
+          // A tutta larghezza desktop il tabellone si sfilaccia: si contiene
+          <div className="lg:max-w-2xl">
+            <PartitaCard partita={prossima} />
+          </div>
         ) : (
           <p className="taglio-sm card p-4 text-sm text-muted">
             Nessuna partita di Reggio pianificata. Guarda il{" "}
@@ -134,13 +137,14 @@ async function HomeContenuti() {
             </Link>
           </div>
           {/* Slide orizzontale: -mx-4/px-4 per far sbordare lo scroll
-              fino ai bordi dello schermo mantenendo l'allineamento */}
-          <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+              fino ai bordi dello schermo mantenendo l'allineamento.
+              Su desktop non si scrolla col dito: griglia a tre. */}
+          <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] lg:mx-0 lg:grid lg:grid-cols-3 lg:overflow-visible lg:px-0">
             {video.map((v) => (
               <VideoCard
                 key={v.videoId}
                 video={v}
-                className="w-[82%] shrink-0 snap-start"
+                className="w-[82%] shrink-0 snap-start lg:w-auto"
               />
             ))}
           </div>
@@ -155,7 +159,7 @@ async function HomeContenuti() {
               tutte →
             </Link>
           </div>
-          <div className="flex flex-col gap-2.5">
+          <div className="grid gap-2.5 lg:grid-cols-2">
             {ultimeNews.map((n) => (
               <NewsCard key={n.id} item={n} />
             ))}

@@ -43,7 +43,7 @@ export default async function SquadraPage({
   const logo = fotoUrl(squadra.logoKey, "thumb");
 
   return (
-    <main className="flex flex-1 flex-col gap-4 px-4 py-6">
+    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 px-4 py-6 lg:max-w-2xl">
       <TornaIndietro fallback="/classifica" etichetta="Classifica" />
 
       <header className="flex items-center gap-3">

@@ -41,7 +41,7 @@ export default async function NewsLetturaPage({
   const fonte = nomeFonte[item.source] ?? item.source;
 
   return (
-    <main className="flex flex-1 flex-col gap-4 px-4 py-6">
+    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 px-4 py-6 lg:max-w-2xl">
       <TornaIndietro fallback="/news" etichetta="News" />
 
       <article className="flex flex-col gap-4">

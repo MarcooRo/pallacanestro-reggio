@@ -36,7 +36,7 @@ export default async function GiocatoriPage({
 
   if (stagioni.length === 0) {
     return (
-      <main className="flex flex-1 flex-col gap-4 px-4 py-6">
+      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 px-4 py-6 lg:max-w-2xl">
         <h1 className="display text-3xl">La squadra</h1>
         <p className="taglio-sm card p-4 text-sm text-muted">
           Il roster non è ancora disponibile: la fonte non l&apos;ha pubblicato.
@@ -58,7 +58,7 @@ export default async function GiocatoriPage({
   ]);
 
   return (
-    <main className="flex flex-1 flex-col gap-4 px-4 py-6">
+    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 px-4 py-6 lg:max-w-2xl">
       <h1 className="display text-3xl">La squadra</h1>
 
       <div className="flex gap-2.5 pl-1">

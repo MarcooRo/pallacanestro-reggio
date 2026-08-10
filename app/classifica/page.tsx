@@ -22,7 +22,7 @@ export default async function ClassificaPage({
   const classifica = await getClassificaCampionato(stagione);
 
   return (
-    <main className="flex flex-1 flex-col gap-4 px-4 py-6">
+    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 px-4 py-6 lg:max-w-3xl">
       <h1 className="display text-3xl">Classifica</h1>
 
       {!classifica ? (

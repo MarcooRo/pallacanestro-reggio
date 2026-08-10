@@ -76,7 +76,7 @@ export default async function PartitaPage({
       inizio={partita.startsAt.toISOString()}
       statoIniziale={partita.status}
     >
-    <main className="flex flex-1 flex-col gap-8 px-4 py-6">
+    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-8 px-4 py-6 lg:max-w-2xl">
       <TornaIndietro fallback="/calendario" etichetta="Partite" />
 
       {/* Scoreboard: punteggio e parziali si aggiornano da soli durante

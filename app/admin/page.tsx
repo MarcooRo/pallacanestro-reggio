@@ -41,7 +41,7 @@ export default async function AdminPage({
   const pronostici = await getPronosticiAdmin(partite.map((p) => p.id));
 
   return (
-    <main className="flex flex-1 flex-col gap-4 px-4 py-8">
+    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 px-4 py-8 lg:max-w-2xl">
       <h1 className="text-2xl font-bold">Admin · Partite</h1>
       <p className="text-sm text-muted">
         Le partite del club, dalla più recente. Apertura voto, chiusura con

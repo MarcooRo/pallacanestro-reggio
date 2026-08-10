@@ -22,7 +22,7 @@ export default async function CalendarioPage({
   const stagioni = await getStagioni();
   if (stagioni.length === 0) {
     return (
-      <main className="flex flex-1 flex-col gap-4 px-4 py-6">
+      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 px-4 py-6 lg:max-w-5xl">
         <h1 className="display text-3xl">Partite</h1>
         <p className="text-sm text-muted">Nessuna partita in archivio.</p>
       </main>
@@ -50,7 +50,7 @@ export default async function CalendarioPage({
   };
 
   return (
-    <main className="flex flex-1 flex-col gap-4 px-4 py-6">
+    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 px-4 py-6 lg:max-w-5xl">
       {/* La stagione vive sulla riga del titolo come tendina: le pillole
           degli anni su schermi stretti mandavano a capo "Solo Reggio" */}
       <div className="flex items-center justify-between gap-3">
@@ -97,7 +97,9 @@ export default async function CalendarioPage({
         {haPartiteDaGiocare(partite) ? "prima le prossime" : "dalla più recente"}
       </p>
 
-      <div className="flex flex-col gap-2.5">
+      {/* Su desktop due colonne: si legge riga per riga, la cronologia
+          scorre in orizzontale prima di andare a capo */}
+      <div className="grid gap-2.5 lg:grid-cols-2">
         {partite.map((p) => (
           <PartitaCard key={p.id} partita={p} />
         ))}

@@ -24,7 +24,7 @@ export default async function VideoPage({
   const items = await getVideo(attivo.fonte);
 
   return (
-    <main className="flex flex-1 flex-col gap-4 px-4 py-6">
+    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 px-4 py-6 lg:max-w-5xl">
       <h1 className="display text-3xl">Video</h1>
 
       <div className="flex gap-2.5 pl-1">
@@ -44,7 +44,7 @@ export default async function VideoPage({
           Nessun video disponibile ora: YouTube non risponde, riprova tra poco.
         </p>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((v) => (
             <VideoCard key={v.videoId} video={v} />
           ))}

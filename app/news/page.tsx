@@ -23,7 +23,7 @@ export default async function NewsPage({
   const items = await getNews(50, attivo.fonte);
 
   return (
-    <main className="flex flex-1 flex-col gap-4 px-4 py-6">
+    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 px-4 py-6 lg:max-w-5xl">
       <h1 className="display text-3xl">News</h1>
 
       <div className="flex gap-2.5 pl-1">
@@ -43,7 +43,7 @@ export default async function NewsPage({
           Nessuna news in archivio per questo filtro.
         </p>
       ) : (
-        <div className="flex flex-col gap-2.5">
+        <div className="grid gap-2.5 lg:grid-cols-2">
           {items.map((n) => (
             <NewsCard key={n.id} item={n} />
           ))}

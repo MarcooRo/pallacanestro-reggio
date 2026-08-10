@@ -61,7 +61,7 @@ export default async function GiocatorePage({
   const ultimaPermanenza = giocatore.permanenze[0];
 
   return (
-    <main className="flex flex-1 flex-col gap-6 px-4 py-6">
+    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 px-4 py-6 lg:max-w-2xl">
       <TornaIndietro fallback="/giocatori" etichetta="La squadra" />
 
       <header className="taglio relative -mt-2 flex items-center gap-4 overflow-hidden card p-4">

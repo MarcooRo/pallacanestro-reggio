@@ -6,6 +6,7 @@ import { ProviderAccesso } from "@/src/components/accesso-richiesto";
 import { BottomNav } from "@/src/components/bottom-nav";
 import { LogoPalla } from "@/src/components/logo-palla";
 import { MenuLaterale } from "@/src/components/menu-laterale";
+import { NavDesktop } from "@/src/components/nav-desktop";
 import { RegistraSw } from "@/src/components/registra-sw";
 import { branding } from "@/src/branding";
 import { getProfilo } from "@/src/lib/auth/session";
@@ -72,7 +73,7 @@ export default async function RootLayout({
         {/* Il fondo dell'header sale fin sopra la fotocamera: la barra di
             stato non deve mostrare la pagina che scorre sotto */}
         <header className="sticky top-0 z-20 border-b border-border bg-background/90 pt-[env(safe-area-inset-top)] backdrop-blur">
-          <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
+          <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3 lg:max-w-5xl">
             <MenuLaterale admin={profilo?.role === "admin"} />
             {/* Il nome per esteso deve stare su una riga: a 390px con text-lg
                 andava a capo ("PALLACANESTRO / REGGIANA") */}
@@ -86,6 +87,7 @@ export default async function RootLayout({
                 <span className="text-brand">.</span>
               </span>
             </Link>
+            <NavDesktop />
             <Link
               href="/profilo"
               aria-label="Profilo"
@@ -100,8 +102,10 @@ export default async function RootLayout({
         </header>
 
         {/* ProviderAccesso: un solo dialog "serve l'account" per l'app,
-            lo aprono le CTA di qualunque pagina */}
-        <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
+            lo aprono le CTA di qualunque pagina. La larghezza non si decide
+            più qui: ogni main dichiara la sua (le liste si allargano su
+            desktop, le pagine verticali restano strette). */}
+        <div className="flex w-full flex-1 flex-col">
           <ProviderAccesso>{children}</ProviderAccesso>
         </div>
 

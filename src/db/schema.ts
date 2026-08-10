@@ -540,3 +540,83 @@ export const appSettings = pgTable("app_settings", {
   value: jsonb().notNull(),
   updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
+
+// ============ SOCIAL ============
+
+// Post social in coda. Principio non negoziabile: l'AI (via MCP) scrive solo
+// 'draft' e 'archived'; la transizione a 'approved' avviene SOLO nelle server
+// action admin, mai nel layer MCP. Imposto nel codice, non solo qui.
+export const socialPosts = pgTable(
+  "social_posts",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    status: text().notNull().default("draft"),
+    // Predisposto per TikTok: basterà allargare il check, niente enum Postgres
+    platform: text().notNull(),
+    kind: text().notNull().default("single"),
+    caption: text().notNull().default(""),
+    hashtags: text().array().notNull().default([]),
+    scheduledAt: timestamp({ withTimezone: true }), // null = appena approvato
+    publishedAt: timestamp({ withTimezone: true }),
+    source: text().notNull(), // chi l'ha creato
+    notes: text(), // note dell'AI per l'admin, mai pubblicate
+    externalId: text(), // id del media su Instagram (fase 2)
+    permalink: text(), // (fase 2)
+    error: text(),
+    attempts: integer().notNull().default(0),
+    idempotencyKey: text().unique(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check(
+      "social_posts_status_check",
+      sql`${t.status} in ('draft','approved','publishing','published','failed','archived')`,
+    ),
+    check(
+      "social_posts_platform_check",
+      sql`${t.platform} in ('instagram_feed','instagram_story')`,
+    ),
+    check("social_posts_kind_check", sql`${t.kind} in ('single','carousel')`),
+    check("social_posts_source_check", sql`${t.source} in ('mcp','admin')`),
+    // La coda del cron di pubblicazione (fase 2): approved per scheduled_at
+    index("social_posts_publish_queue_idx")
+      .on(t.scheduledAt)
+      .where(sql`status = 'approved'`),
+  ],
+);
+
+// Le singole immagini di un post, nell'ordine di pubblicazione.
+// params + template bastano a rigenerare l'immagine da zero: il JPEG su
+// storage è un derivato, mai la fonte di verità.
+export const socialMediaItems = pgTable(
+  "social_media_items",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    postId: uuid()
+      .notNull()
+      .references(() => socialPosts.id, { onDelete: "cascade" }),
+    position: integer().notNull(),
+    template: text().notNull(), // nome dal registry OG (src/lib/og/registry.ts)
+    params: jsonb().notNull(), // validati con lo Zod del template
+    renderedUrl: text(), // URL pubblico del JPEG finale
+    renderedAt: timestamp({ withTimezone: true }),
+    width: integer().notNull(),
+    height: integer().notNull(),
+  },
+  (t) => [
+    unique("social_media_items_post_position_unique").on(t.postId, t.position),
+  ],
+);
+
+// Vuota in fase 1, popolata in fase 2 con l'account Instagram.
+// access_token cifrato a riposo (AES-256-GCM, chiave in env), mai in chiaro.
+export const socialAccounts = pgTable("social_accounts", {
+  id: uuid().primaryKey().defaultRandom(),
+  platform: text().notNull().unique(),
+  externalAccountId: text().notNull(),
+  accessToken: text().notNull(),
+  expiresAt: timestamp({ withTimezone: true }),
+  refreshedAt: timestamp({ withTimezone: true }),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});

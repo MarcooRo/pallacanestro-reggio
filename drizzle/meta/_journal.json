@@ -57,6 +57,13 @@
       "when": 1785961893748,
       "tag": "0007_coppa-europea",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1786382512504,
+      "tag": "0008_coda-social",
+      "breakpoints": true
     }
   ]
 }

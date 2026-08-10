@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
         capabilities: { tools: {} },
         serverInfo: { name: "pallacanestro-reggio-social", version: "1.0.0" },
         instructions:
-          "Coda dei contenuti social di Pallacanestro Reggiana. Flusso: list_og_templates per vedere cosa si può disegnare, preview_media per provare una grafica, queue_post per mettere in coda una bozza. La pubblicazione NON passa da qui: ogni post nasce draft e lo approva un umano da /admin/social. Non esiste un tool che pubblica.",
+          "Coda dei contenuti social di Pallacanestro Reggiana. Grafiche: list_og_templates per i template, preview_media per provarne una, queue_post per la bozza. Foto proprie: list_media per la libreria (caption e tags sono la guida per scegliere); una slide può essere {assetId} nudo o {assetId, template} per una composizione tipo foto-con-testo. La pubblicazione NON passa da qui: ogni post nasce draft e lo approva un umano da /admin/social. Non esiste un tool che pubblica.",
       });
     }
     case "ping":

@@ -15,9 +15,11 @@ import { ImageResponse } from "next/og";
 import sharp from "sharp";
 
 import { db } from "@/src/db";
-import { socialMediaItems, socialPosts } from "@/src/db/schema";
+import { mediaAssets, socialMediaItems, socialPosts } from "@/src/db/schema";
+import { BUCKET_MEDIA } from "@/src/lib/media/libreria";
 import { fontOg } from "@/src/lib/og/font";
 import { dimensioniTemplate, getTemplateOg } from "@/src/lib/og/registry";
+import { fuoriProporzioni } from "@/src/lib/social/forme";
 import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
 
 const BUCKET = "social";
@@ -66,11 +68,59 @@ export async function renderizzaPost(postId: string): Promise<EsitoRender> {
   const renderizzati: EsitoRender["renderizzati"] = [];
 
   for (const item of items) {
-    const { png, width, height } = await pngDaTemplate(item.template, item.params);
+    let jpeg: Buffer;
+    let width: number;
+    let height: number;
 
-    const jpeg = await sharp(Buffer.from(png))
-      .jpeg({ quality: 90, chromaSubsampling: "4:4:4" })
-      .toBuffer();
+    if (item.template) {
+      // Template puro o composizione: satori disegna (nella composizione
+      // scarica lui la foto dall'imageUrl nei params), sharp fa il JPEG
+      const png = await pngDaTemplate(item.template, item.params);
+      jpeg = await sharp(Buffer.from(png.png))
+        .jpeg({ quality: 90, chromaSubsampling: "4:4:4" })
+        .toBuffer();
+      ({ width, height } = png);
+    } else {
+      // Asset nudo: niente render. Se il JPEG originale va bene così,
+      // l'url dell'asset È il rendered_url; altrimenti (formato non JPEG
+      // o proporzioni fuori dai limiti) sharp riquadra a 1080×1350.
+      if (!item.assetId) throw new Error(`la slide ${item.position} non ha né template né asset`);
+      const [asset] = await db
+        .select()
+        .from(mediaAssets)
+        .where(eq(mediaAssets.id, item.assetId))
+        .limit(1);
+      if (!asset || asset.status !== "ready" || !asset.width || !asset.height) {
+        throw new Error(`l'asset della slide ${item.position} non è pronto (pending o mancante)`);
+      }
+
+      if (asset.mime === "image/jpeg" && !fuoriProporzioni(asset.width, asset.height)) {
+        await db
+          .update(socialMediaItems)
+          .set({
+            renderedUrl: asset.url,
+            renderedAt: new Date(),
+            width: asset.width,
+            height: asset.height,
+          })
+          .where(eq(socialMediaItems.id, item.id));
+        renderizzati.push({ position: item.position, url: asset.url });
+        continue;
+      }
+
+      const { data, error } = await supabase.storage
+        .from(BUCKET_MEDIA)
+        .download(asset.storageKey);
+      if (error || !data) {
+        throw new Error(`download dell'asset ${asset.id} fallito: ${error?.message ?? "vuoto"}`);
+      }
+      jpeg = await sharp(Buffer.from(await data.arrayBuffer()))
+        .resize(1080, 1350, { fit: "cover" })
+        .jpeg({ quality: 90, chromaSubsampling: "4:4:4" })
+        .toBuffer();
+      width = 1080;
+      height = 1350;
+    }
 
     const chiave = `${postId}/${item.position}.jpg`;
     const { error } = await supabase.storage

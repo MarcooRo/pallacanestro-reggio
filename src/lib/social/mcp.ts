@@ -16,24 +16,28 @@ import { z } from "zod";
 
 import { db } from "@/src/db";
 import { socialMediaItems, socialPosts } from "@/src/db/schema";
-import { signOgUrl } from "@/src/lib/og/firma";
 import {
-  dimensioniTemplate,
-  getTemplateOg,
-  nomiTemplateOg,
-  tuttiTemplateOg,
-} from "@/src/lib/og/registry";
+  creaUploadFirmato,
+  elencaAssets,
+  finalizzaAsset,
+  type MediaAsset,
+} from "@/src/lib/media/libreria";
+import { signOgUrl } from "@/src/lib/og/firma";
+import { dimensioniTemplate, tuttiTemplateOg } from "@/src/lib/og/registry";
+import { ErroreTool } from "@/src/lib/social/errore";
+import { mediaInput, risolviMedia } from "@/src/lib/social/forme";
 import { renderizzaPost } from "@/src/lib/social/render";
 
-// Un errore "da tool": il messaggio arriva all'AI com'è (isError: true).
-export class ErroreTool extends Error {}
+export { ErroreTool };
 
 const STATI = ["draft", "approved", "publishing", "published", "failed", "archived"] as const;
 const PIATTAFORME = ["instagram_feed", "instagram_story"] as const;
 
 // ---------- input dei tool ----------
 
-const mediaInput = z.strictObject({
+// L'anteprima ha senso solo per grafiche da template (l'asset nudo È già
+// un'immagine): qui template e params restano obbligatori.
+const previewInput = z.strictObject({
   template: z.string().describe("Nome del template, da list_og_templates"),
   params: z
     .record(z.string(), z.unknown())
@@ -42,7 +46,7 @@ const mediaInput = z.strictObject({
 
 const INPUT = {
   list_og_templates: z.strictObject({}),
-  preview_media: mediaInput,
+  preview_media: previewInput,
   queue_post: z.strictObject({
     platform: z.enum(PIATTAFORME),
     caption: z.string().default(""),
@@ -51,7 +55,9 @@ const INPUT = {
       .array(mediaInput)
       .min(1)
       .max(10)
-      .describe("Le slide nell'ordine di pubblicazione (Instagram: max 10)"),
+      .describe(
+        "Le slide nell'ordine di pubblicazione (Instagram: max 10). Tre forme: {template,params} grafica; {assetId} foto della libreria così com'è; {assetId,template,params} composizione (es. foto-con-testo, imageUrl si compila da solo)",
+      ),
     scheduledAt: z.iso
       .datetime({ offset: true })
       .optional()
@@ -78,9 +84,25 @@ const INPUT = {
       .min(1)
       .max(10)
       .optional()
-      .describe("Se presente SOSTITUISCE tutte le slide"),
+      .describe("Se presente SOSTITUISCE tutte le slide (stesse tre forme di queue_post)"),
   }),
   archive_post: z.strictObject({ id: z.string().uuid() }),
+  list_media: z.strictObject({
+    tag: z.string().optional().describe("Solo asset con questo tag"),
+    from: z.iso.datetime({ offset: true }).optional().describe("taken_at da qui in poi"),
+    to: z.iso.datetime({ offset: true }).optional().describe("taken_at fino a qui"),
+    limit: z.number().int().min(1).max(100).default(20),
+  }),
+  create_upload_url: z.strictObject({
+    caption: z
+      .string()
+      .optional()
+      .describe("Descrizione della foto: è ciò su cui ti baserai per ritrovarla"),
+    tags: z.array(z.string()).default([]),
+  }),
+  confirm_upload: z.strictObject({
+    assetId: z.string().uuid().describe("L'asset restituito da create_upload_url"),
+  }),
 } satisfies Record<string, z.ZodType>;
 
 export const DESCRIZIONI: Record<keyof typeof INPUT, string> = {
@@ -95,6 +117,12 @@ export const DESCRIZIONI: Record<keyof typeof INPUT, string> = {
   update_post:
     "Modifica caption, hashtag, note, programmazione proposta o slide di un post ANCORA in stato draft. Dopo l'approvazione non si tocca più.",
   archive_post: "Sposta un post in archived (lo toglie dalla coda).",
+  list_media:
+    "Le foto della libreria (materiale nostro: palazzetto, squadra, tifosi), dalla più recente. caption e tags sono ciò su cui basarti per scegliere la foto giusta: sono scritti apposta. Usa l'id in queue_post come assetId, da solo o con un template di composizione.",
+  create_upload_url:
+    "URL firmato per caricare nella libreria un'immagine che hai prodotto tu: PUT dei byte all'uploadUrl (header x-upsert non serve), poi confirm_upload. MAI passare immagini in base64 nei parametri dei tool.",
+  confirm_upload:
+    "Chiude l'upload iniziato con create_upload_url: verifica che il file sia sul bucket, ne legge dimensioni e formato e rende l'asset usabile nei post.",
 };
 
 // ---------- helper ----------
@@ -104,24 +132,6 @@ function normalizzaHashtags(hashtags: string[]): string[] {
     .flatMap((h) => h.split(/\s+/))
     .filter(Boolean)
     .map((h) => (h.startsWith("#") ? h : `#${h}`));
-}
-
-function validaMedia(media: z.output<typeof mediaInput>[]) {
-  return media.map((m, i) => {
-    const def = getTemplateOg(m.template);
-    if (!def) {
-      throw new ErroreTool(
-        `La slide ${i + 1} usa il template "${m.template}" che non esiste. Template disponibili: ${nomiTemplateOg().join(", ")}. Usa list_og_templates per gli schemi.`,
-      );
-    }
-    const esito = def.schema.safeParse(m.params);
-    if (!esito.success) {
-      throw new ErroreTool(
-        `Parametri non validi per la slide ${i + 1} (template "${m.template}"):\n${z.prettifyError(esito.error)}\nEsempio valido:\n${JSON.stringify(def.esempio, null, 2)}`,
-      );
-    }
-    return { def, params: esito.data, dimensioni: dimensioniTemplate(def) };
-  });
 }
 
 async function caricaPost(id: string) {
@@ -159,13 +169,29 @@ async function mediaDiUnPost(postId: string, base: string) {
     .orderBy(socialMediaItems.position);
   return items.map((m) => ({
     position: m.position,
+    kind: m.kind,
+    assetId: m.assetId,
     template: m.template,
     params: m.params,
     width: m.width,
     height: m.height,
     renderedUrl: m.renderedUrl,
-    previewUrl: signOgUrl(m.template, m.params, base),
+    // L'asset nudo non ha un'anteprima da generare: l'immagine è l'asset
+    previewUrl: m.template ? signOgUrl(m.template, m.params, base) : m.renderedUrl,
   }));
+}
+
+function esponiAsset(a: MediaAsset) {
+  return {
+    id: a.id,
+    url: a.url,
+    width: a.width,
+    height: a.height,
+    mime: a.mime,
+    caption: a.caption,
+    tags: a.tags,
+    takenAt: a.takenAt?.toISOString() ?? null,
+  };
 }
 
 // Render "best effort": il post resta valido anche se il render fallisce,
@@ -205,11 +231,12 @@ const TOOL: Record<
     };
   },
 
-  async preview_media(input: z.output<typeof mediaInput>, ctx: Contesto) {
-    const [m] = validaMedia([input]);
+  async preview_media(input: z.output<typeof previewInput>, ctx: Contesto) {
+    const [m] = await risolviMedia([input]);
     return {
       url: signOgUrl(input.template, m.params, ctx.base),
-      ...m.dimensioni,
+      width: m.width,
+      height: m.height,
       nota: "URL firmato dell'anteprima PNG. Nessun dato è stato creato.",
     };
   },
@@ -235,7 +262,7 @@ const TOOL: Record<
         "Una story ha una sola immagine: passa un solo elemento in media, oppure usa instagram_feed per un carosello.",
       );
     }
-    const media = validaMedia(input.media);
+    const media = await risolviMedia(input.media);
 
     const [post] = await db
       .insert(socialPosts)
@@ -253,14 +280,7 @@ const TOOL: Record<
       .returning();
 
     await db.insert(socialMediaItems).values(
-      media.map((m, i) => ({
-        postId: post.id,
-        position: i,
-        template: m.def.nome,
-        params: m.params,
-        width: m.dimensioni.width,
-        height: m.dimensioni.height,
-      })),
+      media.map((m, i) => ({ postId: post.id, position: i, ...m })),
     );
 
     const avviso = await renderConAvviso(post.id);
@@ -309,17 +329,10 @@ const TOOL: Record<
     }
 
     if (input.media) {
-      const media = validaMedia(input.media);
+      const media = await risolviMedia(input.media);
       await db.delete(socialMediaItems).where(eq(socialMediaItems.postId, post.id));
       await db.insert(socialMediaItems).values(
-        media.map((m, i) => ({
-          postId: post.id,
-          position: i,
-          template: m.def.nome,
-          params: m.params,
-          width: m.dimensioni.width,
-          height: m.dimensioni.height,
-        })),
+        media.map((m, i) => ({ postId: post.id, position: i, ...m })),
       );
     }
 
@@ -361,6 +374,43 @@ const TOOL: Record<
       .set({ status: "archived", updatedAt: new Date() }) // letterale, mai da input
       .where(eq(socialPosts.id, post.id));
     return { post: esponiPost({ ...post, status: "archived" }, ctx.base) };
+  },
+
+  async list_media(input: z.output<(typeof INPUT)["list_media"]>) {
+    const assets = await elencaAssets({
+      tag: input.tag,
+      dal: input.from ? new Date(input.from) : undefined,
+      al: input.to ? new Date(input.to) : undefined,
+      limite: input.limit,
+    });
+    return {
+      assets: assets.map(esponiAsset),
+      nota: "caption e tags sono la descrizione su cui basarti; takenAt è la data di scatto.",
+    };
+  },
+
+  async create_upload_url(input: z.output<(typeof INPUT)["create_upload_url"]>) {
+    const { asset, uploadUrl } = await creaUploadFirmato({
+      caption: input.caption ?? null,
+      tags: input.tags,
+    });
+    return {
+      assetId: asset.id,
+      uploadUrl,
+      prossimoPasso:
+        "PUT dei byte dell'immagine (JPEG, PNG o WebP) all'uploadUrl con Content-Type corretto, poi confirm_upload con questo assetId. L'URL scade presto: carica subito.",
+    };
+  },
+
+  async confirm_upload(input: z.output<(typeof INPUT)["confirm_upload"]>) {
+    try {
+      const asset = await finalizzaAsset(input.assetId);
+      return { asset: esponiAsset(asset) };
+    } catch (err) {
+      throw new ErroreTool(
+        `Finalizzazione fallita: ${err instanceof Error ? err.message : err}`,
+      );
+    }
   },
 };
 

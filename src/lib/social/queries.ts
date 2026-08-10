@@ -13,10 +13,18 @@ export type MediaSocial = typeof socialMediaItems.$inferSelect;
 /**
  * L'immagine da mostrare in anteprima: il JPEG renderizzato se c'è,
  * altrimenti l'URL OG firmato — comunque l'immagine reale generata dal
- * template, mai un mockup.
+ * template, mai un mockup. Un asset nudo non ancora renderizzato (caso
+ * raro: il render parte alla creazione) mostra un segnaposto.
  */
 export function urlAnteprima(media: MediaSocial): string {
-  return media.renderedUrl ?? signOgUrl(media.template, media.params);
+  if (media.renderedUrl) return media.renderedUrl;
+  if (media.template) return signOgUrl(media.template, media.params);
+  return (
+    "data:image/svg+xml," +
+    encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 5"><rect width="4" height="5" fill="#1a1a1c"/></svg>',
+    )
+  );
 }
 
 export interface RigaPostSocial {

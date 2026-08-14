@@ -20,6 +20,8 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
+import type { Blocco } from "@/src/lib/news/blocchi";
+
 // ============ ANAGRAFICHE ============
 
 // Entità stabile nel tempo. Chiave canonica del progetto (Reggio = club_id LBA 44).
@@ -462,21 +464,50 @@ export const roarBuckets = pgTable(
 
 // ============ CONTENUTI E SISTEMA ============
 
+// Due forme nella stessa tabella, tenute onesta dal check `news_forma`:
+//   - news di fonte ('lba', 'pr_wordpress'): un rimando, url obbligatorio,
+//     il testo si legge al volo dalla fonte e non si salva (articolo.ts);
+//   - articolo nostro ('redazione'): corpo a blocchi su DB, nessun url,
+//     slug per l'indirizzo leggibile.
+// Come per il social, l'AI via MCP scrive solo 'draft': la transizione a
+// 'published' vive nelle server action admin.
 export const news = pgTable(
   "news",
   {
     id: uuid().primaryKey().defaultRandom(),
-    source: text().notNull(), // 'lba' | 'pr_wordpress'
+    source: text().notNull(), // 'lba' | 'pr_wordpress' | 'redazione'
     sourceId: text(),
+    // Le news di fonte nascono già pubblicate (l'ingestion non le rilegge):
+    // il default tiene in piedi le righe esistenti e il cron invariato.
+    status: text().notNull().default("published"),
     title: text().notNull(),
-    url: text().notNull(),
+    slug: text().unique(),
+    url: text(),
     excerpt: text(),
     category: text(),
     imageUrl: text(),
+    // La copertina viene dalla libreria foto nostra: restrict perché una
+    // foto pubblicata in un articolo non si cancella per sbaglio.
+    assetId: uuid().references(() => mediaAssets.id, { onDelete: "restrict" }),
+    body: jsonb().$type<Blocco[]>(),
+    authorName: text(),
     publishedAt: timestamp({ withTimezone: true }).notNull(),
     isPinned: boolean().notNull().default(false),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [unique("news_source_source_id_unique").on(t.source, t.sourceId)],
+  (t) => [
+    unique("news_source_source_id_unique").on(t.source, t.sourceId),
+    check("news_status_check", sql`${t.status} in ('draft','published','archived')`),
+    check("news_source_check", sql`${t.source} in ('lba','pr_wordpress','redazione')`),
+    check(
+      "news_forma_check",
+      sql`(${t.source} = 'redazione' and ${t.url} is null and ${t.body} is not null and ${t.slug} is not null) or (${t.source} <> 'redazione' and ${t.url} is not null and ${t.body} is null)`,
+    ),
+    // La lista pubblica legge sempre e solo i pubblicati, dal più recente
+    index("news_pubblicate_idx")
+      .on(t.isPinned, t.publishedAt)
+      .where(sql`status = 'published'`),
+  ],
 );
 
 export const ingestionRuns = pgTable(

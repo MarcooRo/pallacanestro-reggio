@@ -10,6 +10,7 @@ import { NavDesktop } from "@/src/components/nav-desktop";
 import { RegistraSw } from "@/src/components/registra-sw";
 import { branding } from "@/src/branding";
 import { getProfilo } from "@/src/lib/auth/session";
+import { urlSito } from "@/src/lib/sito";
 
 import "./globals.css";
 
@@ -28,6 +29,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  // Base per canonical e og:url: senza questo Next non emette og:url e i
+  // link relativi nei metadata non si risolvono (src/lib/sito.ts).
+  metadataBase: new URL(urlSito()),
   title: {
     default: branding.appName,
     template: `%s · ${branding.appName}`,

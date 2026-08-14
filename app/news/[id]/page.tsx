@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
 
+import { branding } from "@/src/branding";
 import { CorpoArticolo } from "@/src/components/corpo-articolo";
 import { fonteDiCasa, nomeFonte } from "@/src/components/news-card";
 import { TornaIndietro } from "@/src/components/torna-indietro";
 import { dataBreve } from "@/src/lib/date";
 import { getCorpoNews } from "@/src/lib/news/articolo";
 import { getNewsPubblicata } from "@/src/lib/news/queries";
+import { urlSito } from "@/src/lib/sito";
 
 // Due forme nella stessa pagina:
 //   - news di fonte: solo il corpo dell'articolo altrui, letto al volo dalle
@@ -28,17 +30,60 @@ export async function generateMetadata({
   const { id } = await params;
   const item = await getNewsPubblicata(id);
   if (!item) return {};
+  // Canonical sullo slug quando c'è (articoli nostri): un solo indirizzo
+  // buono anche se il link girato è quello con l'uuid.
+  const indirizzo = `/news/${item.slug ?? item.id}`;
   return {
     title: item.title,
     description: item.excerpt ?? undefined,
+    alternates: { canonical: indirizzo },
     openGraph: {
       title: item.title,
       description: item.excerpt ?? undefined,
       type: "article",
+      url: indirizzo,
       publishedTime: item.publishedAt.toISOString(),
+      modifiedTime: item.updatedAt.toISOString(),
       images: item.imageUrl ? [item.imageUrl] : undefined,
     },
   };
+}
+
+// Dati strutturati, solo per gli articoli nostri: sulle news di fonte
+// sarebbe una dichiarazione falsa (il testo non è nostro).
+// Il JSON viene da un oggetto costruito qui, non da input esterno; l'unica
+// insidia sono i "<" dentro i testi, che chiuderebbero il tag script.
+function DatiStrutturati({
+  articolo,
+  url,
+}: {
+  articolo: NonNullable<Awaited<ReturnType<typeof getNewsPubblicata>>>;
+  url: string;
+}) {
+  const dati = {
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
+    headline: articolo.title.slice(0, 110),
+    description: articolo.excerpt ?? undefined,
+    image: articolo.imageUrl ? [articolo.imageUrl] : undefined,
+    datePublished: articolo.publishedAt.toISOString(),
+    dateModified: articolo.updatedAt.toISOString(),
+    author: articolo.authorName
+      ? { "@type": "Person", name: articolo.authorName }
+      : { "@type": "Organization", name: "Redazione" },
+    publisher: { "@type": "Organization", name: branding.appName, url: urlSito() },
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+    inLanguage: "it-IT",
+    isAccessibleForFree: true,
+  };
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify(dati).replaceAll("<", "\\u003c"),
+      }}
+    />
+  );
 }
 
 export default async function NewsLetturaPage({
@@ -60,6 +105,12 @@ export default async function NewsLetturaPage({
 
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 px-4 py-6 lg:max-w-2xl">
+      {nostro && (
+        <DatiStrutturati
+          articolo={item}
+          url={`${urlSito()}/news/${item.slug ?? item.id}`}
+        />
+      )}
       <TornaIndietro fallback="/news" etichetta="News" />
 
       <article className="flex flex-col gap-4">
@@ -86,7 +137,9 @@ export default async function NewsLetturaPage({
         {item.imageUrl && (
           <Image
             src={item.imageUrl}
-            alt=""
+            // La caption scritta in libreria dice cosa si vede; se manca
+            // l'immagine resta decorativa (alt vuoto) invece di mentire.
+            alt={item.copertinaCaption ?? ""}
             width={800}
             height={450}
             className="taglio w-full object-cover"

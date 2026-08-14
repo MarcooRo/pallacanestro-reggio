@@ -9,6 +9,7 @@ export const metadata: Metadata = { title: "News" };
 // Di default si vede tutto, mescolato; i tag scelgono la fonte.
 const FILTRI: { chiave: string; etichetta: string; fonte?: FonteNews }[] = [
   { chiave: "tutte", etichetta: "Tutte" },
+  { chiave: "redazione", etichetta: "Redazione", fonte: "redazione" },
   { chiave: "reggio", etichetta: "Reggio", fonte: "pr_wordpress" },
   { chiave: "seriea", etichetta: "Serie A", fonte: "lba" },
 ];
@@ -26,7 +27,8 @@ export default async function NewsPage({
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 px-4 py-6 lg:max-w-5xl">
       <h1 className="display text-3xl">News</h1>
 
-      <div className="flex gap-2.5 pl-1">
+      {/* quattro pillole a 390px: vanno a capo, non in overflow */}
+      <div className="flex flex-wrap gap-2.5 pl-1">
         {FILTRI.map((filtro) => (
           <Pillola
             key={filtro.chiave}

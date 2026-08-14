@@ -10,8 +10,14 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 
+import {
+  elencoToolNews,
+  eseguiToolNews,
+  esisteToolNews,
+  nomiToolNews,
+} from "@/src/lib/news/mcp";
 import { bearerMcpValido } from "@/src/lib/social/bearer";
-import { elencoToolMcp, eseguiToolMcp } from "@/src/lib/social/mcp";
+import { elencoToolMcp, eseguiToolMcp, nomiToolMcp } from "@/src/lib/social/mcp";
 
 export const runtime = "nodejs";
 
@@ -69,18 +75,34 @@ export async function POST(request: NextRequest) {
           ? chiesta
           : VERSIONI_SUPPORTATE[0],
         capabilities: { tools: {} },
-        serverInfo: { name: "pallacanestro-reggio-social", version: "1.0.0" },
+        serverInfo: { name: "pallacanestro-reggio-contenuti", version: "1.1.0" },
         instructions:
-          "Coda dei contenuti social di Pallacanestro Reggiana. Grafiche: list_og_templates per i template, preview_media per provarne una, queue_post per la bozza. Foto proprie: list_media per la libreria (caption e tags sono la guida per scegliere); una slide può essere {assetId} nudo o {assetId, template} per una composizione tipo foto-con-testo. La pubblicazione NON passa da qui: ogni post nasce draft e lo approva un umano da /admin/social. Non esiste un tool che pubblica.",
+          "Contenuti di Pallacanestro Reggiana: coda social e articoli del sito. Grafiche: list_og_templates per i template, preview_media per provarne una, queue_post per la bozza. Foto proprie: list_media per la libreria (caption e tags sono la guida per scegliere); una slide può essere {assetId} nudo o {assetId, template} per una composizione tipo foto-con-testo. Articoli del sito: create_article con il corpo a blocchi (paragrafo, sottotitolo, elenco, citazione), copertina dalla libreria, e in pagina la nota «Generato in parte con AI»; la firma della fonte è «Redazione», mai «Pallacanestro Reggiana» che sono le news ufficiali del club. La pubblicazione NON passa da qui: post e articoli nascono draft e li manda online un umano da /admin/social e /admin/news. Non esiste un tool che pubblica.",
       });
     }
     case "ping":
       return risposta(msg.id, {});
     case "tools/list":
-      return risposta(msg.id, { tools: elencoToolMcp() });
+      return risposta(msg.id, { tools: [...elencoToolMcp(), ...elencoToolNews()] });
     case "tools/call": {
       const nome = msg.params?.name ?? "";
-      const { testo, errore } = await eseguiToolMcp(nome, msg.params?.arguments, { base });
+      // Nome sconosciuto: l'elenco completo arriva da qui, che è il solo
+      // posto che conosce entrambi i registry.
+      if (!esisteToolNews(nome) && !nomiToolMcp().includes(nome)) {
+        return risposta(msg.id, {
+          content: [
+            {
+              type: "text",
+              text: `Il tool "${nome}" non esiste. Tool disponibili: ${[...nomiToolMcp(), ...nomiToolNews()].join(", ")}. Nota: non esiste NESSUN tool che pubblica — post e articoli li manda online un umano dall'admin.`,
+            },
+          ],
+          isError: true,
+        });
+      }
+      // Due registry, un solo endpoint: il nome decide a chi tocca.
+      const { testo, errore } = esisteToolNews(nome)
+        ? await eseguiToolNews(nome, msg.params?.arguments, { base })
+        : await eseguiToolMcp(nome, msg.params?.arguments, { base });
       return risposta(msg.id, {
         content: [{ type: "text", text: testo }],
         isError: errore,

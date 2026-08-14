@@ -17,6 +17,7 @@ import {
 import { getProfilo } from "@/src/lib/auth/session";
 import { dataOra } from "@/src/lib/date";
 import { CHIAVI_FLAG, getFlag, NOMI_FLAG } from "@/src/lib/flag";
+import { contaBozzeArticoli } from "@/src/lib/news/queries";
 import { getPartiteClubCasa, type PartitaLista } from "@/src/lib/partite/queries";
 import {
   getPronosticiAdmin,
@@ -37,7 +38,11 @@ export default async function AdminPage({
   if (!profilo || profilo.role !== "admin") redirect("/");
 
   const { esito } = await searchParams;
-  const [partite, flag] = await Promise.all([getPartiteClubCasa(), getFlag()]);
+  const [partite, flag, bozze] = await Promise.all([
+    getPartiteClubCasa(),
+    getFlag(),
+    contaBozzeArticoli(),
+  ]);
   const pronostici = await getPronosticiAdmin(partite.map((p) => p.id));
 
   return (
@@ -54,6 +59,12 @@ export default async function AdminPage({
           className="text-sm font-semibold text-brand hover:underline"
         >
           Social → la coda dei post
+        </Link>
+        <Link
+          href="/admin/news"
+          className="text-sm font-semibold text-brand hover:underline"
+        >
+          Articoli → i pezzi nostri{bozze > 0 ? ` (${bozze} in bozza)` : ""}
         </Link>
         <Link
           href="/admin/media"

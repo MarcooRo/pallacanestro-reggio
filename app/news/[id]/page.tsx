@@ -1,19 +1,24 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
-import { nomeFonte } from "@/src/components/news-card";
+import { CorpoArticolo } from "@/src/components/corpo-articolo";
+import { fonteDiCasa, nomeFonte } from "@/src/components/news-card";
 import { TornaIndietro } from "@/src/components/torna-indietro";
 import { dataBreve } from "@/src/lib/date";
 import { getCorpoNews } from "@/src/lib/news/articolo";
-import { getNewsById } from "@/src/lib/news/queries";
+import { getNewsPubblicata } from "@/src/lib/news/queries";
 
-// Lettura in-app: solo il corpo dell'articolo, impaginato col design
-// dell'app. Il testo arriva al volo dalle API delle fonti (niente
-// iframe: il sito intero portava dentro cookie banner e menu altrui) e
-// non si salva a database. La fonte è sempre citata e linkata.
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+// Due forme nella stessa pagina:
+//   - news di fonte: solo il corpo dell'articolo altrui, letto al volo dalle
+//     API della fonte (niente iframe: il sito intero portava dentro cookie
+//     banner e menu altrui) e non salvato a database. La fonte è sempre
+//     citata e linkata.
+//   - articolo nostro: corpo a blocchi dal nostro database, firma al posto
+//     del rimando, e la nota che il testo è stato generato in parte con AI.
+//
+// Il segmento accetta sia lo slug (articoli nostri) sia l'uuid (news di
+// fonte). Le bozze non arrivano qui: getNewsPubblicata filtra su published.
 
 export async function generateMetadata({
   params,
@@ -21,9 +26,19 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  if (!UUID.test(id)) return {};
-  const item = await getNewsById(id);
-  return item ? { title: item.title } : {};
+  const item = await getNewsPubblicata(id);
+  if (!item) return {};
+  return {
+    title: item.title,
+    description: item.excerpt ?? undefined,
+    openGraph: {
+      title: item.title,
+      description: item.excerpt ?? undefined,
+      type: "article",
+      publishedTime: item.publishedAt.toISOString(),
+      images: item.imageUrl ? [item.imageUrl] : undefined,
+    },
+  };
 }
 
 export default async function NewsLetturaPage({
@@ -32,12 +47,15 @@ export default async function NewsLetturaPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  // Il cast a uuid di Postgres esplode sugli id malformati: prima il 404.
-  if (!UUID.test(id)) notFound();
-  const item = await getNewsById(id);
+  const item = await getNewsPubblicata(id);
   if (!item) notFound();
 
-  const paragrafi = await getCorpoNews(item);
+  // Un solo indirizzo buono per gli articoli nostri: chi arriva dall'uuid
+  // finisce sullo slug (link condivisi e motori di ricerca puntano lì).
+  if (item.slug && id !== item.slug) redirect(`/news/${item.slug}`);
+
+  const nostro = item.source === "redazione";
+  const paragrafi = nostro ? null : await getCorpoNews(item);
   const fonte = nomeFonte[item.source] ?? item.source;
 
   return (
@@ -46,11 +64,7 @@ export default async function NewsLetturaPage({
 
       <article className="flex flex-col gap-4">
         <p className="eyebrow">
-          <span
-            className={
-              item.source === "pr_wordpress" ? "font-bold !text-brand-vivid" : ""
-            }
-          >
+          <span className={fonteDiCasa(item.source) ? "font-bold !text-brand-vivid" : ""}>
             {fonte}
           </span>
           {item.category ? ` · ${item.category}` : ""} ·{" "}
@@ -58,6 +72,16 @@ export default async function NewsLetturaPage({
         </p>
 
         <h1 className="display text-3xl">{item.title}</h1>
+
+        {nostro && (
+          <div className="flex flex-col gap-0.5">
+            {item.authorName && (
+              <p className="text-sm font-semibold">di {item.authorName}</p>
+            )}
+            {/* Dichiarato in chiaro, in piccolo: chi legge sa com'è nato il testo */}
+            <p className="text-[11px] text-muted">Generato in parte con AI</p>
+          </div>
+        )}
 
         {item.imageUrl && (
           <Image
@@ -70,7 +94,9 @@ export default async function NewsLetturaPage({
           />
         )}
 
-        {paragrafi ? (
+        {nostro && item.body ? (
+          <CorpoArticolo blocchi={item.body} />
+        ) : paragrafi ? (
           <div className="flex flex-col gap-3 text-[15px] leading-relaxed">
             {paragrafi.map((testo, i) => (
               <p key={i}>{testo}</p>
@@ -88,15 +114,18 @@ export default async function NewsLetturaPage({
         )}
 
         {/* La fonte si cita sempre, e il link è la scappatoia se il
-            corpo non è arrivato */}
-        <a
-          href={item.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="eyebrow self-start transition-colors hover:text-brand-vivid"
-        >
-          Fonte: {fonte} ↗
-        </a>
+            corpo non è arrivato. Un articolo nostro non ha nessun altrove:
+            la fonte è questa pagina. */}
+        {item.url && (
+          <a
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="eyebrow self-start transition-colors hover:text-brand-vivid"
+          >
+            Fonte: {fonte} ↗
+          </a>
+        )}
       </article>
     </main>
   );

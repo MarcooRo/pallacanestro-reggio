@@ -60,6 +60,9 @@ function aParagrafi(html: string): string[] {
 export async function getCorpoNews(
   item: typeof news.$inferSelect,
 ): Promise<string[] | null> {
+  // Gli articoli nostri hanno il corpo su database (blocchi): non c'è
+  // nessuna fonte da interrogare, li impagina CorpoArticolo.
+  if (item.source === "redazione") return null;
   if (!item.sourceId) return null;
   try {
     const html =

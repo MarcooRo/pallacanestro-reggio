@@ -416,6 +416,10 @@ const TOOL: Record<
 
 // ---------- superficie per la route ----------
 
+export function nomiToolMcp(): string[] {
+  return Object.keys(INPUT);
+}
+
 export function elencoToolMcp() {
   return (Object.keys(INPUT) as (keyof typeof INPUT)[]).map((nome) => {
     const schema = z.toJSONSchema(INPUT[nome]) as Record<string, unknown>;

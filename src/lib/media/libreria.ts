@@ -10,7 +10,7 @@ import exifReader from "exif-reader";
 import sharp from "sharp";
 
 import { db } from "@/src/db";
-import { mediaAssets, socialMediaItems } from "@/src/db/schema";
+import { mediaAssets, news, socialMediaItems } from "@/src/db/schema";
 import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
 
 export const BUCKET_MEDIA = "media";
@@ -265,13 +265,18 @@ export async function aggiornaAsset(
     .where(eq(mediaAssets.id, id));
 }
 
-/** In quanti post è usato l'asset (0 = cancellabile). */
+/** In quanti post e articoli è usato l'asset (0 = cancellabile). */
 export async function usiAsset(id: string): Promise<number> {
-  const usi = await db
-    .select({ id: socialMediaItems.id })
-    .from(socialMediaItems)
-    .where(eq(socialMediaItems.assetId, id));
-  return usi.length;
+  // Entrambe le FK sono `restrict`: se qui si contasse solo il social, la
+  // pagina direbbe "cancellabile" e la cancellazione morirebbe sul vincolo.
+  const [slide, articoli] = await Promise.all([
+    db
+      .select({ id: socialMediaItems.id })
+      .from(socialMediaItems)
+      .where(eq(socialMediaItems.assetId, id)),
+    db.select({ id: news.id }).from(news).where(eq(news.assetId, id)),
+  ]);
+  return slide.length + articoli.length;
 }
 
 /** Cancella riga e file, solo se nessun post lo usa (la FK restrict fa da rete). */
@@ -279,7 +284,9 @@ export async function cancellaAsset(id: string): Promise<void> {
   const [asset] = await db.select().from(mediaAssets).where(eq(mediaAssets.id, id)).limit(1);
   if (!asset) return;
   if ((await usiAsset(id)) > 0) {
-    throw new Error("la foto è usata in almeno un post: prima archivia o modifica quei post");
+    throw new Error(
+      "la foto è usata in almeno un post o articolo: prima archivia o modifica quei contenuti",
+    );
   }
   await db.delete(mediaAssets).where(eq(mediaAssets.id, id));
   const supabase = createSupabaseAdminClient();

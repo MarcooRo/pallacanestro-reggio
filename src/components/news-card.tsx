@@ -8,15 +8,24 @@ import Link from "next/link";
 import type { news } from "@/src/db/schema";
 import { soloOra } from "@/src/lib/date";
 
+// 'Redazione' tiene distinti gli articoli nostri dalle news ufficiali del
+// club ('Pallacanestro Reggiana'): il lettore non deve poterli confondere.
 export const nomeFonte: Record<string, string> = {
   lba: "Lega Basket",
   pr_wordpress: "Pallacanestro Reggiana",
+  redazione: "Redazione",
 };
+
+/** Le fonti "di casa", che si riconoscono al volo dall'occhiello rosso. */
+export function fonteDiCasa(source: string): boolean {
+  return source === "pr_wordpress" || source === "redazione";
+}
 
 export function NewsCard({ item }: { item: typeof news.$inferSelect }) {
   return (
     <Link
-      href={`/news/${item.id}`}
+      // Gli articoli nostri hanno un indirizzo leggibile, le news di fonte l'uuid
+      href={`/news/${item.slug ?? item.id}`}
       className="taglio-sm group flex gap-3 card p-3 transition-colors hover:border-brand"
     >
       {item.imageUrl && (
@@ -32,7 +41,7 @@ export function NewsCard({ item }: { item: typeof news.$inferSelect }) {
       <span className="flex min-w-0 flex-col gap-1">
         <span className="eyebrow">
           {/* le news di Reggio si riconoscono al volo: fonte in rosso */}
-          <span className={item.source === "pr_wordpress" ? "font-bold !text-brand-vivid" : ""}>
+          <span className={fonteDiCasa(item.source) ? "font-bold !text-brand-vivid" : ""}>
             {nomeFonte[item.source] ?? item.source}
           </span>
           {item.category ? ` · ${item.category}` : ""} · {soloOra(item.publishedAt)}

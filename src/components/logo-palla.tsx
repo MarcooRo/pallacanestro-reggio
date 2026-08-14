@@ -1,10 +1,11 @@
-// Loghino: palla da basket in tinta brand. Le cuciture sono nel colore
-// di sfondo, così la palla si "ritaglia" da sola sull'header scuro.
+// Loghino: palla da basket nel rosso del logo del club (--brand-logo, non il
+// rosso acceso dell'interfaccia). Le cuciture sono nel colore di sfondo, così
+// la palla si "ritaglia" da sola sull'header scuro.
 
 export function LogoPalla({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 20 20" className={className} aria-hidden>
-      <circle cx="10" cy="10" r="10" fill="var(--brand-vivid)" />
+      <circle cx="10" cy="10" r="10" fill="var(--brand-logo)" />
       <g stroke="var(--sfondo)" strokeWidth="1.4" fill="none">
         <path d="M10 0v20" />
         <path d="M0 10h20" />

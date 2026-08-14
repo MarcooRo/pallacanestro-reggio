@@ -19,6 +19,10 @@
   --testo: #f5f4f2;
   /* Abbastanza chiaro da leggersi sul grigio delle card (surface #131316) */
   --muted: #aeaeb6;
+  /* Ambra da display a LED per il timbro "unofficial": non è un colore del
+     club (sta qui e non nei token di branding, è un accento d'interfaccia) e
+     proprio per questo stacca dal rosso del marchio. */
+  --accento-pixel: #ffc046;
 }
 
 @theme inline {
@@ -36,6 +40,7 @@
   --color-brand-tint: var(--brand-surface-tint);
   --font-sans: var(--font-archivo);
   --font-mono: var(--font-geist-mono);
+  --font-pixel: var(--font-silkscreen);
 }
 
 body {
@@ -53,6 +58,38 @@ body {
   text-transform: uppercase;
   letter-spacing: -0.015em;
   line-height: 0.95;
+}
+
+/* Timbro "unofficial": bitmap ambra appiccicata di traverso sul wordmark,
+   come un adesivo. Sta in diagonale e in un font a pixel proprio per non
+   sembrare parte del marchio: l'app non è del club. Ruota da bottom-left così
+   il pivot resta agganciato alla fine del nome anche quando cambia corpo. */
+.timbro-unofficial {
+  font-family: var(--font-silkscreen), var(--font-geist-mono), monospace;
+  font-size: 0.5rem;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  text-transform: lowercase;
+  color: var(--accento-pixel);
+  display: inline-block;
+  transform: rotate(-9deg) translateY(-0.15em);
+  transform-origin: left bottom;
+  /* Alone tenue: la parola è piccolissima, senza glow sparisce sul fumo */
+  text-shadow: 0 0 10px color-mix(in srgb, var(--accento-pixel) 40%, transparent);
+}
+
+@media (min-width: 640px) {
+  .timbro-unofficial {
+    font-size: 0.625rem;
+  }
+}
+
+/* Da lg l'header ospita anche la nav: il timbro rientra di un filo per non
+   finire appiccicato alla prima voce ("Home"). */
+@media (min-width: 1024px) {
+  .timbro-unofficial {
+    font-size: 0.5625rem;
+  }
 }
 
 /* Occhiello da tabellone: mono, piccolo, spaziato */

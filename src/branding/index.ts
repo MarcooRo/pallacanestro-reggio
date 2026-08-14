@@ -9,9 +9,13 @@ const mode: BrandingMode =
 
 interface Branding {
   mode: BrandingMode;
-  /** Nome dell'app mostrato in header, metadata e PWA */
+  /** Nome dell'app mostrato in metadata e PWA */
   appName: string;
   appShortName: string;
+  /** Nome nell'header: abbreviato, deve stare su una riga a 390px */
+  appHeaderName: string;
+  /** Dichiarazione che l'app non è del club: nell'header è il timbro pixelato */
+  disclaimer: string;
   tagline: string;
   /** Path del logo in /public; null = fallback tipografico */
   logoUrl: string | null;
@@ -36,6 +40,8 @@ const configs: Record<BrandingMode, Branding> = {
     mode: "official",
     appName: "Pallacanestro Reggiana",
     appShortName: "Reggiana",
+    appHeaderName: "Pall. Reggiana",
+    disclaimer: "unofficial",
     tagline: "Segui Reggio: news, partite e la pagella della curva",
     logoUrl: null,
     colori: {
@@ -50,6 +56,8 @@ const configs: Record<BrandingMode, Branding> = {
     mode: "generic",
     appName: "Pallacanestro Reggiana",
     appShortName: "Reggiana",
+    appHeaderName: "Pall. Reggiana",
+    disclaimer: "unofficial",
     tagline: "Segui la tua squadra: news, partite e pagelle",
     logoUrl: null,
     colori: {

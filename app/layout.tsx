@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, Geist_Mono } from "next/font/google";
+import { Archivo, Geist_Mono, Silkscreen } from "next/font/google";
 import Link from "next/link";
 
 import { ProviderAccesso } from "@/src/components/accesso-richiesto";
@@ -25,6 +25,13 @@ const archivo = Archivo({
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+// Bitmap font per il solo timbro "unofficial" nell'header: una parola, un peso.
+const silkscreen = Silkscreen({
+  variable: "--font-silkscreen",
+  weight: "400",
   subsets: ["latin"],
 });
 
@@ -66,7 +73,7 @@ export default async function RootLayout({
     <html
       lang="it"
       data-branding={branding.mode}
-      className={`${archivo.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${archivo.variable} ${geistMono.variable} ${silkscreen.variable} h-full antialiased`}
       // Le estensioni del browser (es. LanguageTool) iniettano attributi
       // sull'<html> prima che React si agganci: senza questo, ogni dev
       // session mostra un falso warning di hydration mismatch.
@@ -79,16 +86,29 @@ export default async function RootLayout({
         <header className="sticky top-0 z-20 border-b border-border bg-background/90 pt-[env(safe-area-inset-top)] backdrop-blur">
           <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3 lg:max-w-5xl">
             <MenuLaterale admin={profilo?.role === "admin"} />
-            {/* Il nome per esteso deve stare su una riga: a 390px con text-lg
-                andava a capo ("PALLACANESTRO / REGGIANA") */}
+            {/* Il nome sta abbreviato per stare su una riga a 390px: con
+                "Pallacanestro Reggiana" per esteso andava a capo. Accanto, il
+                timbro pixelato in diagonale che dichiara l'app non ufficiale. */}
             <Link
               href="/"
-              className="display flex flex-1 items-center gap-2 text-base text-foreground sm:text-xl"
+              className="flex flex-1 items-center gap-2 text-foreground"
+              aria-label={`${branding.appHeaderName} — ${branding.disclaimer}`}
             >
               <LogoPalla className="h-5 w-5 shrink-0" />
-              <span>
-                {branding.appName}
-                <span className="text-brand">.</span>
+              {/* Il timbro è in posizione assoluta: appoggiato alla fine del
+                  nome, non occupa una colonna del flex. Così da lg, dove
+                  l'header ospita anche la nav, non spinge il wordmark a capo. */}
+              <span className="relative shrink-0 whitespace-nowrap">
+                <span className="display text-base sm:text-xl">
+                  {branding.appHeaderName}
+                  <span className="text-brand">.</span>
+                </span>
+                <span
+                  className="timbro-unofficial absolute bottom-[46%] left-full ml-1.5"
+                  aria-hidden
+                >
+                  {branding.disclaimer}
+                </span>
               </span>
             </Link>
             <NavDesktop />

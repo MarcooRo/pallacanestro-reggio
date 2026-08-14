@@ -14,6 +14,10 @@
   --brand-vivid: #ff2440;        /* stati attivi, glow */
   --brand-on-primary: #ffffff;
   --brand-surface-tint: #2a0d13; /* rosso spento per sfondi */
+  /* Il rosso del logo del club (public/logo-pallacanestro-reggiana.svg): più
+     scuro e meno acceso del --brand-vivid dell'interfaccia. Lo usa solo la
+     palla del loghino, che deve stare in tinta col marchio. */
+  --brand-logo: #c10e1a;
 }
 
 /* Generico: nessun riferimento al club, per distribuzione senza accordo */
@@ -23,4 +27,5 @@
   --brand-vivid: #60a5fa;
   --brand-on-primary: #ffffff;
   --brand-surface-tint: #101a33;
+  --brand-logo: #1d4ed8;
 }

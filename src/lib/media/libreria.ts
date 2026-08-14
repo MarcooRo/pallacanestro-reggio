@@ -5,7 +5,7 @@
 
 import { randomUUID } from "node:crypto";
 
-import { and, arrayContains, desc, eq, gte, lte, type SQL } from "drizzle-orm";
+import { and, arrayContains, desc, eq, gte, lte, sql, type SQL } from "drizzle-orm";
 import exifReader from "exif-reader";
 import sharp from "sharp";
 
@@ -267,16 +267,32 @@ export async function aggiornaAsset(
 
 /** In quanti post e articoli è usato l'asset (0 = cancellabile). */
 export async function usiAsset(id: string): Promise<number> {
-  // Entrambe le FK sono `restrict`: se qui si contasse solo il social, la
-  // pagina direbbe "cancellabile" e la cancellazione morirebbe sul vincolo.
-  const [slide, articoli] = await Promise.all([
+  // Tre posti, e solo i primi due hanno una FK `restrict` a fare da rete:
+  // le foto dentro il corpo di un articolo stanno in un jsonb, quindi qui è
+  // l'UNICO controllo che impedisce di cancellare una foto pubblicata e
+  // lasciare un buco a metà articolo.
+  const [slide, copertine, dentroArticoli] = await Promise.all([
     db
       .select({ id: socialMediaItems.id })
       .from(socialMediaItems)
       .where(eq(socialMediaItems.assetId, id)),
     db.select({ id: news.id }).from(news).where(eq(news.assetId, id)),
+    db
+      .select({ id: news.id })
+      .from(news)
+      .where(
+        sql`${news.body} is not null and exists (
+          select 1 from jsonb_array_elements(${news.body}) blocco
+          where blocco->>'assetId' = ${id}
+        )`,
+      ),
   ]);
-  return slide.length + articoli.length;
+  // Un articolo può usare la stessa foto in copertina E nel corpo: conta una volta
+  const idArticoli = new Set([
+    ...copertine.map((r) => r.id),
+    ...dentroArticoli.map((r) => r.id),
+  ]);
+  return slide.length + idArticoli.size;
 }
 
 /** Cancella riga e file, solo se nessun post lo usa (la FK restrict fa da rete). */

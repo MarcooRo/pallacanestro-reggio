@@ -8,6 +8,10 @@ import { fonteDiCasa, nomeFonte } from "@/src/components/news-card";
 import { TornaIndietro } from "@/src/components/torna-indietro";
 import { dataBreve } from "@/src/lib/date";
 import { getCorpoNews } from "@/src/lib/news/articolo";
+import {
+  risolviImmaginiCorpo,
+  urlImmaginiCorpo,
+} from "@/src/lib/news/immagini";
 import { getNewsPubblicata } from "@/src/lib/news/queries";
 import { urlSito } from "@/src/lib/sito";
 
@@ -33,6 +37,15 @@ export async function generateMetadata({
   // Canonical sullo slug quando c'è (articoli nostri): un solo indirizzo
   // buono anche se il link girato è quello con l'uuid.
   const indirizzo = `/news/${item.slug ?? item.id}`;
+
+  // Senza copertina, per la condivisione vale la prima foto del corpo:
+  // meglio una scheda con immagine che una scheda nuda.
+  let anteprima = item.imageUrl;
+  if (!anteprima && item.body) {
+    const immagini = await risolviImmaginiCorpo(item.body);
+    anteprima = urlImmaginiCorpo(item.body, immagini)[0] ?? null;
+  }
+
   return {
     title: item.title,
     description: item.excerpt ?? undefined,
@@ -44,7 +57,7 @@ export async function generateMetadata({
       url: indirizzo,
       publishedTime: item.publishedAt.toISOString(),
       modifiedTime: item.updatedAt.toISOString(),
-      images: item.imageUrl ? [item.imageUrl] : undefined,
+      images: anteprima ? [anteprima] : undefined,
     },
   };
 }
@@ -56,16 +69,23 @@ export async function generateMetadata({
 function DatiStrutturati({
   articolo,
   url,
+  immaginiCorpo,
 }: {
   articolo: NonNullable<Awaited<ReturnType<typeof getNewsPubblicata>>>;
   url: string;
+  immaginiCorpo: string[];
 }) {
+  // Copertina e foto del corpo: Google preferisce più immagini per articolo
+  const immagini = [
+    ...(articolo.imageUrl ? [articolo.imageUrl] : []),
+    ...immaginiCorpo,
+  ];
   const dati = {
     "@context": "https://schema.org",
     "@type": "NewsArticle",
     headline: articolo.title.slice(0, 110),
     description: articolo.excerpt ?? undefined,
-    image: articolo.imageUrl ? [articolo.imageUrl] : undefined,
+    image: immagini.length > 0 ? immagini : undefined,
     datePublished: articolo.publishedAt.toISOString(),
     dateModified: articolo.updatedAt.toISOString(),
     author: articolo.authorName
@@ -102,6 +122,9 @@ export default async function NewsLetturaPage({
   const nostro = item.source === "redazione";
   const paragrafi = nostro ? null : await getCorpoNews(item);
   const fonte = nomeFonte[item.source] ?? item.source;
+  // Le foto dentro il corpo: il blocco porta l'id, url e misure stanno in
+  // libreria (misure vere = nessun salto di layout mentre carica).
+  const immagini = nostro ? await risolviImmaginiCorpo(item.body) : {};
 
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 px-4 py-6 lg:max-w-2xl">
@@ -109,6 +132,7 @@ export default async function NewsLetturaPage({
         <DatiStrutturati
           articolo={item}
           url={`${urlSito()}/news/${item.slug ?? item.id}`}
+          immaginiCorpo={urlImmaginiCorpo(item.body, immagini)}
         />
       )}
       <TornaIndietro fallback="/news" etichetta="News" />
@@ -148,7 +172,7 @@ export default async function NewsLetturaPage({
         )}
 
         {nostro && item.body ? (
-          <CorpoArticolo blocchi={item.body} />
+          <CorpoArticolo blocchi={item.body} immagini={immagini} />
         ) : paragrafi ? (
           <div className="flex flex-col gap-3 text-[15px] leading-relaxed">
             {paragrafi.map((testo, i) => (

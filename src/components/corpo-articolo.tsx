@@ -5,9 +5,19 @@
 // Lo usano sia /news/[slug] sia l'anteprima in /admin/news/[id]: quello che
 // vede l'admin prima di pubblicare è esattamente quello che va online.
 
-import type { Blocco } from "@/src/lib/news/blocchi";
+import Image from "next/image";
 
-export function CorpoArticolo({ blocchi }: { blocchi: Blocco[] }) {
+import type { Blocco } from "@/src/lib/news/blocchi";
+import type { ImmaginiCorpo } from "@/src/lib/news/immagini";
+
+export function CorpoArticolo({
+  blocchi,
+  immagini = {},
+}: {
+  blocchi: Blocco[];
+  /** assetId → foto, da risolviImmaginiCorpo(). */
+  immagini?: ImmaginiCorpo;
+}) {
   return (
     <div className="flex flex-col gap-3 text-[15px] leading-relaxed">
       {blocchi.map((blocco, i) => {
@@ -40,6 +50,31 @@ export function CorpoArticolo({ blocchi }: { blocchi: Blocco[] }) {
                 )}
               </blockquote>
             );
+          case "immagine": {
+            const foto = immagini[blocco.assetId];
+            // Foto sparita dalla libreria: si salta il blocco invece di
+            // lasciare un'immagine rotta in mezzo al testo.
+            if (!foto) return null;
+            return (
+              <figure key={i} className="my-1 flex flex-col gap-1.5">
+                <Image
+                  src={foto.url}
+                  // L'alt descrive la foto (caption della libreria); la
+                  // didascalia è un'altra cosa e si legge sotto.
+                  alt={foto.caption ?? ""}
+                  width={foto.width ?? 1080}
+                  height={foto.height ?? 810}
+                  sizes="(min-width: 1024px) 672px, 100vw"
+                  className="taglio-sm h-auto w-full object-cover"
+                />
+                {blocco.didascalia && (
+                  <figcaption className="text-xs text-muted">
+                    {blocco.didascalia}
+                  </figcaption>
+                )}
+              </figure>
+            );
+          }
           default:
             return <p key={i}>{blocco.testo}</p>;
         }

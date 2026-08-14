@@ -11,7 +11,12 @@ import { and, eq, ne, sql } from "drizzle-orm";
 
 import { db } from "@/src/db";
 import { mediaAssets, news } from "@/src/db/schema";
-import { haParagrafi, type Blocco } from "@/src/lib/news/blocchi";
+import {
+  assetIdsDelCorpo,
+  haParagrafi,
+  MAX_IMMAGINI_CORPO,
+  type Blocco,
+} from "@/src/lib/news/blocchi";
 
 export const SORGENTE_REDAZIONE = "redazione";
 
@@ -58,9 +63,10 @@ async function slugLibero(titolo: string, escludiId?: string): Promise<string> {
   );
 }
 
-// ---------- copertina ----------
+// ---------- foto ----------
 
-async function copertina(assetId: string): Promise<string> {
+/** Una foto usabile: esiste in libreria ed è arrivata a 'ready'. */
+async function fotoUsabile(assetId: string) {
   const [asset] = await db
     .select()
     .from(mediaAssets)
@@ -76,7 +82,24 @@ async function copertina(assetId: string): Promise<string> {
       `La foto ${assetId} è ancora in caricamento (status ${asset.status}): chiudi l'upload con confirm_upload prima di usarla.`,
     );
   }
-  return asset.url;
+  return asset;
+}
+
+async function copertina(assetId: string): Promise<string> {
+  return (await fotoUsabile(assetId)).url;
+}
+
+// Le foto dentro il corpo non hanno una foreign key che le protegga (stanno
+// in un jsonb), quindi il controllo alla scrittura è l'unica rete: un id
+// inventato deve fermarsi qui, non diventare un buco in pagina.
+async function controllaImmaginiDelCorpo(body: Blocco[]): Promise<void> {
+  const ids = assetIdsDelCorpo(body);
+  if (ids.length > MAX_IMMAGINI_CORPO) {
+    throw new ErroreArticolo(
+      `Troppe foto nel corpo: ${ids.length}, il massimo è ${MAX_IMMAGINI_CORPO}. Tienine le più significative.`,
+    );
+  }
+  for (const id of ids) await fotoUsabile(id);
 }
 
 // ---------- lettura per gli ingressi di scrittura ----------
@@ -116,16 +139,17 @@ export interface CampiArticolo {
   publishedAt?: Date | null;
 }
 
-function controllaCorpo(body: Blocco[]): void {
+async function controllaCorpo(body: Blocco[]): Promise<void> {
   if (!haParagrafi(body)) {
     throw new ErroreArticolo(
-      "Il corpo è fatto solo di sottotitoli o elenchi: un articolo ha bisogno di almeno un paragrafo di testo.",
+      "Il corpo è fatto solo di sottotitoli, elenchi o foto: un articolo ha bisogno di almeno un paragrafo di testo.",
     );
   }
+  await controllaImmaginiDelCorpo(body);
 }
 
 export async function creaBozza(campi: CampiArticolo): Promise<Articolo> {
-  controllaCorpo(campi.body);
+  await controllaCorpo(campi.body);
   const imageUrl = campi.assetId ? await copertina(campi.assetId) : null;
   const slug = await slugLibero(campi.title);
 
@@ -156,7 +180,7 @@ export async function aggiornaBozza(
 ): Promise<Articolo> {
   const articolo = await getArticolo(id);
   soloBozza(articolo, "la modifica");
-  if (campi.body) controllaCorpo(campi.body);
+  if (campi.body) await controllaCorpo(campi.body);
 
   const imageUrl =
     campi.assetId === undefined

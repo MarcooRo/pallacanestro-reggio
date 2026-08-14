@@ -28,6 +28,23 @@ export const bloccoSchema = z.discriminatedUnion("t", [
     testo,
     chi: z.string().trim().max(80).optional().describe("Chi l'ha detta"),
   }),
+  // Solo l'id: url, dimensioni e alt si leggono dalla libreria quando la
+  // pagina si compone (src/lib/news/immagini.ts). Così le misure sono quelle
+  // vere — niente salto di layout — e non si duplica un dato che può
+  // invecchiare.
+  z.strictObject({
+    t: z.literal("immagine"),
+    assetId: z
+      .string()
+      .uuid()
+      .describe("Foto della libreria, da list_media. Solo materiale nostro"),
+    didascalia: z
+      .string()
+      .trim()
+      .max(200)
+      .optional()
+      .describe("Riga sotto la foto: cosa si sta guardando"),
+  }),
 ]);
 
 export const corpoSchema = z
@@ -38,15 +55,29 @@ export const corpoSchema = z
 
 export type Blocco = z.output<typeof bloccoSchema>;
 
-/** Un articolo deve avere qualcosa da leggere, non solo sottotitoli. */
+/** Un articolo deve avere qualcosa da leggere, non solo sottotitoli e foto. */
 export function haParagrafi(corpo: Blocco[]): boolean {
   return corpo.some((b) => b.t === "paragrafo" || b.t === "citazione");
 }
 
 /** Battute del solo testo leggibile: serve al tempo di lettura e all'admin. */
 export function numeroParole(corpo: Blocco[]): number {
-  const parti = corpo.flatMap((b) =>
-    b.t === "elenco" ? b.voci : [b.testo],
-  );
+  const parti = corpo.flatMap((b) => {
+    if (b.t === "elenco") return b.voci;
+    // Le immagini non hanno testo: contarle darebbe "undefined" per parola
+    if (b.t === "immagine") return b.didascalia ? [b.didascalia] : [];
+    return [b.testo];
+  });
   return parti.join(" ").split(/\s+/).filter(Boolean).length;
 }
+
+/** Le foto citate nel corpo, nell'ordine, senza doppioni. */
+export function assetIdsDelCorpo(corpo: Blocco[]): string[] {
+  const visti = new Set<string>();
+  for (const b of corpo) if (b.t === "immagine") visti.add(b.assetId);
+  return [...visti];
+}
+
+// Tetto alle foto dentro un articolo: oltre si fanno pagine da megabyte
+// su una connessione da palazzetto.
+export const MAX_IMMAGINI_CORPO = 10;

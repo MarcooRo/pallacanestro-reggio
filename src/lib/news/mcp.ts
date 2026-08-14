@@ -77,11 +77,11 @@ const INPUT = {
 
 export const DESCRIZIONI_NEWS: Record<keyof typeof INPUT, string> = {
   create_article:
-    "Scrive un articolo nostro e lo mette in bozza sul sito. Il corpo è fatto di blocchi (paragrafo, sottotitolo, elenco, citazione), non HTML. NON viene pubblicato: lo pubblica un umano da /admin/news, e in pagina comparirà la nota «Generato in parte con AI».",
+    "Scrive un articolo nostro e lo mette in bozza sul sito. Il corpo è fatto di blocchi (paragrafo, sottotitolo, elenco, citazione, immagine), non HTML. Le foto dentro il testo sono blocchi {t:'immagine', assetId} con l'id preso da list_media, al massimo 10, e sono cosa diversa dalla copertina (assetId in cima): usale dove aiutano il racconto. NON viene pubblicato: lo pubblica un umano da /admin/news, e in pagina comparirà la nota «Generato in parte con AI».",
   list_articles: "Elenca gli articoli nostri: prima le bozze in lavorazione, poi i pubblicati.",
   get_article: "Dettaglio completo di un articolo, corpo compreso.",
   update_article:
-    "Corregge un articolo ANCORA in bozza: titolo, corpo, sommario, rubrica, firma, copertina. Dopo la pubblicazione non si tocca più da qui.",
+    "Corregge un articolo ANCORA in bozza: titolo, corpo (foto comprese), sommario, rubrica, firma, copertina. Dopo la pubblicazione non si tocca più da qui.",
   archive_article:
     "Archivia un articolo: se era pubblicato esce dal sito, se era una bozza esce dalla lista di lavoro.",
 };

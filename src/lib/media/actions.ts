@@ -12,6 +12,7 @@ import {
   aggiornaAsset,
   cancellaAsset,
   caricaAsset,
+  importaAssetDaUrl,
 } from "@/src/lib/media/libreria";
 
 const uuid = z.string().uuid();
@@ -61,6 +62,37 @@ export async function caricaFoto(formData: FormData) {
       ? `${caricate} foto caricate, ${errori.length} no — ${errori.join("; ")}`
       : `${caricate === 1 ? "1 foto caricata" : `${caricate} foto caricate`}`,
   );
+}
+
+// Import da URL: comodo quando la foto è già online (una nostra grafica, un
+// media kit) e non la si vuole passare dal telefono. Uno alla volta, con la
+// provenienza salvata in origin_url — chi approva il post deve poter vedere
+// che quell'immagine non è nostra.
+export async function importaFotoDaUrl(formData: FormData) {
+  await richiediAdmin();
+
+  const indirizzo = String(formData.get("url") ?? "").trim();
+  if (!indirizzo) esito("Nessun URL indicato");
+
+  const caption = String(formData.get("caption") ?? "").trim() || null;
+  const tags = String(formData.get("tags") ?? "")
+    .split(/[\s,]+/)
+    .filter(Boolean);
+
+  // esito() fa redirect(), che internamente è un throw: va chiamata FUORI
+  // dal try, altrimenti il catch si mangia il redirect di successo.
+  let messaggio: string;
+  try {
+    const asset = await importaAssetDaUrl(indirizzo, {
+      source: "admin",
+      caption,
+      tags,
+    });
+    messaggio = `Foto importata da URL (${asset.width}×${asset.height})`;
+  } catch (err) {
+    messaggio = `Import non riuscito — ${err instanceof Error ? err.message : err}`;
+  }
+  esito(messaggio);
 }
 
 export async function modificaFoto(formData: FormData) {

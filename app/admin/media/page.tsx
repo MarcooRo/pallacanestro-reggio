@@ -1,16 +1,20 @@
-// La libreria delle foto proprie: si carica dal telefono, al palazzetto,
-// tra un quarto e l'altro — la pagina è pensata per quello. Didascalia e
-// tag sono ciò su cui l'AI si basa per scegliere le foto (list_media):
-// scriverli bene qui è metà del lavoro.
+// La libreria foto: si carica dal telefono, al palazzetto, tra un quarto e
+// l'altro — la pagina è pensata per quello, quindi didascalia e tag sono
+// facoltativi (si raffinano dopo, foto per foto) e l'unica cosa obbligatoria
+// è scegliere i file. Sono comunque ciò su cui l'AI si basa per scegliere le
+// foto (list_media): scriverli bene resta metà del lavoro.
+// Secondo ingresso: import da URL, per le immagini già online.
 
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { FormCaricaFoto } from "@/src/components/form-carica-foto";
+import { FormImportaUrl } from "@/src/components/form-importa-url";
 import { getProfilo } from "@/src/lib/auth/session";
 import { dataOra } from "@/src/lib/date";
-import { cancellaFoto, caricaFoto, modificaFoto } from "@/src/lib/media/actions";
+import { cancellaFoto, modificaFoto } from "@/src/lib/media/actions";
 import { elencaAssetsAdmin } from "@/src/lib/media/libreria";
 
 export const metadata: Metadata = { title: "Admin · Foto" };
@@ -41,38 +45,8 @@ export default async function AdminMediaPage({
         </p>
       )}
 
-      <form action={caricaFoto} className="flex flex-col gap-3 rounded-md border border-border p-4">
-        <p className="text-sm text-muted">
-          Didascalia e tag sono quello che l&apos;AI legge per scegliere le
-          foto: descrivi cosa si vede, non serve altro.
-        </p>
-        <input
-          type="file"
-          name="files"
-          accept="image/jpeg,image/png,image/webp"
-          multiple
-          required
-          className="text-sm file:mr-3 file:rounded-md file:border-0 file:bg-brand file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-on-brand"
-        />
-        <input
-          type="text"
-          name="caption"
-          placeholder="Didascalia (es. La curva durante il terzo quarto con Trapani)"
-          className="rounded-md border border-border bg-transparent px-2 py-1.5 text-sm"
-        />
-        <input
-          type="text"
-          name="tags"
-          placeholder="Tag separati da spazi (es. palabigi tifosi trapani)"
-          className="rounded-md border border-border bg-transparent px-2 py-1.5 text-sm"
-        />
-        <button
-          type="submit"
-          className="self-start rounded-md bg-brand px-3 py-1.5 text-sm font-semibold text-on-brand"
-        >
-          Carica
-        </button>
-      </form>
+      <FormCaricaFoto />
+      <FormImportaUrl />
 
       {assets.length === 0 && (
         <p className="rounded-md border border-border p-4 text-sm text-muted">
@@ -113,6 +87,21 @@ export default async function AdminMediaPage({
                   ? ` · usata in ${a.usi === 1 ? "1 post" : `${a.usi} post`}`
                   : ""}
               </p>
+              {/* Provenienza in chiaro: una foto presa da un sito non è
+                  nostra, e chi approva il post deve saperlo prima, non dopo */}
+              {a.originUrl && (
+                <p className="text-xs text-brand-vivid">
+                  presa da{" "}
+                  <a
+                    href={a.originUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="break-all underline"
+                  >
+                    {a.originUrl}
+                  </a>
+                </p>
+              )}
               <form action={modificaFoto} className="flex flex-col gap-2">
                 <input type="hidden" name="assetId" value={a.id} />
                 <input

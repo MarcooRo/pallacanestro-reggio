@@ -1,7 +1,9 @@
-// La libreria delle foto proprie: materiale nostro (palazzetto, squadra,
-// tifosi), MAI foto scaricate da fonti esterne. I metadati (dimensioni,
-// mime, EXIF) si leggono sempre server-side dai byte veri: quello che
-// dichiara il client non tocca mai il database.
+// La libreria foto: materiale nostro (palazzetto, squadra, tifosi) e, da
+// agosto 2026, anche immagini importate da un URL esterno — quelle portano
+// `origin_url` valorizzato, che è l'unico modo per riconoscerle dopo.
+// I byte finiscono sempre sul nostro bucket, mai linkati dall'origine.
+// I metadati (dimensioni, mime, EXIF) si leggono sempre server-side dai byte
+// veri: quello che dichiara il client non tocca mai il database.
 
 import { randomUUID } from "node:crypto";
 
@@ -11,6 +13,7 @@ import sharp from "sharp";
 
 import { db } from "@/src/db";
 import { mediaAssets, news, socialMediaItems } from "@/src/db/schema";
+import { scaricaImmagine } from "@/src/lib/media/scarica";
 import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
 
 export const BUCKET_MEDIA = "media";
@@ -87,7 +90,13 @@ function chiaveStorage(id: string, formato: string, creato: Date): string {
  */
 export async function caricaAsset(
   buffer: Buffer,
-  opts: { source: "admin" | "mcp"; caption?: string | null; tags?: string[] },
+  opts: {
+    source: "admin" | "mcp";
+    caption?: string | null;
+    tags?: string[];
+    /** Se i byte arrivano da un URL esterno: da dove. Traccia la provenienza. */
+    originUrl?: string | null;
+  },
 ): Promise<MediaAsset> {
   const metadati = await leggiMetadati(buffer);
   const id = randomUUID();
@@ -115,12 +124,32 @@ export async function caricaAsset(
       mime: metadati.mime,
       bytes: metadati.bytes,
       source: opts.source,
+      originUrl: opts.originUrl ?? null,
       caption: opts.caption?.trim() || null,
       takenAt: metadati.takenAt ?? adesso,
       tags: normalizzaTags(opts.tags ?? []),
     })
     .returning();
   return asset;
+}
+
+/**
+ * Importa in libreria un'immagine che sta a un URL esterno: si scarica coi
+ * paletti di scarica.ts, si valida coi soliti sharp + EXIF e finisce sul
+ * nostro bucket. La copia è voluta: l'URL di partenza può cambiare o morire,
+ * e i post renderizzati non possono dipendere dal server di qualcun altro.
+ *
+ * `origin_url` resta come traccia della provenienza. Attenzione: prendere
+ * un'immagine da un sito NON dà il diritto di pubblicarla — quel giudizio
+ * sta a chi approva il post in /admin/social, e per questo la provenienza è
+ * scritta in chiaro nella pagina admin e restituita dai tool MCP.
+ */
+export async function importaAssetDaUrl(
+  indirizzo: string,
+  opts: { source: "admin" | "mcp"; caption?: string | null; tags?: string[] },
+): Promise<MediaAsset> {
+  const { buffer, url } = await scaricaImmagine(indirizzo);
+  return caricaAsset(buffer, { ...opts, originUrl: url });
 }
 
 export function normalizzaTags(tags: string[]): string[] {

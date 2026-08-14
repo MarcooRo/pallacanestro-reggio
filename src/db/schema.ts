@@ -617,10 +617,15 @@ export const socialPosts = pgTable(
   ],
 );
 
-// La libreria delle foto proprie (fase 1.6): materiale nostro, mai foto
-// scaricate da fonti esterne. Un asset via MCP nasce 'pending' (riga senza
-// file) e diventa 'ready' solo quando il file è sul bucket e i metadati
-// sono stati letti server-side, mai fidandosi del client.
+// La libreria foto (fase 1.6). Nasce come archivio di materiale nostro; da
+// agosto 2026 accetta anche immagini scaricate da un URL esterno, e in quel
+// caso `origin_url` dice da dove arrivano: è l'unica traccia della
+// provenienza, quindi l'unico modo per sapere, prima di pubblicare, se una
+// foto è nostra o di qualcun altro. `source` resta CHI l'ha messa dentro
+// (admin o mcp), non da dove viene.
+// Un asset via MCP nasce 'pending' (riga senza file) e diventa 'ready' solo
+// quando il file è sul bucket e i metadati sono stati letti server-side,
+// mai fidandosi del client.
 export const mediaAssets = pgTable(
   "media_assets",
   {
@@ -633,6 +638,7 @@ export const mediaAssets = pgTable(
     mime: text(),
     bytes: integer(),
     source: text().notNull(),
+    originUrl: text(), // null = foto nostra; valorizzato = scaricata da lì
     caption: text(), // ciò su cui l'AI si basa per scegliere: va scritta bene
     takenAt: timestamp({ withTimezone: true }), // da EXIF, altrimenti data di upload
     tags: text().array().notNull().default([]),

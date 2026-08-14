@@ -1,10 +1,14 @@
 import type { NextConfig } from "next";
 
+import { LIMITE_UPLOAD_MB } from "./src/lib/media/limiti";
+
 const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
-      // Le foto dal telefono per la libreria media (default: 1mb)
-      bodySizeLimit: "25mb",
+      // Le foto dal telefono per la libreria media (default: 1mb). Il numero
+      // vive in src/lib/media/limiti.ts: la pagina admin lo mostra e blocca
+      // la selezione troppo grossa prima di inviarla.
+      bodySizeLimit: `${LIMITE_UPLOAD_MB}mb`,
     },
   },
   images: {

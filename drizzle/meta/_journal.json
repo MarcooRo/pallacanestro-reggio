@@ -78,6 +78,13 @@
       "when": 1786716777894,
       "tag": "0010_articoli-redazione",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1786724504237,
+      "tag": "0011_provenienza-foto",
+      "breakpoints": true
     }
   ]
 }

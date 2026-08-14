@@ -20,8 +20,10 @@ import {
   creaUploadFirmato,
   elencaAssets,
   finalizzaAsset,
+  importaAssetDaUrl,
   type MediaAsset,
 } from "@/src/lib/media/libreria";
+import { ErroreScarico } from "@/src/lib/media/scarica";
 import { signOgUrl } from "@/src/lib/og/firma";
 import { dimensioniTemplate, tuttiTemplateOg } from "@/src/lib/og/registry";
 import { ErroreTool } from "@/src/lib/social/errore";
@@ -103,6 +105,19 @@ const INPUT = {
   confirm_upload: z.strictObject({
     assetId: z.string().uuid().describe("L'asset restituito da create_upload_url"),
   }),
+  import_media_url: z.strictObject({
+    url: z
+      .string()
+      .url()
+      .describe(
+        "URL diretto al file immagine (JPEG, PNG o WebP), non la pagina che la contiene",
+      ),
+    caption: z
+      .string()
+      .optional()
+      .describe("Cosa si vede: è ciò su cui ti baserai per ritrovarla in list_media"),
+    tags: z.array(z.string()).default([]),
+  }),
 } satisfies Record<string, z.ZodType>;
 
 export const DESCRIZIONI: Record<keyof typeof INPUT, string> = {
@@ -123,6 +138,8 @@ export const DESCRIZIONI: Record<keyof typeof INPUT, string> = {
     "URL firmato per caricare nella libreria un'immagine che hai prodotto tu: PUT dei byte all'uploadUrl (header x-upsert non serve), poi confirm_upload. MAI passare immagini in base64 nei parametri dei tool.",
   confirm_upload:
     "Chiude l'upload iniziato con create_upload_url: verifica che il file sia sul bucket, ne legge dimensioni e formato e rende l'asset usabile nei post.",
+  import_media_url:
+    "Mette in libreria un'immagine che sta già online: il server la scarica dall'URL, ne legge dimensioni e formato e la copia sul nostro storage (l'URL di partenza non viene linkato nei post). Comodo per non dover far caricare tutto a mano dall'admin. La provenienza resta salvata e visibile all'admin: NON usarlo per foto di agenzie, testate o altri club, che non si possono ripubblicare — se una foto ci serve ma non è nostra, meglio il template citazione-notizia, che è sola tipografia.",
 };
 
 // ---------- helper ----------
@@ -191,6 +208,9 @@ function esponiAsset(a: MediaAsset) {
     caption: a.caption,
     tags: a.tags,
     takenAt: a.takenAt?.toISOString() ?? null,
+    // null = foto nostra. Valorizzato = scaricata da lì, quindi da trattare
+    // come materiale di qualcun altro finché l'admin non dice il contrario.
+    origine: a.originUrl,
   };
 }
 
@@ -409,6 +429,26 @@ const TOOL: Record<
     } catch (err) {
       throw new ErroreTool(
         `Finalizzazione fallita: ${err instanceof Error ? err.message : err}`,
+      );
+    }
+  },
+
+  async import_media_url(input: z.output<(typeof INPUT)["import_media_url"]>) {
+    try {
+      const asset = await importaAssetDaUrl(input.url, {
+        source: "mcp",
+        caption: input.caption ?? null,
+        tags: input.tags,
+      });
+      return {
+        asset: esponiAsset(asset),
+        nota: "L'immagine è sul nostro storage e usabile come assetId nei post. La provenienza è registrata: se non è materiale nostro, dillo nelle note del post così l'admin decide in approvazione.",
+      };
+    } catch (err) {
+      // ErroreScarico ha già un messaggio scritto per essere letto da te
+      if (err instanceof ErroreScarico) throw new ErroreTool(err.message);
+      throw new ErroreTool(
+        `Import da URL fallito: ${err instanceof Error ? err.message : err}. Se il messaggio parla di formato, l'URL non punta a un JPEG/PNG/WebP.`,
       );
     }
   },

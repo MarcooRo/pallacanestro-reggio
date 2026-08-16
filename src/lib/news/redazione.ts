@@ -17,6 +17,7 @@ import {
   MAX_IMMAGINI_CORPO,
   type Blocco,
 } from "@/src/lib/news/blocchi";
+import { controllaGrafici } from "@/src/lib/news/grafici/dati";
 
 export const SORGENTE_REDAZIONE = "redazione";
 
@@ -142,10 +143,13 @@ export interface CampiArticolo {
 async function controllaCorpo(body: Blocco[]): Promise<void> {
   if (!haParagrafi(body)) {
     throw new ErroreArticolo(
-      "Il corpo è fatto solo di sottotitoli, elenchi o foto: un articolo ha bisogno di almeno un paragrafo di testo.",
+      "Il corpo è fatto solo di sottotitoli, elenchi, foto o widget: un articolo ha bisogno di almeno un paragrafo di testo (blocco 'paragrafo' o 'md').",
     );
   }
   await controllaImmaginiDelCorpo(body);
+  // I widget: nome che esiste, parametri validi, riferimenti veri. Lancia
+  // ErroreTool, che il layer MCP riporta com'è (cfr. src/lib/news/mcp.ts).
+  await controllaGrafici(body);
 }
 
 export async function creaBozza(campi: CampiArticolo): Promise<Articolo> {

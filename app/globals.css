@@ -185,6 +185,17 @@ body {
   );
 }
 
+/* Carosello foto degli articoli: si scorre col dito, e la barra di scroll
+   sparisce perché a bordo pagina è un segno grafico che non c'entra niente
+   (su telefono non si vede comunque). Il gesto resta quello nativo. */
+.carosello {
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+.carosello::-webkit-scrollbar {
+  display: none;
+}
+
 /* Reveal orchestrato della home */
 @keyframes sale {
   from {

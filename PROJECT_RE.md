@@ -242,6 +242,26 @@ Come chiuderlo, in ordine di costo:
 
 **Confine (rivisto il 05/08/2026):** a database vanno solo titolo, estratto, data, categoria, immagine e link. Il corpo dell'articolo non si salva mai: la lettura in-app (`/news/[id]`) lo legge al volo dalle API delle fonti (WP REST per la società, `contents/get-content-by-id` per LBA) con cache di un'ora, ridotto a paragrafi di puro testo, citando e linkando sempre l'originale.
 
+### Articoli nostri (fonte `redazione`)
+
+L'eccezione alla regola sopra: sono gli unici articoli col corpo su database, perché il testo è nostro. Nascono dai tool MCP (`/api/mcp`, bearer fisso) e sono sempre **draft**: nessun tool pubblica, la messa online è un gesto umano da `/admin/news`. In pagina la firma è «Redazione» e compare la nota «Generato in parte con AI».
+
+Il corpo (`news.body`, jsonb) **non è HTML**: è un elenco di blocchi tipizzati, validati da Zod in `src/lib/news/blocchi.ts` e impaginati da `src/components/corpo-articolo.tsx`. Non esiste un percorso che porti markup in pagina — niente `dangerouslySetInnerHTML`, in nessun ramo.
+
+| Blocco | Cosa è |
+|---|---|
+| `paragrafo`, `sottotitolo`, `elenco`, `citazione` | testo semplice, senza markup |
+| `md` | il blocco per scrivere lungo: markdown di un **sottoinsieme chiuso** (`**bold**`, `_corsivo_`, `` `codice` ``, `[link](url)`, `##`/`###`, elenchi, `>`, `---`), analizzato in nodi React da `src/lib/news/markdown.ts`. Mai in HTML: un tag scritto nel testo resta testo. Gli href passano da un filtro (solo http/https/mailto/link interni): `javascript:` non diventa mai un link |
+| `immagine` | una foto della libreria (solo `assetId`: url, misure e alt si risolvono a render). Con `piena: true` esce dai margini del testo |
+| `galleria` | 2-6 foto in carosello (scroll-snap CSS, zero JavaScript) |
+| `grafico` | un widget dal registry: `{tipo, params}` |
+
+**I widget** (`src/lib/news/grafici/`) hanno la stessa forma dei template OG social: nome, descrizione per l'AI, schema Zod, esempio, `render`. In più possono avere `carica` — leggono il dato vero quando la pagina si compone. Il blocco salva un **riferimento** (`matchId`), non i numeri: l'articolo resta giusto se il tabellino si corregge dopo, e chi scrive non può sbagliare una cifra che non scrive. `verifica` è il controllo alla scrittura: i blocchi stanno in un jsonb, nessuna foreign key li protegge.
+
+Registry al 16/08/2026: `numeri-chiave` (1-3 numeri da tabellone, valori scritti a mano) e `tabellino` (compatto, dal `matchId`). Aggiungerne uno = un file in `templates/` e una riga nel registry; lo schema del corpo non cambia, ed è di proposito — `blocchi.ts` è importato da `src/db/schema.ts`, tirarci dentro React e query chiuderebbe un ciclo.
+
+Tool MCP degli articoli: `create_article`, `update_article` (solo bozze), `list_articles`, `get_article`, `archive_article`, `list_article_blocks` (i widget con schema ed esempio), `list_matches` (i `matchId` con `haTabellino`).
+
 ### Fonte coppa europea: API FIBA (Basketball Champions League)
 
 Aggiunta il 05/08/2026. Base: `https://digital-api.fiba.basketball/hapi`. Obbligatori l'header `ocp-apim-subscription-key` (chiave PUBBLICA, sta nel bundle JS di championsleague.basketball — stessa natura del token WebSocket LBA) e uno User-Agent da browser. Nota: il SITO è dietro una protezione bot che blocca curl e headless (403); l'API no.

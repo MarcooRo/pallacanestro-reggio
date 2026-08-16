@@ -13,7 +13,9 @@
 
 import { z } from "zod";
 
+import { dataBreve } from "@/src/lib/date";
 import { corpoSchema, numeroParole } from "@/src/lib/news/blocchi";
+import { tuttiGrafici } from "@/src/lib/news/grafici/registry";
 import {
   aggiornaBozza,
   archiviaArticolo,
@@ -23,6 +25,7 @@ import {
   getArticolo,
   type Articolo,
 } from "@/src/lib/news/redazione";
+import { getPartiteClubCasa, matchIdsConTabellino } from "@/src/lib/partite/queries";
 import { ErroreTool } from "@/src/lib/social/errore";
 
 const STATI = ["draft", "published", "archived"] as const;
@@ -73,17 +76,35 @@ const INPUT = {
     assetId: z.string().uuid().nullable().optional().describe("null toglie la copertina"),
   }),
   archive_article: z.strictObject({ id: z.string().uuid() }),
+  list_article_blocks: z.strictObject({}),
+  list_matches: z.strictObject({
+    limite: z
+      .number()
+      .int()
+      .min(1)
+      .max(50)
+      .optional()
+      .describe("Quante partite, dalla più recente. Senza indicazione: 20"),
+    soloConTabellino: z
+      .boolean()
+      .optional()
+      .describe("true = solo le gare che hanno già le statistiche a database"),
+  }),
 } satisfies Record<string, z.ZodType>;
 
 export const DESCRIZIONI_NEWS: Record<keyof typeof INPUT, string> = {
   create_article:
-    "Scrive un articolo nostro e lo mette in bozza sul sito. Il corpo è fatto di blocchi (paragrafo, sottotitolo, elenco, citazione, immagine), non HTML. Le foto dentro il testo sono blocchi {t:'immagine', assetId} con l'id preso da list_media, al massimo 10, e sono cosa diversa dalla copertina (assetId in cima): usale dove aiutano il racconto. NON viene pubblicato: lo pubblica un umano da /admin/news, e in pagina comparirà la nota «Generato in parte con AI».",
+    "Scrive un articolo nostro e lo mette in bozza sul sito. Il corpo è fatto di blocchi, non HTML: md (testo con **grassetto**, _corsivo_, [link], ## sottotitoli, elenchi, citazioni — è il blocco da usare per scrivere lungo), paragrafo, sottotitolo, elenco, citazione, immagine, galleria, grafico. Le foto dentro il testo sono blocchi {t:'immagine', assetId} con l'id preso da list_media, al massimo 10, e sono cosa diversa dalla copertina (assetId in cima): con piena:true la foto va da bordo a bordo, e una galleria ({t:'galleria', assetIds}) mette 2-6 foto in un carosello. I widget ({t:'grafico', tipo, params}) si scelgono da list_article_blocks: quelli che leggono il database mostrano il dato vero, quindi passi un id e non dei numeri. NON viene pubblicato: lo pubblica un umano da /admin/news, e in pagina comparirà la nota «Generato in parte con AI».",
   list_articles: "Elenca gli articoli nostri: prima le bozze in lavorazione, poi i pubblicati.",
   get_article: "Dettaglio completo di un articolo, corpo compreso.",
   update_article:
-    "Corregge un articolo ANCORA in bozza: titolo, corpo (foto comprese), sommario, rubrica, firma, copertina. Dopo la pubblicazione non si tocca più da qui.",
+    "Corregge un articolo ANCORA in bozza: titolo, corpo (foto e widget compresi), sommario, rubrica, firma, copertina. Dopo la pubblicazione non si tocca più da qui.",
   archive_article:
     "Archivia un articolo: se era pubblicato esce dal sito, se era una bozza esce dalla lista di lavoro.",
+  list_article_blocks:
+    "I widget grafici che puoi mettere dentro un articolo, con schema JSON dei parametri ed esempio valido. Vanno nel corpo come blocchi {t:'grafico', tipo, params}. Chiamalo prima di usarne uno: i nomi non si indovinano.",
+  list_matches:
+    "Le partite del club, dalla più recente: id, squadre, punteggio, stato e se hanno già il tabellino. Serve per prendere il matchId dei widget che leggono i dati veri di una gara.",
 };
 
 // ---------- esposizione ----------
@@ -156,6 +177,61 @@ const TOOL: Record<
   async archive_article(input: z.output<(typeof INPUT)["archive_article"]>, ctx: Contesto) {
     const articolo = await archiviaArticolo(input.id);
     return { articolo: esponiArticolo(articolo, ctx.base) };
+  },
+
+  // Stessa forma di list_og_templates per le grafiche social: il registry è
+  // l'unico posto che sa quali widget esistono (src/lib/news/grafici).
+  async list_article_blocks() {
+    return {
+      widget: tuttiGrafici().map((g) => {
+        const schema = z.toJSONSchema(g.schema) as Record<string, unknown>;
+        delete schema.$schema;
+        return {
+          tipo: g.nome,
+          descrizione: g.descrizione,
+          params: schema,
+          esempio: g.esempio,
+          // La forma esatta del blocco da mettere nel corpo: senza questo
+          // esempio il modello tende a inventarsi {t: g.nome, ...}
+          bloccoEsempio: { t: "grafico", tipo: g.nome, params: g.esempio },
+        };
+      }),
+      nota: "I widget che leggono il database (es. tabellino) mostrano il dato vero al momento in cui la pagina si apre: passi un id, non dei numeri.",
+    };
+  },
+
+  async list_matches(input: z.output<(typeof INPUT)["list_matches"]>, ctx: Contesto) {
+    const limite = input.limite ?? 20;
+    // Il calendario parte dalla gara più recente in ordine di data, e a
+    // stagione appena cominciata le prime sono tutte da giocare: chi cerca
+    // partite col tabellino ne guarda molte di più prima di tagliare.
+    const partite = await getPartiteClubCasa(input.soloConTabellino ? 150 : limite);
+    const conTabellino = await matchIdsConTabellino(partite.map((p) => p.id));
+    const righe = partite
+      .filter((p) => !input.soloConTabellino || conTabellino.has(p.id))
+      .slice(0, limite)
+      .map((p) => ({
+        matchId: p.id,
+        data: p.startsAt.toISOString(),
+        quando: dataBreve(p.startsAt),
+        competizione: p.competitionName,
+        giornata: p.dayName,
+        casa: p.homeTeam,
+        ospiti: p.awayTeam,
+        // A gara da giocare i punteggi sono 0-0 a database: darli per buoni
+        // farebbe scrivere "finita 0-0" a chi legge solo questo elenco.
+        punteggio:
+          p.status === "scheduled" || p.homeScore === null || p.awayScore === null
+            ? null
+            : `${p.homeScore}-${p.awayScore}`,
+        stato: p.status,
+        haTabellino: conTabellino.has(p.id),
+        urlPagina: `${ctx.base}/partite/${p.id}`,
+      }));
+    return {
+      partite: righe,
+      nota: "matchId è quello che serve al widget tabellino. Senza haTabellino non c'è ancora nulla da mostrare.",
+    };
   },
 };
 

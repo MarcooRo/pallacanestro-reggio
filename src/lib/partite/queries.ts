@@ -1,13 +1,14 @@
 // Letture per calendario, dettaglio partita e pagella.
 // Solo lettura: le scritture passano dalle server actions.
 
-import { and, desc, eq, gt, sql } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import { db } from "@/src/db";
 import {
   competitions,
   matches,
+  playerMatchStats,
   players,
   teamSeasons,
   voteTallies,
@@ -225,6 +226,18 @@ export async function getPartiteClubCasa(limite = 60) {
     )
     .orderBy(desc(matches.startsAt))
     .limit(limite);
+}
+
+/** Quali di queste partite hanno già il tabellino a database. Serve a chi
+ *  scrive un articolo per sapere su quali gare il widget "tabellino" ha
+ *  qualcosa da mostrare. Una query sola, non una per partita. */
+export async function matchIdsConTabellino(ids: string[]): Promise<Set<string>> {
+  if (ids.length === 0) return new Set();
+  const righe = await db
+    .selectDistinct({ matchId: playerMatchStats.matchId })
+    .from(playerMatchStats)
+    .where(inArray(playerMatchStats.matchId, ids));
+  return new Set(righe.map((r) => r.matchId));
 }
 
 export async function getUltimaPagella() {

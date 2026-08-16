@@ -8,6 +8,7 @@ import { fonteDiCasa, nomeFonte } from "@/src/components/news-card";
 import { TornaIndietro } from "@/src/components/torna-indietro";
 import { dataBreve } from "@/src/lib/date";
 import { getCorpoNews } from "@/src/lib/news/articolo";
+import { risolviGrafici } from "@/src/lib/news/grafici/dati";
 import {
   risolviImmaginiCorpo,
   urlImmaginiCorpo,
@@ -125,6 +126,9 @@ export default async function NewsLetturaPage({
   // Le foto dentro il corpo: il blocco porta l'id, url e misure stanno in
   // libreria (misure vere = nessun salto di layout mentre carica).
   const immagini = nostro ? await risolviImmaginiCorpo(item.body) : {};
+  // I widget: il blocco porta il riferimento, il dato si legge adesso —
+  // così un tabellino corretto dopo la pubblicazione si aggiorna da solo.
+  const grafici = nostro ? await risolviGrafici(item.body) : {};
 
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 px-4 py-6 lg:max-w-2xl">
@@ -172,7 +176,7 @@ export default async function NewsLetturaPage({
         )}
 
         {nostro && item.body ? (
-          <CorpoArticolo blocchi={item.body} immagini={immagini} />
+          <CorpoArticolo blocchi={item.body} immagini={immagini} grafici={grafici} />
         ) : paragrafi ? (
           <div className="flex flex-col gap-3 text-[15px] leading-relaxed">
             {paragrafi.map((testo, i) => (

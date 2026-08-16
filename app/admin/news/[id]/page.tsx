@@ -19,6 +19,7 @@ import {
   riportaInBozza,
 } from "@/src/lib/news/actions";
 import { numeroParole } from "@/src/lib/news/blocchi";
+import { risolviGrafici } from "@/src/lib/news/grafici/dati";
 import { risolviImmaginiCorpo } from "@/src/lib/news/immagini";
 import { getNewsQualsiasiStato } from "@/src/lib/news/queries";
 
@@ -42,8 +43,10 @@ export default async function DettaglioArticoloPage({
 
   const bozza = articolo.status === "draft";
   const pubblicato = articolo.status === "published";
-  // Le stesse foto della pagina pubblica: l'anteprima deve essere fedele
+  // Le stesse foto e gli stessi widget della pagina pubblica: l'anteprima
+  // deve essere fedele, altrimenti non serve a niente
   const immagini = await risolviImmaginiCorpo(articolo.body);
+  const grafici = await risolviGrafici(articolo.body);
 
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-5 px-4 py-8 lg:max-w-2xl">
@@ -107,7 +110,11 @@ export default async function DettaglioArticoloPage({
             <p className="text-sm text-muted italic">{articolo.excerpt}</p>
           )}
           {articolo.body && (
-            <CorpoArticolo blocchi={articolo.body} immagini={immagini} />
+            <CorpoArticolo
+              blocchi={articolo.body}
+              immagini={immagini}
+              grafici={grafici}
+            />
           )}
         </article>
       </section>

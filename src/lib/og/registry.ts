@@ -4,6 +4,7 @@
 
 import { citazioneNotizia } from "./templates/citazione-notizia";
 import { fotoConTesto } from "./templates/foto-con-testo";
+import { mezzoCampo } from "./templates/mezzo-campo";
 import { migliorePartita } from "./templates/migliore-partita";
 import { schedaGiocatore } from "./templates/scheda-giocatore";
 import { dimensioniTemplate, type TemplateOg } from "./tipi";
@@ -16,6 +17,7 @@ const TEMPLATE_OG: Record<string, TemplateOg<any>> = {
   [schedaGiocatore.nome]: schedaGiocatore,
   [fotoConTesto.nome]: fotoConTesto,
   [citazioneNotizia.nome]: citazioneNotizia,
+  [mezzoCampo.nome]: mezzoCampo,
 };
 
 export function getTemplateOg(nome: string): TemplateOg<unknown> | null {

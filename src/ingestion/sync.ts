@@ -145,7 +145,13 @@ export async function sincronizzaRoster(
           nationality: g.nationality,
           heightCm: g.heightCm,
           weightKg: g.weightKg,
-          photoKey: g.photoKey,
+          // La fonte pubblica le foto a stagione avviata: per tutto il
+          // 2026-27 player_picture_key è arrivato null per l'INTERA lega
+          // (verificato il 18/08/2026 anche sul sito loro). Scritto così
+          // com'era, cancellava la foto di chi era già in rosa. Un null
+          // dalla fonte qui vuol dire "non ancora pubblicata", mai
+          // "tolta": la foto si sovrascrive solo con un'altra foto.
+          photoKey: sql`coalesce(excluded.photo_key, ${players.photoKey})`,
         },
         // Se l'admin ha corretto a mano, l'ingestion non tocca (regola 2).
         setWhere: sql`${players.manualOverride} = false`,
@@ -202,7 +208,8 @@ export async function sincronizzaCalendarioCompetizione(
 ): Promise<DiffCalendario | null> {
   const partite = await getCalendario(competizione.lbaChampionshipId);
   const mappabili = partite.filter(
-    (p) => mappaSquadre.has(p.homeLbaTeamId) && mappaSquadre.has(p.awayLbaTeamId),
+    (p) =>
+      mappaSquadre.has(p.homeLbaTeamId) && mappaSquadre.has(p.awayLbaTeamId),
   );
 
   // Competizione di un'altra serie (es. giovanili): non entra nel database.
@@ -308,7 +315,9 @@ async function mappaSquadreDaDb(): Promise<Map<number, string>> {
   return new Map(righe.map((r) => [r.lbaTeamId!, r.id]));
 }
 
-export async function sincronizzaCalendarioCorrente(): Promise<DiffCalendario[]> {
+export async function sincronizzaCalendarioCorrente(): Promise<
+  DiffCalendario[]
+> {
   const competizioni = await getCompetizioniCorrenti();
   await segnalaTypeCodeSconosciuti(competizioni);
   const mappaSquadre = await mappaSquadreDaDb();
@@ -587,6 +596,8 @@ export interface DiffTabellini {
   sincronizzate: number;
   righeScritte: number;
   giocatoriNuovi: number;
+  /** Foto trovate nel tabellino per chi non ne aveva: vedi sotto */
+  fotoRecuperate: number;
   partiteFallite: number[];
 }
 
@@ -627,6 +638,7 @@ export async function sincronizzaTabellini(
     sincronizzate: 0,
     righeScritte: 0,
     giocatoriNuovi: 0,
+    fotoRecuperate: 0,
     partiteFallite: [],
   };
 
@@ -654,10 +666,41 @@ export async function sincronizzaTabellini(
       diff.giocatoriNuovi += nuovi.length;
 
       const righeGiocatori = await db
-        .select({ id: players.id, lbaPlayerId: players.lbaPlayerId })
+        .select({
+          id: players.id,
+          lbaPlayerId: players.lbaPlayerId,
+          photoKey: players.photoKey,
+        })
         .from(players)
         .where(inArray(players.lbaPlayerId, idLba));
-      const mappaGiocatori = new Map(righeGiocatori.map((r) => [r.lbaPlayerId, r.id]));
+      const mappaGiocatori = new Map(
+        righeGiocatori.map((r) => [r.lbaPlayerId, r.id]),
+      );
+
+      // Il tabellino è l'unica fonte che la foto ce l'ha SEMPRE: player_p_key
+      // è la stessa chiave di player_picture_key del roster (verificato su
+      // Brown, chiave identica). Quando il roster non le pubblica ancora, chi
+      // è già sceso in campo la foto ce l'ha lo stesso. Si riempiono solo i
+      // buchi: una foto già a database non si tocca, e nemmeno quelle
+      // corrette a mano dall'admin.
+      const senzaFoto = new Set(
+        righeGiocatori.filter((g) => !g.photoKey).map((g) => g.lbaPlayerId),
+      );
+      for (const r of tabellino.righe) {
+        if (!r.photoKey || !senzaFoto.has(r.lbaPlayerId)) continue;
+        const aggiornati = await db
+          .update(players)
+          .set({ photoKey: r.photoKey })
+          .where(
+            and(
+              eq(players.lbaPlayerId, r.lbaPlayerId),
+              isNull(players.photoKey),
+              eq(players.manualOverride, false),
+            ),
+          )
+          .returning({ id: players.id });
+        diff.fotoRecuperate += aggiornati.length;
+      }
 
       for (const r of tabellino.righe) {
         const playerId = mappaGiocatori.get(r.lbaPlayerId);
@@ -768,10 +811,14 @@ export async function sincronizzaStagione(anno: number, homeClubLbaId: number) {
       mappaSquadre.get(squadraCasa.lbaTeamId)!,
     );
     if (giocatori > 0) {
-      console.log(`  Roster ${squadraCasa.displayName}: ${giocatori} giocatori`);
+      console.log(
+        `  Roster ${squadraCasa.displayName}: ${giocatori} giocatori`,
+      );
     }
   } else {
-    console.warn(`  Nessuna squadra con club LBA ${homeClubLbaId} nella stagione ${anno}`);
+    console.warn(
+      `  Nessuna squadra con club LBA ${homeClubLbaId} nella stagione ${anno}`,
+    );
   }
 
   for (const c of competizioni) {
@@ -783,7 +830,9 @@ export async function sincronizzaStagione(anno: number, homeClubLbaId: number) {
       }
       console.log(
         `  Calendario "${c.name}": ${diff.totali - diff.saltate} partite` +
-          (diff.saltate > 0 ? ` (${diff.saltate} non riconciliate, saltate)` : ""),
+          (diff.saltate > 0
+            ? ` (${diff.saltate} non riconciliate, saltate)`
+            : ""),
       );
     } catch (err) {
       console.warn(`  Calendario "${c.name}" non disponibile:`, err);

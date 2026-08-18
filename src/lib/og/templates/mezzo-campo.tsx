@@ -3,10 +3,10 @@
 // post — questo template non legge nulla dal database, quindi il disegno
 // dice esattamente ciò che gli si dà.
 //
-// Il campo è lo stesso di src/components/campo-quintetto.tsx (viewBox
-// 300×282, canestro in alto): è l'unica altra copia di quella geometria e
-// va tenuta allineata, così l'immagine social e la pagina squadra
-// mostrano lo stesso campo.
+// Le linee del campo arrivano da src/lib/campo/geometria.ts, le stesse
+// che disegnano il quintetto in pagina squadra e il widget d'articolo:
+// qui cambiano solo i colori, che nell'immagine social non possono essere
+// variabili CSS.
 //
 // Le linee sono un <img> con un data URI SVG e non un <svg> inline: a
 // satori gli archi (tiro da tre, lunetta tratteggiata) arrivano così
@@ -15,6 +15,14 @@
 import { z } from "zod";
 
 import { branding } from "@/src/branding";
+import {
+  CAMPO_ARCHI,
+  CAMPO_FERRO,
+  CAMPO_RETTANGOLI,
+  CAMPO_TABELLONE,
+  CAMPO_TRATTEGGIO,
+  CAMPO_VIEWBOX,
+} from "@/src/lib/campo/geometria";
 
 import { DIMENSIONI, type TemplateOg } from "../tipi";
 
@@ -24,13 +32,17 @@ const schema = z.strictObject({
     .trim()
     .min(1)
     .max(70)
-    .describe('Sopra il campo, in grande: "Il quintetto che ha aperto la partita"'),
+    .describe(
+      'Sopra il campo, in grande: "Il quintetto che ha aperto la partita"',
+    ),
   nota: z
     .string()
     .trim()
     .max(140)
     .optional()
-    .describe("Riga piccola sotto il campo: il contesto, o che cosa mostrano le posizioni"),
+    .describe(
+      "Riga piccola sotto il campo: il contesto, o che cosa mostrano le posizioni",
+    ),
   giocatori: z
     .array(
       z.strictObject({
@@ -42,12 +54,16 @@ const schema = z.strictObject({
           .trim()
           .max(18)
           .optional()
-          .describe('Sotto il cognome, in piccolo: "Playmaker", "Centro". Si può omettere'),
+          .describe(
+            'Sotto il cognome, in piccolo: "Playmaker", "Centro". Si può omettere',
+          ),
         x: z
           .number()
           .min(0)
           .max(100)
-          .describe("Da sinistra a destra: 0 = linea laterale sinistra, 100 = destra, 50 = centro"),
+          .describe(
+            "Da sinistra a destra: 0 = linea laterale sinistra, 100 = destra, 50 = centro",
+          ),
         y: z
           .number()
           .min(0)
@@ -59,7 +75,9 @@ const schema = z.strictObject({
     )
     .min(1)
     .max(8)
-    .describe("Da 1 a 8 giocatori. Oltre, i cartellini si accavallano e non si legge più niente"),
+    .describe(
+      "Da 1 a 8 giocatori. Oltre, i cartellini si accavallano e non si legge più niente",
+    ),
 });
 
 type Params = z.output<typeof schema>;
@@ -71,7 +89,9 @@ const filo = "rgba(255,255,255,0.14)";
 // Il campo occupa la larghezza utile meno i margini del cartellino più a
 // bordo campo; l'altezza segue il rapporto 300:282 del viewBox.
 const CAMPO_W = 872;
-const CAMPO_H = 820;
+const CAMPO_H = Math.round(
+  (CAMPO_W * CAMPO_VIEWBOX.altezza) / CAMPO_VIEWBOX.larghezza,
+);
 // Il cartellino: pastiglia col numero più cognome e ruolo, tutto centrato
 // in una scatola di larghezza fissa. Larghezza fissa e non trasformazioni
 // percentuali: così il centro è aritmetica, non un'incognita del layout.
@@ -92,20 +112,24 @@ function corpoTitolo(titolo: string): number {
 }
 
 function campoSvg(): string {
-  const linea = "rgba(255,255,255,0.30)";
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 282" width="${CAMPO_W}" height="${CAMPO_H}">
-<rect width="300" height="282" fill="rgba(255,255,255,0.05)"/>
-<g stroke="${linea}" stroke-width="2" fill="none">
-<rect x="1" y="1" width="298" height="280"/>
-<rect x="105" y="1" width="90" height="87"/>
-<path d="M120 88a30 30 0 0 0 60 0"/>
-<path d="M120 88a30 30 0 0 1 60 0" stroke-dasharray="6 6"/>
-<path d="M27 1v22a123 123 0 0 0 246 0V1"/>
-<path d="M114 281a36 36 0 0 1 72 0"/>
-</g>
+  const { larghezza, altezza } = CAMPO_VIEWBOX;
+  const rettangoli = CAMPO_RETTANGOLI.map(
+    (r) =>
+      `<rect x="${r.x}" y="${r.y}" width="${r.width}" height="${r.height}"/>`,
+  ).join("");
+  const archi = CAMPO_ARCHI.map(
+    (a) =>
+      `<path d="${a.d}"${a.tratteggiato ? ` stroke-dasharray="${CAMPO_TRATTEGGIO}"` : ""}/>`,
+  ).join("");
+  const { x1, y1, x2, y2 } = CAMPO_TABELLONE;
+  const { cx, cy, r } = CAMPO_FERRO;
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${larghezza} ${altezza}" width="${CAMPO_W}" height="${CAMPO_H}">
+<rect width="${larghezza}" height="${altezza}" fill="rgba(255,255,255,0.05)"/>
+<g stroke="rgba(255,255,255,0.30)" stroke-width="2" fill="none">${rettangoli}${archi}</g>
 <g stroke="${colori.vivo}" stroke-width="2.5" fill="none">
-<line x1="132" y1="12" x2="168" y2="12"/>
-<circle cx="150" cy="21" r="6.5"/>
+<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>
+<circle cx="${cx}" cy="${cy}" r="${r}"/>
 </g>
 </svg>`;
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
@@ -164,83 +188,83 @@ function render(p: Params) {
             DIMENSIONI.feed.width - CARTELLINO_W - BORDO - sinistra - ARIA,
           );
           return (
-          <div
-            key={`${g.numero}-${g.cognome}-${i}`}
-            style={{
-              position: "absolute",
-              display: "flex",
-              width: PEDINA,
-              height: PEDINA,
-              left: sinistra,
-              top: (g.y / 100) * CAMPO_H - PEDINA / 2,
-            }}
-          >
             <div
-              style={{
-                display: "flex",
-                width: PEDINA,
-                height: PEDINA,
-                borderRadius: PEDINA,
-                backgroundColor: colori.vivo,
-                color: colori.scuro,
-                border: `5px solid ${colori.scuro}`,
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 44,
-                fontWeight: 800,
-              }}
-            >
-              {g.numero}
-            </div>
-            <div
+              key={`${g.numero}-${g.cognome}-${i}`}
               style={{
                 position: "absolute",
                 display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                width: CARTELLINO_W,
-                left: scarto,
-                top: PEDINA + 8,
+                width: PEDINA,
+                height: PEDINA,
+                left: sinistra,
+                top: (g.y / 100) * CAMPO_H - PEDINA / 2,
               }}
             >
               <div
                 style={{
                   display: "flex",
+                  width: PEDINA,
+                  height: PEDINA,
+                  borderRadius: PEDINA,
+                  backgroundColor: colori.vivo,
+                  color: colori.scuro,
+                  border: `5px solid ${colori.scuro}`,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 44,
+                  fontWeight: 800,
+                }}
+              >
+                {g.numero}
+              </div>
+              <div
+                style={{
+                  position: "absolute",
+                  display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
-                  padding: "6px 14px",
-                  backgroundColor: colori.scuro,
+                  width: CARTELLINO_W,
+                  left: scarto,
+                  top: PEDINA + 8,
                 }}
               >
                 <div
                   style={{
                     display: "flex",
-                    fontSize: 32,
-                    fontWeight: 800,
-                    textTransform: "uppercase",
-                    letterSpacing: -0.5,
+                    flexDirection: "column",
+                    alignItems: "center",
+                    padding: "6px 14px",
+                    backgroundColor: colori.scuro,
                   }}
                 >
-                  {g.cognome}
-                </div>
-                {g.ruolo && (
                   <div
                     style={{
                       display: "flex",
-                      fontSize: 22,
-                      fontWeight: 500,
+                      fontSize: 32,
+                      fontWeight: 800,
                       textTransform: "uppercase",
-                      letterSpacing: 3,
-                      color: attenuato,
-                      marginTop: 4,
+                      letterSpacing: -0.5,
                     }}
                   >
-                    {g.ruolo}
+                    {g.cognome}
                   </div>
-                )}
+                  {g.ruolo && (
+                    <div
+                      style={{
+                        display: "flex",
+                        fontSize: 22,
+                        fontWeight: 500,
+                        textTransform: "uppercase",
+                        letterSpacing: 3,
+                        color: attenuato,
+                        marginTop: 4,
+                      }}
+                    >
+                      {g.ruolo}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
           );
         })}
       </div>
@@ -275,7 +299,7 @@ function render(p: Params) {
 export const mezzoCampo: TemplateOg<Params> = {
   nome: "mezzo-campo",
   descrizione:
-    "Mezzo campo da basket visto dall'alto, con i giocatori piazzati dove vuoi: un quintetto, uno schema, la disposizione di un possesso. Ogni giocatore è una pastiglia col numero, cognome e ruolo sotto. Le coordinate sono in percentuale sul mezzo campo: x da sinistra (0) a destra (100), y dal fondo sotto canestro (0) alla metà campo (100) — in area ~20, sull'arco da tre ~55, in regia ~85. I dati non arrivano dal database: numeri, cognomi e posizioni li scrivi tu, quindi vanno verificati.",
+    "Mezzo campo da basket visto dall'alto, con i giocatori piazzati dove vuoi: un quintetto, uno schema, la disposizione di un possesso. Ogni giocatore è una pastiglia col numero, cognome e ruolo sotto. Le coordinate sono in percentuale sul mezzo campo: x da sinistra (0) a destra (100), y dal fondo sotto canestro (0) alla metà campo (100) — in area ~20, sull'arco da tre ~55, in regia ~85. I dati non arrivano dal database: numeri, cognomi e posizioni li scrivi tu, quindi vanno verificati. Esiste anche come widget d'articolo, stesso nome e stessi parametri, in list_article_blocks: quello è SVG in pagina e si adatta al telefono, questo è un PNG per i social.",
   formato: "feed",
   schema,
   esempio: {

@@ -9,6 +9,7 @@
 
 import { z } from "zod";
 
+import { mezzoCampo } from "./templates/mezzo-campo";
 import { numeriChiave } from "./templates/numeri-chiave";
 import { tabellinoPartita } from "./templates/tabellino";
 import type { GraficoArticolo } from "./tipi";
@@ -20,6 +21,7 @@ import { ErroreTool } from "@/src/lib/social/errore";
 const GRAFICI: Record<string, GraficoArticolo<any, any>> = {
   [numeriChiave.nome]: numeriChiave,
   [tabellinoPartita.nome]: tabellinoPartita,
+  [mezzoCampo.nome]: mezzoCampo,
 };
 
 export function getGrafico(nome: string): GraficoArticolo | null {

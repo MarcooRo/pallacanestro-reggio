@@ -3,6 +3,14 @@
 // decide la posizione sul disegno (regia in alto, lunghi sotto canestro).
 
 import { AvatarGiocatore } from "@/src/components/avatar-giocatore";
+import {
+  CAMPO_ARCHI,
+  CAMPO_FERRO,
+  CAMPO_RETTANGOLI,
+  CAMPO_TABELLONE,
+  CAMPO_TRATTEGGIO,
+  CAMPO_VIEWBOX,
+} from "@/src/lib/campo/geometria";
 import type { TitolareCampo } from "@/src/lib/partite/quintetti";
 
 // Coordinate % sul viewBox 300×282 del campo.
@@ -21,19 +29,31 @@ export function CampoQuintetto({
 }) {
   return (
     <div className="relative w-full">
-      <svg viewBox="0 0 300 282" className="block w-full" aria-hidden>
-        <rect width="300" height="282" fill="var(--superficie)" />
+      <svg
+        viewBox={`0 0 ${CAMPO_VIEWBOX.larghezza} ${CAMPO_VIEWBOX.altezza}`}
+        className="block w-full"
+        aria-hidden
+      >
+        <rect
+          width={CAMPO_VIEWBOX.larghezza}
+          height={CAMPO_VIEWBOX.altezza}
+          fill="var(--superficie)"
+        />
         <g stroke="var(--linea)" strokeWidth="2" fill="none">
-          <rect x="1" y="1" width="298" height="280" />
-          <rect x="105" y="1" width="90" height="87" />
-          <path d="M120 88a30 30 0 0 0 60 0" />
-          <path d="M120 88a30 30 0 0 1 60 0" strokeDasharray="6 6" />
-          <path d="M27 1v22a123 123 0 0 0 246 0V1" />
-          <path d="M114 281a36 36 0 0 1 72 0" />
+          {CAMPO_RETTANGOLI.map((r) => (
+            <rect key={`${r.x}-${r.y}`} {...r} />
+          ))}
+          {CAMPO_ARCHI.map((a) => (
+            <path
+              key={a.d}
+              d={a.d}
+              strokeDasharray={a.tratteggiato ? CAMPO_TRATTEGGIO : undefined}
+            />
+          ))}
         </g>
         <g stroke="var(--muted)" strokeWidth="2" fill="none">
-          <line x1="132" y1="12" x2="168" y2="12" />
-          <circle cx="150" cy="21" r="6.5" />
+          <line {...CAMPO_TABELLONE} />
+          <circle {...CAMPO_FERRO} />
         </g>
       </svg>
 

@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { branding } from "@/src/branding";
 import { CorpoArticolo } from "@/src/components/corpo-articolo";
-import { fonteDiCasa, nomeFonte } from "@/src/components/news-card";
+import { fonteDiCasa, nomeFonte } from "@/src/lib/news/etichette";
 import { TornaIndietro } from "@/src/components/torna-indietro";
 import { dataBreve } from "@/src/lib/date";
 import { getCorpoNews } from "@/src/lib/news/articolo";

@@ -60,22 +60,21 @@ body {
   line-height: 0.95;
 }
 
-/* Timbro "unofficial": bitmap ambra appiccicata di traverso sul wordmark,
-   come un adesivo. Sta in diagonale e in un font a pixel proprio per non
-   sembrare parte del marchio: l'app non è del club. Ruota da bottom-left così
-   il pivot resta agganciato alla fine del nome anche quando cambia corpo. */
+/* Timbro "unofficial": riga a pixel sotto il wordmark, dritta e in rosso.
+   Resta in un font a pixel per non sembrare parte del marchio - l'app non è
+   del club - ma non è più un adesivo di traverso: dritta e allineata al nome
+   si legge, ed era il punto di scriverla. */
 .timbro-unofficial {
   font-family: var(--font-silkscreen), var(--font-geist-mono), monospace;
   font-size: 0.5rem;
   line-height: 1;
-  letter-spacing: 0.01em;
+  /* Il pixel font è stretto: la spaziatura lo distende sotto al nome */
+  letter-spacing: 0.14em;
   text-transform: lowercase;
-  color: var(--accento-pixel);
-  display: inline-block;
-  transform: rotate(-9deg) translateY(-0.15em);
-  transform-origin: left bottom;
+  color: var(--brand-vivid);
+  display: block;
   /* Alone tenue: la parola è piccolissima, senza glow sparisce sul fumo */
-  text-shadow: 0 0 10px color-mix(in srgb, var(--accento-pixel) 40%, transparent);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--brand-vivid) 40%, transparent);
 }
 
 @media (min-width: 640px) {
@@ -84,8 +83,8 @@ body {
   }
 }
 
-/* Da lg l'header ospita anche la nav: il timbro rientra di un filo per non
-   finire appiccicato alla prima voce ("Home"). */
+/* Da lg l'header ospita anche la nav: il timbro resta piccolo, sotto al
+   nome non deve mai pesare quanto il nome. */
 @media (min-width: 1024px) {
   .timbro-unofficial {
     font-size: 0.5625rem;
@@ -210,12 +209,21 @@ body {
 .sale {
   animation: sale 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
-.sale-2 { animation-delay: 0.08s; }
-.sale-3 { animation-delay: 0.16s; }
-.sale-4 { animation-delay: 0.24s; }
+.sale-2 {
+  animation-delay: 0.08s;
+}
+.sale-3 {
+  animation-delay: 0.16s;
+}
+.sale-4 {
+  animation-delay: 0.24s;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .sale, .sale-2, .sale-3, .sale-4 {
+  .sale,
+  .sale-2,
+  .sale-3,
+  .sale-4 {
     animation: none;
   }
   * {

@@ -13,10 +13,21 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 // per la lista, per la home e per la pagina di lettura.
 const PUBBLICATE = eq(news.status, "published");
 
-export async function getNews(limite = 50, fonte?: FonteNews) {
+/**
+ * Una news come la vedono le liste. Oltre alle colonne della tabella c'è
+ * `copertina`: le news di fonte portano l'url della foto loro, i nostri
+ * articoli l'id della foto in libreria — chi impagina non deve saperlo.
+ */
+export type NewsInLista = typeof news.$inferSelect & { copertina: string | null };
+
+export async function getNews(limite = 50, fonte?: FonteNews): Promise<NewsInLista[]> {
   return db
-    .select()
+    .select({
+      ...getTableColumns(news),
+      copertina: sql<string | null>`coalesce(${news.imageUrl}, ${mediaAssets.url})`,
+    })
     .from(news)
+    .leftJoin(mediaAssets, eq(news.assetId, mediaAssets.id))
     .where(fonte ? and(PUBBLICATE, eq(news.source, fonte)) : PUBBLICATE)
     .orderBy(desc(news.isPinned), desc(news.publishedAt))
     .limit(limite);

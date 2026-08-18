@@ -87,26 +87,22 @@ export default async function RootLayout({
           <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3 lg:max-w-5xl">
             <MenuLaterale admin={profilo?.role === "admin"} />
             {/* Il nome sta abbreviato per stare su una riga a 390px: con
-                "Pallacanestro Reggiana" per esteso andava a capo. Accanto, il
-                timbro pixelato in diagonale che dichiara l'app non ufficiale. */}
+                "Pallacanestro Reggiana" per esteso andava a capo. Sotto, la
+                riga a pixel che dichiara l'app non ufficiale. */}
             <Link
               href="/"
               className="flex flex-1 items-center gap-2 text-foreground"
               aria-label={`${branding.appHeaderName} — ${branding.disclaimer}`}
             >
               <LogoPalla className="h-5 w-5 shrink-0" />
-              {/* Il timbro è in posizione assoluta: appoggiato alla fine del
-                  nome, non occupa una colonna del flex. Così da lg, dove
-                  l'header ospita anche la nav, non spinge il wordmark a capo. */}
-              <span className="relative shrink-0 whitespace-nowrap">
+              {/* Nome e timbro incolonnati: il timbro sta sotto e allineato a
+                  sinistra col nome, così da lg non ruba larghezza alla nav. */}
+              <span className="flex shrink-0 flex-col gap-0.5 whitespace-nowrap">
                 <span className="display text-base sm:text-xl">
                   {branding.appHeaderName}
                   <span className="text-brand">.</span>
                 </span>
-                <span
-                  className="timbro-unofficial absolute bottom-[46%] left-full ml-1.5"
-                  aria-hidden
-                >
+                <span className="timbro-unofficial" aria-hidden>
                   {branding.disclaimer}
                 </span>
               </span>
@@ -117,7 +113,15 @@ export default async function RootLayout({
               aria-label="Profilo"
               className="-m-2 p-2 text-muted transition-colors hover:text-foreground"
             >
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <circle cx="12" cy="8" r="4" />
                 <path d="M4.5 21a7.5 7.5 0 0 1 15 0" />
               </svg>

@@ -5,32 +5,20 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import type { news } from "@/src/db/schema";
 import { soloOra } from "@/src/lib/date";
+import { fonteDiCasa, nomeFonte } from "@/src/lib/news/etichette";
+import type { NewsInLista } from "@/src/lib/news/queries";
 
-// 'Redazione' tiene distinti gli articoli nostri dalle news ufficiali del
-// club ('Pallacanestro Reggiana'): il lettore non deve poterli confondere.
-export const nomeFonte: Record<string, string> = {
-  lba: "Lega Basket",
-  pr_wordpress: "Pallacanestro Reggiana",
-  redazione: "Redazione",
-};
-
-/** Le fonti "di casa", che si riconoscono al volo dall'occhiello rosso. */
-export function fonteDiCasa(source: string): boolean {
-  return source === "pr_wordpress" || source === "redazione";
-}
-
-export function NewsCard({ item }: { item: typeof news.$inferSelect }) {
+export function NewsCard({ item }: { item: NewsInLista }) {
   return (
     <Link
       // Gli articoli nostri hanno un indirizzo leggibile, le news di fonte l'uuid
       href={`/news/${item.slug ?? item.id}`}
       className="taglio-sm group flex gap-3 card p-3 transition-colors hover:border-brand"
     >
-      {item.imageUrl && (
+      {item.copertina && (
         <Image
-          src={item.imageUrl}
+          src={item.copertina}
           alt=""
           width={96}
           height={64}

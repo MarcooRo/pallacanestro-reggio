@@ -72,3 +72,27 @@ export function nomeMese(meseIso: string): string {
 export function etichettaStagione(anno: number): string {
   return `${anno}-${String((anno + 1) % 100).padStart(2, "0")}`;
 }
+
+/** Il giorno a Reggio Emilia in forma YYYY-MM-DD: la chiave con cui si
+ *  raggruppano le news in una scaletta per data. */
+export function chiaveGiorno(d: Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: FUSO,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(d);
+}
+
+/** L'etichetta della banda giorno: "Oggi", "Ieri", poi "lun 17 ago". */
+export function etichettaGiorno(d: Date, adesso = new Date()): string {
+  const giorno = chiaveGiorno(d);
+  if (giorno === chiaveGiorno(adesso)) return "Oggi";
+  if (giorno === chiaveGiorno(new Date(adesso.getTime() - 86_400_000))) return "Ieri";
+  return new Intl.DateTimeFormat("it-IT", {
+    timeZone: FUSO,
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  }).format(d);
+}

@@ -8,14 +8,20 @@ import { soloOra } from "@/src/lib/date";
 import { fonteDiCasa, nomeFonte } from "@/src/lib/news/etichette";
 import type { NewsInLista } from "@/src/lib/news/queries";
 
-export function NewsRiquadro({ item }: { item: NewsInLista }) {
+export function NewsRiquadro({
+  item,
+  className = "",
+}: {
+  item: NewsInLista;
+  className?: string;
+}) {
   const diCasa = fonteDiCasa(item.source);
   return (
     <Link
       href={`/news/${item.slug ?? item.id}`}
       className={`taglio-sm card group flex flex-col overflow-hidden transition-colors hover:border-brand ${
         diCasa ? "border-l-[3px] border-l-brand-vivid" : ""
-      }`}
+      } ${className}`}
     >
       {item.copertina && (
         <span className="relative block aspect-[16/9] w-full">

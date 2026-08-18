@@ -4,14 +4,10 @@ import Link from "next/link";
 import { NewsApertura } from "@/src/components/news-apertura";
 import { NewsRiga } from "@/src/components/news-riga";
 import { NewsRiquadro } from "@/src/components/news-riquadro";
+import { NewsTessera } from "@/src/components/news-tessera";
 import { Pillola } from "@/src/components/pillola";
-import { chiaveGiorno, etichettaGiorno } from "@/src/lib/date";
 import { fonteDiCasa } from "@/src/lib/news/etichette";
-import {
-  getNews,
-  type FonteNews,
-  type NewsInLista,
-} from "@/src/lib/news/queries";
+import { getNews, type FonteNews } from "@/src/lib/news/queries";
 
 export const metadata: Metadata = { title: "News" };
 
@@ -23,39 +19,23 @@ const FILTRI: { chiave: string; etichetta: string; fonte?: FonteNews }[] = [
   { chiave: "seriea", etichetta: "Serie A", fonte: "lba" },
 ];
 
-// Quante notizie del giorno più recente stanno in riquadro prima che anche
-// quel giorno passi a righe: di una giornata da quindici pezzi, quindici
-// foto grandi sarebbero il muro di prima. Tre = una riga piena da lg, mai
-// un riquadro spaiato in fondo alla griglia.
-const RIQUADRI_MAX = 3;
+// Il disegno del mosaico: una tessera alta a sinistra, due che le stanno
+// accanto, tre sotto. Le misure sono fisse e ripetute apposta — è il ritmo
+// a reggere la pagina, non l'ordine di arrivo delle notizie. Su telefono
+// la griglia non c'è e le tessere si incolonnano: lì il ritmo lo fa
+// l'altezza, che cala mano a mano che si scende.
+const MOSAICO = [
+  "h-64 sm:col-span-12 sm:row-span-2 sm:h-auto lg:col-span-7",
+  "h-52 sm:col-span-6 sm:h-auto lg:col-span-5",
+  "h-52 sm:col-span-6 sm:h-auto lg:col-span-5",
+  "h-40 sm:col-span-4 sm:h-auto",
+  "h-40 sm:col-span-4 sm:h-auto",
+  "h-40 sm:col-span-4 sm:h-auto",
+];
 
-interface Giorno {
-  chiave: string;
-  etichetta: string;
-  /** Se quel giorno ha pubblicato anche Reggio: la banda accende il filo */
-  diCasa: boolean;
-  items: NewsInLista[];
-}
-
-function perGiorno(items: NewsInLista[]): Giorno[] {
-  const giorni: Giorno[] = [];
-  for (const item of items) {
-    const chiave = chiaveGiorno(item.publishedAt);
-    let giorno = giorni.at(-1);
-    if (giorno?.chiave !== chiave) {
-      giorno = {
-        chiave,
-        etichetta: etichettaGiorno(item.publishedAt),
-        diCasa: false,
-        items: [],
-      };
-      giorni.push(giorno);
-    }
-    giorno.diCasa ||= fonteDiCasa(item.source);
-    giorno.items.push(item);
-  }
-  return giorni;
-}
+// Tre: da lg è la riga piena della striscia, e una quarta scheda spaiata
+// lasciava mezzo riquadro rosso vuoto.
+const STRISCIA_MAX = 3;
 
 export default async function NewsPage({
   searchParams,
@@ -66,13 +46,21 @@ export default async function NewsPage({
   const attivo = FILTRI.find((x) => x.chiave === f) ?? FILTRI[0];
   const items = await getNews(50, attivo.fonte);
 
-  // Ogni notizia sta sotto la banda del suo giorno, apertura compresa: la
-  // scaletta per data è la spina dorsale della pagina. A cambiare è solo
-  // la scala — il giorno più recente in grande, i precedenti a righe.
-  const giorni = perGiorno(items);
+  const [apertura, ...resto] = items;
+  const mosaico = resto.slice(0, MOSAICO.length);
+  let coda = resto.slice(MOSAICO.length);
+
+  // La striscia di Reggio esiste solo quando le fonti sono mescolate: è lì
+  // per ripescare le notizie del club prima che affoghino fra quelle di
+  // lega, e con un filtro attivo non ripescherebbe niente.
+  const striscia = attivo.fonte
+    ? []
+    : coda.filter((n) => fonteDiCasa(n.source)).slice(0, STRISCIA_MAX);
+  const inStriscia = new Set(striscia.map((n) => n.id));
+  coda = coda.filter((n) => !inStriscia.has(n.id));
 
   return (
-    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-5 px-4 py-6 lg:max-w-5xl">
+    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 px-4 py-6 lg:max-w-5xl">
       {/* Da lg titolo e filtri stanno sulla stessa riga: l'apertura comincia
           più in alto, che è tutto il punto di questa pagina */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -91,7 +79,7 @@ export default async function NewsPage({
         </div>
       </div>
 
-      {giorni.length === 0 ? (
+      {!apertura ? (
         <p className="taglio-sm card flex flex-col gap-2 p-5 text-sm text-muted">
           Qui non c&apos;è ancora niente da leggere.
           <Link href="/news" className="eyebrow text-brand-vivid">
@@ -99,46 +87,63 @@ export default async function NewsPage({
           </Link>
         </p>
       ) : (
-        giorni.map((giorno, i) => {
-          // Il giorno più recente si apre in grande, gli altri sono righe
-          const [apertura, ...resto] = i === 0 ? giorno.items : [];
-          const riquadri = resto.slice(0, RIQUADRI_MAX);
-          const righe = i === 0 ? resto.slice(RIQUADRI_MAX) : giorno.items;
+        <>
+          <NewsApertura item={apertura} />
 
-          return (
-            <section key={giorno.chiave} className="flex flex-col gap-2.5">
-              {/* La banda del giorno: le news arrivano a grappoli, e i buchi
-                  fra un giorno e l'altro sono un'informazione anche loro */}
-              <div className="flex items-center gap-3 pt-1">
-                <span className="eyebrow !text-foreground">
-                  {giorno.etichetta}
-                </span>
-                {giorno.diCasa && (
-                  <span className="h-px w-7 shrink-0 bg-brand-vivid" />
-                )}
-                <span className="h-px flex-1 bg-border" />
+          {mosaico.length > 0 && (
+            <div className="grid grid-cols-1 gap-2.5 sm:auto-rows-[11.5rem] sm:grid-cols-12 lg:auto-rows-[12.5rem]">
+              {mosaico.map((n, i) => (
+                <NewsTessera
+                  key={n.id}
+                  item={n}
+                  className={`sale ${MOSAICO[i]}`}
+                  // Le tessere entrano a scaglioni, non tutte insieme: un
+                  // gradino per tessera, come la home
+                  style={{ animationDelay: `${0.05 * i}s` }}
+                  grande={i === 0}
+                />
+              ))}
+            </div>
+          )}
+
+          {striscia.length > 0 && (
+            // La striscia rompe la colonna: fondo rosso spento, e si scorre
+            // col dito sul telefono come i video in home
+            <section className="taglio -mx-4 flex flex-col gap-3 bg-brand-tint px-4 py-5 sm:mx-0 sm:px-5">
+              <div className="flex items-baseline justify-between">
+                <h2 className="display text-2xl">Solo Reggio</h2>
+                <Link
+                  href="/news?f=reggio"
+                  className="eyebrow text-brand-vivid"
+                >
+                  tutte →
+                </Link>
               </div>
-
-              {apertura && <NewsApertura item={apertura} />}
-
-              {riquadri.length > 0 && (
-                <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-                  {riquadri.map((n) => (
-                    <NewsRiquadro key={n.id} item={n} />
-                  ))}
-                </div>
-              )}
-
-              {righe.length > 0 && (
-                <div className="flex flex-col">
-                  {righe.map((n) => (
-                    <NewsRiga key={n.id} item={n} />
-                  ))}
-                </div>
-              )}
+              <div className="-mx-4 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:px-0 lg:grid lg:grid-cols-3 lg:overflow-visible">
+                {striscia.map((n) => (
+                  <NewsRiquadro
+                    key={n.id}
+                    item={n}
+                    className="w-[78%] shrink-0 snap-start sm:w-[46%] lg:w-auto"
+                  />
+                ))}
+              </div>
             </section>
-          );
-        })
+          )}
+
+          {coda.length > 0 && (
+            <section className="flex flex-col gap-2">
+              <h2 className="eyebrow">Archivio</h2>
+              {/* Due colonne da lg: la coda è lunga, e in colonna sola
+                  diventava lo scroll infinito che c'era prima */}
+              <div className="grid lg:grid-cols-2 lg:gap-x-8">
+                {coda.map((n) => (
+                  <NewsRiga key={n.id} item={n} />
+                ))}
+              </div>
+            </section>
+          )}
+        </>
       )}
     </main>
   );

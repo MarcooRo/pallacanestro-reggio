@@ -1,10 +1,11 @@
-// Riga di archivio: l'orario a sinistra in mono, il titolo, la miniatura.
-// La data non si ripete riga per riga — la dice la banda del giorno.
+// Riga d'archivio: titolo, fonte e data in piccolo, miniatura a destra.
+// È la coda della pagina, dove si scorre per cercare: qui conta la
+// densità, non la foto.
 
 import Image from "next/image";
 import Link from "next/link";
 
-import { orario } from "@/src/lib/date";
+import { soloOra } from "@/src/lib/date";
 import { fonteDiCasa, nomeFonte } from "@/src/lib/news/etichette";
 import type { NewsInLista } from "@/src/lib/news/queries";
 
@@ -15,13 +16,10 @@ export function NewsRiga({ item }: { item: NewsInLista }) {
       href={`/news/${item.slug ?? item.id}`}
       // Il filo a sinistra è sempre lì, trasparente: acceso o spento la
       // riga non si sposta di un pixel
-      className={`group flex items-center gap-3 border-l-2 border-b border-b-border py-2.5 pl-3 transition-colors hover:bg-surface sm:gap-4 ${
+      className={`group flex items-center gap-3 border-l-2 border-b border-b-border py-2.5 pl-3 transition-colors hover:bg-surface ${
         diCasa ? "border-l-brand-vivid" : "border-l-transparent"
       }`}
     >
-      <span className="score w-10 shrink-0 text-xs text-muted">
-        {orario(item.publishedAt)}
-      </span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         {/* Su uno schermo largo la riga arriverebbe a 110 caratteri: la
             misura si ferma dove un titolo si legge ancora in un colpo */}
@@ -32,7 +30,8 @@ export function NewsRiga({ item }: { item: NewsInLista }) {
           <span className={diCasa ? "font-bold !text-brand-vivid" : ""}>
             {nomeFonte[item.source] ?? item.source}
           </span>
-          {item.category ? ` · ${item.category}` : ""}
+          {item.category ? ` · ${item.category}` : ""} ·{" "}
+          {soloOra(item.publishedAt)}
         </span>
       </span>
       {item.copertina && (

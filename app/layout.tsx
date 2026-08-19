@@ -28,7 +28,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// Bitmap font per il solo timbro "unofficial" nell'header: una parola, un peso.
+// Bitmap font per la sola firma sotto il wordmark: una riga, un peso.
 const silkscreen = Silkscreen({
   variable: "--font-silkscreen",
   weight: "400",
@@ -88,21 +88,21 @@ export default async function RootLayout({
             <MenuLaterale admin={profilo?.role === "admin"} />
             {/* Il nome sta abbreviato per stare su una riga a 390px: con
                 "Pallacanestro Reggiana" per esteso andava a capo. Sotto, la
-                riga a pixel che dichiara l'app non ufficiale. */}
+                riga a pixel con la firma: l'app la fa un tifoso, non il club. */}
             <Link
               href="/"
               className="flex flex-1 items-center gap-2 text-foreground"
               aria-label={`${branding.appHeaderName} — ${branding.disclaimer}`}
             >
               <LogoPalla className="h-5 w-5 shrink-0" />
-              {/* Nome e timbro incolonnati: il timbro sta sotto e allineato a
+              {/* Nome e firma incolonnati: la firma sta sotto e allineata a
                   sinistra col nome, così da lg non ruba larghezza alla nav. */}
               <span className="flex shrink-0 flex-col gap-0.5 whitespace-nowrap">
                 <span className="display text-base sm:text-xl">
                   {branding.appHeaderName}
                   <span className="text-brand">.</span>
                 </span>
-                <span className="timbro-unofficial" aria-hidden>
+                <span className="timbro-firma" aria-hidden>
                   {branding.disclaimer}
                 </span>
               </span>

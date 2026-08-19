@@ -41,7 +41,7 @@ const configs: Record<BrandingMode, Branding> = {
     appName: "Pallacanestro Reggiana",
     appShortName: "Reggiana",
     appHeaderName: "Pall. Reggiana",
-    disclaimer: "unofficial",
+    disclaimer: "by one tifoso",
     tagline: "Segui Reggio: news, partite e la pagella della curva",
     logoUrl: null,
     colori: {
@@ -57,7 +57,7 @@ const configs: Record<BrandingMode, Branding> = {
     appName: "Pallacanestro Reggiana",
     appShortName: "Reggiana",
     appHeaderName: "Pall. Reggiana",
-    disclaimer: "unofficial",
+    disclaimer: "by one tifoso",
     tagline: "Segui la tua squadra: news, partite e pagelle",
     logoUrl: null,
     colori: {

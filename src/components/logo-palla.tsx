@@ -1,12 +1,21 @@
 // Loghino: palla da basket nel rosso del logo del club (--brand-logo, non il
 // rosso acceso dell'interfaccia). Le cuciture sono nel colore di sfondo, così
 // la palla si "ritaglia" da sola sull'header scuro.
+//
+// Ogni minuto la palla fa tre palleggi (globals.css): il rimbalzo sta sull'svg,
+// il giro sulle sole cuciture - il cerchio è simmetrico, ruotarlo non si
+// vedrebbe, e tenerli separati evita che lo schiacciamento storca la rotazione.
 
 export function LogoPalla({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 20 20" className={className} aria-hidden>
+    <svg viewBox="0 0 20 20" className={`palla ${className ?? ""}`} aria-hidden>
       <circle cx="10" cy="10" r="10" fill="var(--brand-logo)" />
-      <g stroke="var(--sfondo)" strokeWidth="1.4" fill="none">
+      <g
+        className="palla-cuciture"
+        stroke="var(--sfondo)"
+        strokeWidth="1.4"
+        fill="none"
+      >
         <path d="M10 0v20" />
         <path d="M0 10h20" />
         <path d="M2.93 2.93c4.13 4.13 4.13 10 0 14.14" />

@@ -5,7 +5,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 
 import { richiediAdmin } from "@/src/lib/identita/admin";
 import { dataOra } from "@/src/lib/date";

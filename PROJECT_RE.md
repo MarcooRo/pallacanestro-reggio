@@ -32,13 +32,13 @@ L'app ufficiale LBA ha una sezione **MyLBA** con voto, punti e badge. È a livel
 | Livello | Scelta |
 |---|---|
 | App | **Next.js 15 (App Router) + TypeScript**, installabile come **PWA** |
-| Hosting | **Vercel** — scala a zero, assorbe il picco post-partita |
-| DB | **Postgres su Supabase** (managed) |
+| Hosting | **VPS propria** (Caddy + systemd, `vps/Infrastruttura-VPS.md`) — era Vercel fino al 23/08/2026 |
+| DB | **Postgres sulla VPS** (era Supabase fino al 23/08/2026) |
 | Accesso dati | **Drizzle ORM**, migrazioni versionate nel repo |
-| Auth | **Supabase Auth**, OTP via email |
+| Auth | **Identità anonima per dispositivo** (rev. 24/08/2026, vedi sotto); password solo per l'admin |
 | Logica fidata | **Server Actions / Route Handlers** con connessione privilegiata |
 | Immagini condivisibili | **`@vercel/og`** |
-| Scheduling ingestion | **Vercel Cron** → route handler idempotenti |
+| Scheduling ingestion | **cron sulla VPS** → route handler idempotenti (era Vercel Cron) |
 | UI | **Tailwind + shadcn/ui** |
 | Push | **Web Push (VAPID)**; eventuale shell **Capacitor** in seconda battuta |
 | Toolchain | **`bun install` + `bun test`** in locale; runtime **Node** in produzione |
@@ -66,6 +66,29 @@ Conseguenza: **niente RLS da mantenere**, un solo percorso di accesso.
 - **Realtime / websocket** in v1: i conteggi sono nascosti fino a chiusura voto, non c'è niente da mostrare live.
 - **Coda / orchestratore**: sono pochi job al giorno. Cron + handler idempotenti + tabella di log bastano.
 - **localStorage / sessionStorage** per stato di dominio.
+
+---
+
+### Revisione 24/08/2026 — niente più account: identità anonima
+
+Decisione presa con l'app in uso privato: **il voto è libero, senza
+registrazione**. Il principio "zero attrito" vince sul controllo del voto
+doppio, accettato come rischio tollerabile per un fun project.
+
+- L'identità è un **cookie tecnico firmato** (HMAC, `src/lib/identita`),
+  impostato dal server alla prima partecipazione, durata 1 anno, con copia
+  di riserva in localStorage (`custode-identita`). Il profilo è una riga
+  anonima in `profiles` (nickname facoltativo, scelto dal /profilo).
+- **Niente fingerprinting, niente IP come identità**: l'IP fa solo da
+  rate limit anti-script (in memoria, processo singolo).
+- **L'admin è l'unico login**: una password (hash scrypt in `app_settings`,
+  chiave `admin_password_hash`, si imposta con `scripts/imposta-password.ts`),
+  sessione in cookie firmato httpOnly di 30 giorni (`/admin/accesso`).
+- Supabase Auth, le pagine di accesso/registrazione, la vetrina e la
+  modalità ospite sono state rimosse. Supabase resta SOLO per lo Storage
+  delle foto (bucket `media`), finché anche quello non trasloca sulla VPS.
+- Upgrade futuro possibile: passkey ("salva l'identità con Face ID") per
+  chi vuole uno storico a prova di cancellazione dati.
 
 ---
 

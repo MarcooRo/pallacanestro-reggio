@@ -23,6 +23,9 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "i.ytimg.com" },
       // il nostro archivio media, servito dalla route /media (URL assoluti)
       { protocol: "https", hostname: "tiforeggiana.it" },
+      // TEMPORANEO (solo anteprima locale): il DB di sviluppo ha ancora 12
+      // URL del vecchio storage Supabase. Da togliere dopo il fix dei dati.
+      { protocol: "https", hostname: "thiptbtgofaazpbwabkb.supabase.co" },
       { protocol: "http", hostname: "localhost" },
     ],
   },

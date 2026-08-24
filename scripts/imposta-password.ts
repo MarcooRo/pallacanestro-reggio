@@ -27,7 +27,8 @@ if (!password || password.length < 8) {
 }
 
 const client = postgres(process.env.DATABASE_URL!, { max: 1 });
-const db = drizzle(client);
+// casing come in drizzle.config.ts: le colonne nel DB sono snake_case
+const db = drizzle(client, { casing: "snake_case" });
 
 const hash = hashPassword(password);
 const [esistente] = await db

@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { LogoClub } from "@/src/components/logo-club";
-import { NewsCard } from "@/src/components/news-card";
 import { NewsRiga } from "@/src/components/news-riga";
 import { NewsRiquadro } from "@/src/components/news-riquadro";
 import { PartitaCard } from "@/src/components/partita-card";
@@ -245,14 +244,16 @@ async function HomeContenuti() {
       </section>
 
       {/* ── Seconda riga, tre colonne alla pari: la cronaca di Reggio in
-          lista, i video, la classifica del campionato. ── */}
+          lista, i video, la classifica del campionato. La colonna video
+          detta l'altezza; nelle altre due sono le RIGHE a stirarsi
+          (flex-1), così i bordi inferiori chiudono allineati. ── */}
       <section className="sale sale-3 grid gap-8 lg:grid-cols-3 lg:gap-6">
         <div className="flex flex-col gap-3">
           <TitoloSezione titolo="Qui Reggio" href="/news?f=reggio" link="tutte" />
           {quiReggio.length > 0 ? (
-            <div className="flex flex-col">
+            <div className="flex flex-1 flex-col">
               {quiReggio.map((n) => (
-                <NewsRiga key={n.id} item={n} />
+                <NewsRiga key={n.id} item={n} className="flex-1" />
               ))}
             </div>
           ) : (
@@ -286,7 +287,7 @@ async function HomeContenuti() {
         {classifica && (
           <div className="flex flex-col gap-3">
             <TitoloSezione titolo="Classifica" href="/classifica" link="tutta" />
-            <div className="tabellone taglio-sm flex flex-col">
+            <div className="tabellone taglio-sm flex flex-1 flex-col">
               <div className="fascia flex items-baseline justify-between gap-2 border-b border-border px-3 py-2">
                 <span className="truncate font-bold">
                   {etichettaStagione(classifica.seasonYear)}
@@ -295,12 +296,12 @@ async function HomeContenuti() {
                   <span className="shrink-0">{classifica.giornata}</span>
                 )}
               </div>
-              <ol className="flex flex-col py-1">
+              <ol className="flex flex-1 flex-col py-1">
                 {inTesta.map((r) => (
-                  <li key={r.lbaTeamId}>
+                  <li key={r.lbaTeamId} className="flex flex-1">
                     <Link
                       href={r.reggio ? "/giocatori" : `/squadre/${r.lbaTeamId}`}
-                      className={`flex items-center gap-2.5 border-l-2 px-2.5 py-1.5 transition-colors hover:bg-surface ${
+                      className={`flex w-full items-center gap-2.5 border-l-2 px-2.5 py-1.5 transition-colors hover:bg-surface ${
                         r.reggio
                           ? "border-l-brand-vivid bg-brand-tint"
                           : "border-l-transparent"
@@ -361,16 +362,24 @@ async function HomeContenuti() {
         )}
       </section>
 
-      {/* ── La coda: tutti gli altri articoli, di qualunque fonte, a
-          terzine fino al limite — per il resto c'è la pagina News. ── */}
+      {/* ── La coda: tutti gli altri articoli, di qualunque fonte. Non
+          un muro di card: le prime tre hanno la foto, il resto è la
+          lista d'archivio a due colonne — si scorre con l'occhio. ── */}
       {coda.length > 0 && (
-        <section className="sale sale-4 flex flex-col gap-3">
+        <section className="sale sale-4 flex flex-col gap-4">
           <TitoloSezione titolo="Tutte le news" href="/news" link="tutte" />
-          <div className="grid gap-2.5 lg:grid-cols-2 xl:grid-cols-3">
-            {coda.map((n) => (
-              <NewsCard key={n.id} item={n} />
+          <div className="grid gap-2.5 lg:grid-cols-3">
+            {coda.slice(0, 3).map((n) => (
+              <NewsRiquadro key={n.id} item={n} />
             ))}
           </div>
+          {coda.length > 3 && (
+            <div className="grid lg:grid-cols-2 lg:gap-x-8">
+              {coda.slice(3).map((n) => (
+                <NewsRiga key={n.id} item={n} />
+              ))}
+            </div>
+          )}
         </section>
       )}
 

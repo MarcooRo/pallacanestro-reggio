@@ -9,7 +9,13 @@ import { soloOra } from "@/src/lib/date";
 import { fonteDiCasa, nomeFonte } from "@/src/lib/news/etichette";
 import type { NewsInLista } from "@/src/lib/news/queries";
 
-export function NewsRiga({ item }: { item: NewsInLista }) {
+export function NewsRiga({
+  item,
+  className = "",
+}: {
+  item: NewsInLista;
+  className?: string;
+}) {
   const diCasa = fonteDiCasa(item.source);
   return (
     <Link
@@ -18,7 +24,7 @@ export function NewsRiga({ item }: { item: NewsInLista }) {
       // riga non si sposta di un pixel
       className={`group flex items-center gap-3 border-l-2 border-b border-b-border py-2.5 pl-3 transition-colors hover:bg-surface ${
         diCasa ? "border-l-brand-vivid" : "border-l-transparent"
-      }`}
+      } ${className}`}
     >
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         {/* Su uno schermo largo la riga arriverebbe a 110 caratteri: la

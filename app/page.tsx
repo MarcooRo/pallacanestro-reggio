@@ -3,10 +3,10 @@ import Link from "next/link";
 import { NewsApertura } from "@/src/components/news-apertura";
 import { NewsCard } from "@/src/components/news-card";
 import { NewsRiga } from "@/src/components/news-riga";
-import { NewsRiquadro } from "@/src/components/news-riquadro";
 import { PartitaCard } from "@/src/components/partita-card";
 import { Pagella } from "@/src/components/pagella";
 import { VideoCard } from "@/src/components/video-card";
+import { soloOra } from "@/src/lib/date";
 import { getProfilo } from "@/src/lib/identita/sessione";
 import { fonteDiCasa } from "@/src/lib/news/etichette";
 import { getNews, type NewsInLista } from "@/src/lib/news/queries";
@@ -126,23 +126,36 @@ async function HomeContenuti() {
               </p>
             )}
 
-            {/* Il box della redazione sta sotto il tabellone: fondo
-                rosso spento come la striscia "Solo Reggio" delle News,
-                un pezzo alla volta — l'ultimo — che non scivola via con
-                la cronaca. */}
+            {/* Il pezzo della redazione sta sotto il tabellone: card
+                compatta e testuale — la voce della casa si riconosce dal
+                fondo rosso spento e dall'occhiello, non da una foto che
+                si mangia la colonna. Un pezzo alla volta, l'ultimo, che
+                non scivola via con la cronaca. */}
             {redazione.length > 0 && (
-              <div className="taglio flex flex-col gap-3 bg-brand-tint p-4">
-                <div className="flex items-baseline justify-between">
-                  <h2 className="display text-2xl">Dalla redazione</h2>
-                  <Link
-                    href="/news?f=redazione"
-                    className="eyebrow text-brand-vivid"
-                  >
-                    tutti →
-                  </Link>
-                </div>
-                <NewsRiquadro item={redazione[0]} />
-              </div>
+              <Link
+                href={`/news/${redazione[0].slug ?? redazione[0].id}`}
+                className="taglio group flex flex-col gap-2 border-l-[3px] border-l-brand-vivid bg-brand-tint p-4"
+              >
+                <span className="flex items-baseline justify-between gap-2">
+                  <span className="eyebrow font-bold !text-brand-vivid">
+                    Dalla redazione
+                  </span>
+                  <span className="eyebrow shrink-0">
+                    {soloOra(redazione[0].publishedAt)}
+                  </span>
+                </span>
+                <span className="leading-snug font-bold text-balance transition-colors group-hover:text-brand-vivid">
+                  {redazione[0].title}
+                </span>
+                {redazione[0].excerpt && (
+                  <span className="line-clamp-2 text-sm text-muted">
+                    {redazione[0].excerpt}
+                  </span>
+                )}
+                <span className="eyebrow text-brand-vivid transition-transform group-hover:translate-x-1">
+                  leggi →
+                </span>
+              </Link>
             )}
           </div>
         </div>
@@ -180,15 +193,22 @@ async function HomeContenuti() {
               tutti →
             </Link>
           </div>
-          {/* Sul telefono i video scorrono col dito come prima; nella
-              colonna desktop stanno incolonnati */}
-          <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0">
+          {/* Sul telefono i video scorrono col dito come prima. Nella
+              colonna desktop solo il più fresco ha la miniatura grande,
+              gli altri sono righe compatte: tre card piene impilate
+              spingevano la coda della pagina un metro più in basso. */}
+          <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] lg:hidden">
             {video.map((v) => (
               <VideoCard
                 key={v.videoId}
                 video={v}
-                className="w-[82%] shrink-0 snap-start lg:w-auto"
+                className="w-[82%] shrink-0 snap-start"
               />
+            ))}
+          </div>
+          <div className="hidden flex-col gap-2.5 lg:flex">
+            {video.map((v, i) => (
+              <VideoCard key={v.videoId} video={v} compatta={i > 0} />
             ))}
           </div>
         </div>

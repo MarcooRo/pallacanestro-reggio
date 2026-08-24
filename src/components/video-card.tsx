@@ -13,7 +13,16 @@ import { createPortal } from "react-dom";
 import type { Video } from "@/src/lib/video/queries";
 import { soloOra } from "@/src/lib/date";
 
-export function VideoCard({ video, className = "" }: { video: Video; className?: string }) {
+export function VideoCard({
+  video,
+  className = "",
+  compatta = false,
+}: {
+  video: Video;
+  className?: string;
+  /** Riga orizzontale: miniatura piccola e titolo, per le liste dense */
+  compatta?: boolean;
+}) {
   const [aperto, setAperto] = useState(false);
   // La massima risoluzione che YouTube ha per questo video: maxres
   // (1280×720) non esiste per tutti, al 404 si ripiega sulla hqdefault
@@ -21,6 +30,51 @@ export function VideoCard({ video, className = "" }: { video: Video; className?:
   const [thumb, setThumb] = useState(
     `https://i.ytimg.com/vi/${video.videoId}/maxresdefault.jpg`,
   );
+
+  if (compatta) {
+    return (
+      // Il Teatro sta FUORI dal bottone: è un portal, ma gli eventi React
+      // risalgono l'albero dei componenti — dentro, il click su "Chiudi"
+      // arriverebbe anche all'onClick della riga e riaprirebbe il player.
+      <>
+        {/* Tutta la riga è il bottone: su una miniatura da 7rem il
+            bersaglio giusto è la riga intera, non il francobollo */}
+        <button
+          type="button"
+          onClick={() => setAperto(true)}
+          aria-label={`Guarda: ${video.titolo}`}
+          className={`taglio-sm card group flex cursor-pointer items-center gap-3 p-2.5 text-left transition-colors hover:border-brand ${className}`}
+        >
+          <span className="relative block aspect-video w-28 shrink-0">
+            <Image
+              src={thumb}
+              alt=""
+              fill
+              sizes="7rem"
+              className="object-cover"
+              onError={() => setThumb(video.thumbnailUrl)}
+            />
+            <span className="absolute inset-0 flex items-center justify-center bg-black/25 transition-colors group-hover:bg-black/10">
+              <span className="flex h-6 w-8 -skew-x-[14deg] items-center justify-center bg-brand">
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 skew-x-[14deg] fill-on-brand">
+                  <path d="M8 5.5v13l11-6.5Z" />
+                </svg>
+              </span>
+            </span>
+          </span>
+          <span className="flex min-w-0 flex-col gap-0.5">
+            <span className="eyebrow">
+              {video.tag} · {soloOra(video.publishedAt)}
+            </span>
+            <span className="line-clamp-2 text-sm font-bold leading-snug transition-colors group-hover:text-brand-vivid">
+              {video.titolo}
+            </span>
+          </span>
+        </button>
+        {aperto && <Teatro video={video} chiudi={() => setAperto(false)} />}
+      </>
+    );
+  }
 
   return (
     <div className={`taglio-sm flex flex-col card ${className}`}>

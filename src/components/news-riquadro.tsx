@@ -13,10 +13,14 @@ export function NewsRiquadro({
   item,
   className = "",
   style,
+  riempi = false,
 }: {
   item: NewsInLista;
   className?: string;
   style?: CSSProperties;
+  /** In una colonna stirata è la FOTO a crescere, non il vuoto tra
+      titolo e data: il riquadro riempie l'altezza che gli danno. */
+  riempi?: boolean;
 }) {
   const diCasa = fonteDiCasa(item.source);
   return (
@@ -28,7 +32,11 @@ export function NewsRiquadro({
       style={style}
     >
       {item.copertina && (
-        <span className="relative block aspect-[16/9] w-full">
+        <span
+          className={`relative block w-full ${
+            riempi ? "min-h-40 flex-1" : "aspect-[16/9]"
+          }`}
+        >
           <Image
             src={item.copertina}
             alt=""
@@ -38,7 +46,9 @@ export function NewsRiquadro({
           />
         </span>
       )}
-      <span className="flex flex-1 flex-col gap-1.5 p-3.5">
+      <span
+        className={`flex flex-col gap-1.5 p-3.5 ${riempi ? "" : "flex-1"}`}
+      >
         <span className="eyebrow">
           <span className={diCasa ? "font-bold !text-brand-vivid" : ""}>
             {nomeFonte[item.source] ?? item.source}

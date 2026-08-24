@@ -3,10 +3,10 @@ import Link from "next/link";
 import { NewsApertura } from "@/src/components/news-apertura";
 import { NewsCard } from "@/src/components/news-card";
 import { NewsRiga } from "@/src/components/news-riga";
+import { NewsRiquadro } from "@/src/components/news-riquadro";
 import { PartitaCard } from "@/src/components/partita-card";
 import { Pagella } from "@/src/components/pagella";
 import { VideoCard } from "@/src/components/video-card";
-import { soloOra } from "@/src/lib/date";
 import { getProfilo } from "@/src/lib/identita/sessione";
 import { fonteDiCasa } from "@/src/lib/news/etichette";
 import { getNews, type NewsInLista } from "@/src/lib/news/queries";
@@ -126,45 +126,16 @@ async function HomeContenuti() {
               </p>
             )}
 
-            {/* Il pezzo della redazione sta sotto il tabellone: card
-                compatta e testuale — la voce della casa si riconosce dal
-                fondo rosso spento e dall'occhiello, non da una foto che
-                si mangia la colonna. Un pezzo alla volta, l'ultimo, che
-                non scivola via con la cronaca. */}
-            {redazione.length > 0 && (
-              <Link
-                href={`/news/${redazione[0].slug ?? redazione[0].id}`}
-                className="taglio group flex flex-col gap-2 border-l-[3px] border-l-brand-vivid bg-brand-tint p-4"
-              >
-                <span className="flex items-baseline justify-between gap-2">
-                  <span className="eyebrow font-bold !text-brand-vivid">
-                    Dalla redazione
-                  </span>
-                  <span className="eyebrow shrink-0">
-                    {soloOra(redazione[0].publishedAt)}
-                  </span>
-                </span>
-                <span className="leading-snug font-bold text-balance transition-colors group-hover:text-brand-vivid">
-                  {redazione[0].title}
-                </span>
-                {redazione[0].excerpt && (
-                  <span className="line-clamp-2 text-sm text-muted">
-                    {redazione[0].excerpt}
-                  </span>
-                )}
-                <span className="eyebrow text-brand-vivid transition-transform group-hover:translate-x-1">
-                  leggi →
-                </span>
-              </Link>
-            )}
           </div>
         </div>
       </section>
 
-      {/* ── Seconda riga: Qui Reggio largo due colonne coi suoi quattro
-          articoli, i video nella terza. Sul telefono si incolonna. ── */}
+      {/* ── Seconda riga, tre colonne alla pari: la cronaca di Reggio in
+          lista, il pezzo della redazione con la sua foto nel box rosso,
+          i video. Le righe di Qui Reggio stanno in colonna singola: così
+          la lista riempie l'altezza invece di lasciare vuoti. ── */}
       <section className="sale sale-3 grid gap-8 lg:grid-cols-3 lg:gap-6">
-        <div className="flex flex-col gap-3 lg:col-span-2">
+        <div className="flex flex-col gap-3">
           <div className="flex items-baseline justify-between">
             <h2 className="display text-2xl">Qui Reggio</h2>
             <Link href="/news?f=reggio" className="eyebrow text-brand-vivid">
@@ -172,9 +143,7 @@ async function HomeContenuti() {
             </Link>
           </div>
           {quiReggio.length > 0 ? (
-            // Quattro articoli a coppie: due colonne di righe, come
-            // l'archivio della pagina News
-            <div className="grid lg:grid-cols-2 lg:gap-x-6">
+            <div className="flex flex-col">
               {quiReggio.map((n) => (
                 <NewsRiga key={n.id} item={n} />
               ))}
@@ -185,6 +154,26 @@ async function HomeContenuti() {
             </p>
           )}
         </div>
+
+        {/* Il box della redazione: fondo rosso spento come la striscia
+            "Solo Reggio" delle News, un pezzo alla volta — l'ultimo, con
+            foto e spazio suo — che non scivola via con la cronaca.
+            h-full + flex-1: il box riempie la colonna alla pari delle
+            sorelle, senza buchi sotto. */}
+        {redazione.length > 0 && (
+          <div className="taglio flex h-full flex-col gap-3 bg-brand-tint p-4">
+            <div className="flex items-baseline justify-between">
+              <h2 className="display text-2xl">Dalla redazione</h2>
+              <Link
+                href="/news?f=redazione"
+                className="eyebrow text-brand-vivid"
+              >
+                tutti →
+              </Link>
+            </div>
+            <NewsRiquadro item={redazione[0]} className="flex-1" riempi />
+          </div>
+        )}
 
         <div className="flex flex-col gap-3">
           <div className="flex items-baseline justify-between">

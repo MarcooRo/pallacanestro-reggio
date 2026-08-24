@@ -76,7 +76,9 @@ async function HomeContenuti() {
 
   return (
     // Ogni sezione dopo la prima è separata da un divisorio e respira.
-    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-2 px-4 py-6 lg:max-w-5xl [&>section]:py-6 [&>section+section]:border-t [&>section+section]:border-border">
+    // Da lg il margine laterale cresce (px-10): coi 16px del telefono la
+    // pagina toccava quasi i bordi delle finestre non a tutto schermo.
+    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-2 px-4 py-6 lg:max-w-5xl lg:px-10 [&>section]:py-6 [&>section+section]:border-t [&>section+section]:border-border">
       {profilo?.nickname && (
         <p className="eyebrow sale">Ciao, {profilo.nickname}</p>
       )}
@@ -95,10 +97,9 @@ async function HomeContenuti() {
         </section>
       )}
 
-      {/* ── Testata: due righe. Prima riga l'apertura alla scala che
-          merita con accanto la prossima partita — il tabellone sta in
-          testata come sui giornali sportivi. Seconda riga i tre riquadri
-          delle notizie che incalzano. ── */}
+      {/* ── Testata: l'apertura alla scala che merita con accanto la
+          prossima partita — il tabellone sta in testata come sui
+          giornali sportivi. ── */}
       <section className="sale sale-2 flex flex-col gap-2.5">
         <div className="grid gap-2.5 lg:grid-cols-[2fr_1fr] lg:items-start">
           {testata && <NewsApertura item={testata} />}
@@ -125,24 +126,11 @@ async function HomeContenuti() {
             )}
           </div>
         </div>
-        {sottoApertura.length > 0 && (
-          <div className="grid gap-2.5 lg:grid-cols-3">
-            {sottoApertura.map((n, i) => (
-              <NewsRiquadro
-                key={n.id}
-                item={n}
-                className="sale"
-                // un gradino per riquadro, come le tessere della pagina News
-                style={{ animationDelay: `${0.05 * i}s` }}
-              />
-            ))}
-          </div>
-        )}
       </section>
 
-      {/* ── Fascia a tre colonne: la cronaca di Reggio, il box della
-          redazione, i video. Tre verticali affiancate da lg, incolonnate
-          sul telefono. ── */}
+      {/* ── Seconda riga: la fascia a tre colonne con la cronaca di
+          Reggio, il box della redazione, i video. Tre verticali
+          affiancate da lg, incolonnate sul telefono. ── */}
       <section className="sale sale-3 grid gap-8 lg:grid-cols-3 lg:gap-6">
         <div className="flex flex-col gap-3">
           <div className="flex items-baseline justify-between">
@@ -203,6 +191,22 @@ async function HomeContenuti() {
           </div>
         </div>
       </section>
+
+      {/* ── I tre riquadri delle notizie che incalzano: la riga fa da
+          cerniera tra la parte di Reggio e la coda di lega. ── */}
+      {sottoApertura.length > 0 && (
+        <section className="sale sale-4 grid gap-2.5 lg:grid-cols-3">
+          {sottoApertura.map((n, i) => (
+            <NewsRiquadro
+              key={n.id}
+              item={n}
+              className="sale"
+              // un gradino per riquadro, come le tessere della pagina News
+              style={{ animationDelay: `${0.05 * i}s` }}
+            />
+          ))}
+        </section>
+      )}
 
       {/* ── Il resto del campionato: due colonne di card, in fondo dove
           stanno le notizie che non sono di Reggio. ── */}

@@ -85,7 +85,9 @@ export default async function RootLayout({
         {/* Il fondo dell'header sale fin sopra la fotocamera: la barra di
             stato non deve mostrare la pagina che scorre sotto */}
         <header className="sticky top-0 z-20 border-b border-border bg-background/90 pt-[env(safe-area-inset-top)] backdrop-blur">
-          <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3 lg:max-w-5xl">
+          {/* px-10 da lg: stesso margine laterale della home, i bordi
+              del contenuto restano incolonnati con logo e nav */}
+          <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3 lg:max-w-5xl lg:px-10">
             <MenuLaterale admin={admin} />
             {/* Il nome sta abbreviato per stare su una riga a 390px: con
                 "Pallacanestro Reggiana" per esteso andava a capo. Sotto, la

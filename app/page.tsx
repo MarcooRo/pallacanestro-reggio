@@ -31,9 +31,9 @@ export default async function HomePage() {
   return <HomeContenuti />;
 }
 
-// Quante notizie entrano in ogni spazio: Qui Reggio è una lista, la
-// coda chiude a terzine con tutto quello che resta.
-const QUI_REGGIO = 5;
+// Quante notizie entrano in ogni spazio: Qui Reggio sei a coppie (tre
+// righe), la coda chiude con tutto quello che resta.
+const QUI_REGGIO = 6;
 const CODA = 12;
 
 // Il pezzo della redazione non segue la cronaca: ha il suo box e ci
@@ -41,9 +41,10 @@ const CODA = 12;
 // alla volta: è la firma della casa, non un flusso.
 const SPAZIO_REDAZIONE = 1;
 
-// Quante squadre nel box classifica: otto righe stanno all'altezza
-// delle colonne sorelle; se Reggio è più giù si aggiunge in fondo.
-const SQUADRE_CLASSIFICA = 8;
+// Quante squadre nel box classifica: sei righe stanno all'altezza
+// delle tre righe di Qui Reggio; se Reggio è più giù si aggiunge in
+// fondo, dopo i puntini.
+const SQUADRE_CLASSIFICA = 6;
 
 // Il titolo di sezione con la firma della casa: il cuneo rosso
 // inclinato, lo stesso taglio dei tag e del bottone play.
@@ -79,7 +80,7 @@ function Apertura({ item }: { item: NewsInLista }) {
   return (
     <Link
       href={`/news/${item.slug ?? item.id}`}
-      className={`taglio card group relative flex min-h-[22rem] overflow-hidden transition-colors hover:border-brand lg:col-span-6 lg:min-h-[26rem] ${
+      className={`taglio card group relative flex min-h-[22rem] overflow-hidden transition-colors hover:border-brand lg:col-span-8 lg:min-h-[30rem] ${
         diCasa ? "border-l-[3px] border-l-brand-vivid" : ""
       }`}
     >
@@ -168,13 +169,12 @@ async function HomeContenuti() {
         <p className="eyebrow sale">Ciao, {profilo.nickname}</p>
       )}
 
-      {/* ── Testata a tre colonne: l'apertura da manchette, il pezzo
-          della redazione, la colonna della partita col voto sotto il
-          tabellone. Sul telefono: apertura, partita, redazione. ── */}
+      {/* ── Testata: l'apertura da manchette e la colonna di destra con
+          la partita sopra e il pezzo della redazione sotto. ── */}
       <section className="sale sale-2 grid gap-2.5 lg:grid-cols-12">
         {testata && <Apertura item={testata} />}
 
-        <div className="flex flex-col gap-3 lg:col-span-3 lg:col-start-10 lg:row-start-1">
+        <div className="flex flex-col gap-3 lg:col-span-4">
           <TitoloSezione
             titolo="Prossima partita"
             href="/calendario"
@@ -195,13 +195,11 @@ async function HomeContenuti() {
             </p>
           )}
           {/* Sotto il tabellone, la partecipazione: il voto quando la
-              finestra è aperta, altrimenti l'ultima pagella. mt-auto:
-              se la colonna avanza, il vuoto sta in mezzo e la call sta
-              appoggiata in fondo. */}
+              finestra è aperta, altrimenti l'ultima pagella. */}
           {votazione ? (
             <Link
               href={`/partite/${votazione.id}`}
-              className="taglio display mt-auto flex items-baseline justify-between bg-brand px-4 py-3 text-xl text-on-brand transition-colors hover:bg-brand-hover"
+              className="taglio display flex items-baseline justify-between bg-brand px-4 py-3 text-xl text-on-brand transition-colors hover:bg-brand-hover"
             >
               <span>Si vota, ora</span>
               <span className="eyebrow">vota →</span>
@@ -210,7 +208,7 @@ async function HomeContenuti() {
             ultima && (
               <Link
                 href={`/partite/${ultima.partita.id}`}
-                className="taglio group mt-auto flex flex-col gap-1 border-l-[3px] border-l-brand-vivid bg-brand-tint px-4 py-3"
+                className="taglio group flex flex-col gap-1 border-l-[3px] border-l-brand-vivid bg-brand-tint px-4 py-3"
               >
                 <span className="eyebrow font-bold !text-brand-vivid">
                   L&apos;ultima pagella
@@ -227,33 +225,61 @@ async function HomeContenuti() {
               </Link>
             )
           )}
-        </div>
 
-        {/* Il box della redazione: fondo rosso spento, un pezzo alla
-            volta — l'ultimo — che non scivola via con la cronaca. */}
-        {redazione.length > 0 && (
-          <div className="taglio flex h-full flex-col gap-3 bg-brand-tint p-4 lg:col-span-3 lg:col-start-7 lg:row-start-1">
-            <TitoloSezione
-              titolo="Redazione"
-              href="/news?f=redazione"
-              link="tutti"
-            />
-            <NewsRiquadro item={redazione[0]} className="flex-1" riempi />
-          </div>
-        )}
+          {/* Sotto la partita, il pezzo della redazione: card orizzontale
+              nel suo rosso spento, foto piccola e titolo — l'ultimo, che
+              non scivola via con la cronaca. mt-auto: se la colonna
+              avanza sull'apertura, il respiro sta in mezzo. */}
+          {redazione.length > 0 && (
+            <div className="mt-auto flex flex-col gap-3 pt-3">
+              <TitoloSezione
+                titolo="Redazione"
+                href="/news?f=redazione"
+                link="tutti"
+              />
+              <Link
+                href={`/news/${redazione[0].slug ?? redazione[0].id}`}
+                className="taglio group flex gap-3.5 border-l-[3px] border-l-brand-vivid bg-brand-tint p-3.5"
+              >
+                {redazione[0].copertina && (
+                  <span className="relative block aspect-[4/3] w-28 shrink-0 self-center overflow-hidden">
+                    <Image
+                      src={redazione[0].copertina}
+                      alt=""
+                      fill
+                      sizes="7rem"
+                      className="object-cover transition-transform duration-700 group-hover:scale-[1.06]"
+                    />
+                  </span>
+                )}
+                <span className="flex min-w-0 flex-col gap-1.5">
+                  <span className="eyebrow">
+                    {soloOra(redazione[0].publishedAt)}
+                  </span>
+                  <span className="line-clamp-3 leading-snug font-bold transition-colors group-hover:text-brand-vivid">
+                    {redazione[0].title}
+                  </span>
+                  <span className="eyebrow text-brand-vivid transition-transform group-hover:translate-x-1">
+                    leggi →
+                  </span>
+                </span>
+              </Link>
+            </div>
+          )}
+        </div>
       </section>
 
-      {/* ── Seconda riga, tre colonne alla pari: la cronaca di Reggio in
-          lista, i video, la classifica del campionato. La colonna video
-          detta l'altezza; nelle altre due sono le RIGHE a stirarsi
-          (flex-1), così i bordi inferiori chiudono allineati. ── */}
+      {/* ── Seconda riga: la cronaca di Reggio a coppie (due colonne di
+          righe) e accanto la classifica del campionato. Sei articoli e
+          sei squadre: le due colonne chiudono naturalmente alla pari,
+          senza stirare le righe. ── */}
       <section className="sale sale-3 grid gap-8 lg:grid-cols-3 lg:gap-6">
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 lg:col-span-2">
           <TitoloSezione titolo="Qui Reggio" href="/news?f=reggio" link="tutte" />
           {quiReggio.length > 0 ? (
-            <div className="flex flex-1 flex-col">
+            <div className="grid flex-1 lg:grid-cols-2 lg:gap-x-8">
               {quiReggio.map((n) => (
-                <NewsRiga key={n.id} item={n} className="flex-1" />
+                <NewsRiga key={n.id} item={n} />
               ))}
             </div>
           ) : (
@@ -261,27 +287,6 @@ async function HomeContenuti() {
               Nessun&apos;altra notizia da Reggio, per ora.
             </p>
           )}
-        </div>
-
-        <div className="flex flex-col gap-3">
-          <TitoloSezione titolo="Video" href="/video" link="tutti" />
-          {/* Sul telefono i video scorrono col dito come prima. Nella
-              colonna desktop solo il più fresco ha la miniatura grande,
-              gli altri sono righe compatte. */}
-          <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] lg:hidden">
-            {video.map((v) => (
-              <VideoCard
-                key={v.videoId}
-                video={v}
-                className="w-[82%] shrink-0 snap-start"
-              />
-            ))}
-          </div>
-          <div className="hidden flex-col gap-2.5 lg:flex">
-            {video.map((v, i) => (
-              <VideoCard key={v.videoId} video={v} compatta={i > 0} />
-            ))}
-          </div>
         </div>
 
         {classifica && (
@@ -333,7 +338,7 @@ async function HomeContenuti() {
                   </li>
                 ))}
                 {/* Reggio non molla la classifica nemmeno quando sta
-                    sotto l'ottava: si ripesca dopo i puntini */}
+                    sotto la sesta: si ripesca dopo i puntini */}
                 {reggioFuori && (
                   <li>
                     <span aria-hidden className="block px-10 py-0.5 text-muted">
@@ -361,6 +366,23 @@ async function HomeContenuti() {
           </div>
         )}
       </section>
+
+      {/* ── La banda dei video: tre alla pari, stessa misura — la griglia
+          li stira alla stessa altezza. Sul telefono scorrono col dito. ── */}
+      {video.length > 0 && (
+        <section className="sale sale-3 flex flex-col gap-3">
+          <TitoloSezione titolo="Video" href="/video" link="tutti" />
+          <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] lg:mx-0 lg:grid lg:grid-cols-3 lg:overflow-visible lg:px-0">
+            {video.map((v) => (
+              <VideoCard
+                key={v.videoId}
+                video={v}
+                className="w-[82%] shrink-0 snap-start lg:w-auto"
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ── La coda: tutti gli altri articoli, di qualunque fonte. Non
           un muro di card: le prime tre hanno la foto, il resto è la

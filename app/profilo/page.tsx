@@ -1,74 +1,84 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
 import { NotifichePush } from "@/src/components/notifiche-push";
-import { esci } from "@/src/lib/auth/actions";
-import { getProfilo, getUtente } from "@/src/lib/auth/session";
+import { isAdmin } from "@/src/lib/identita/admin";
+import { aggiornaNickname } from "@/src/lib/identita/azioni";
+import { getProfilo } from "@/src/lib/identita/sessione";
 import { getPuntiUtente } from "@/src/lib/pronostici/queries";
+
+// Il profilo dell'identità anonima: nessun account, nessuna email. Il
+// nickname è facoltativo e serve solo a comparire con un nome nelle
+// classifiche; i punti sono un dato personale e si leggono solo qui.
 
 export default async function ProfiloPage({
   searchParams,
 }: {
-  searchParams: Promise<{ password?: string }>;
+  searchParams: Promise<{ errore?: string }>;
 }) {
-  const utente = await getUtente();
-  const { password } = await searchParams;
-
-  if (!utente) {
-    return (
-      <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-5 px-4 py-10 text-center">
-        <h1 className="display text-4xl">Profilo</h1>
-        <p className="text-sm text-muted">
-          Accedi per votare il migliore in campo e comparire nelle classifiche.
-        </p>
-        <Link
-          href="/accesso"
-          className="taglio-sm display bg-brand px-4 py-3 text-xl text-on-brand transition-colors hover:bg-brand-hover"
-        >
-          Entra
-        </Link>
-      </main>
-    );
-  }
-
-  const profilo = await getProfilo();
-  if (!profilo) redirect("/benvenuto");
-
-  // I punti sono un dato personale: si leggono qui e in nessun altro posto.
-  const punti = await getPuntiUtente(profilo.id);
+  const [profilo, admin] = await Promise.all([getProfilo(), isAdmin()]);
+  const { errore } = await searchParams;
+  const punti = profilo ? await getPuntiUtente(profilo.id) : 0;
 
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col gap-6 px-4 py-8">
       <h1 className="display text-4xl">
-        {profilo.nickname}
+        {profilo?.nickname ?? "Il tuo profilo"}
         <span className="text-brand-vivid">.</span>
       </h1>
 
-      {/* Rientro dal recupero password: si dice che è andata */}
-      {password && (
+      <p className="text-sm text-muted">
+        Qui non c&apos;è nessun account: questo dispositivo è la tua identità.
+        Voti e pronostici restano privati, si vedono solo gli aggregati — e il
+        nickname compare in classifica solo se lo scegli. I dettagli sono
+        nella pagina{" "}
+        <Link href="/privacy" className="text-brand-vivid underline">
+          privacy
+        </Link>
+        .
+      </p>
+
+      {errore && (
         <p className="border-l-2 border-brand-vivid bg-brand-tint px-3 py-2 text-sm text-brand-vivid">
-          Password aggiornata.
+          {errore}
         </p>
       )}
 
-      <dl className="flex flex-col gap-3 border-l-2 border-brand pl-4">
-        <div>
-          <dt className="eyebrow">Nickname</dt>
-          <dd className="font-bold">{profilo.nickname}</dd>
-        </div>
-        <div>
-          <dt className="eyebrow">Email</dt>
-          <dd className="font-bold">{utente.email}</dd>
-        </div>
-        <div>
-          <dt className="eyebrow">Punti</dt>
-          <dd className="score text-lg font-bold tabular-nums">{punti}</dd>
-        </div>
-      </dl>
+      <form action={aggiornaNickname} className="flex flex-col gap-3">
+        <label className="eyebrow" htmlFor="nickname">
+          Nickname
+        </label>
+        <input
+          id="nickname"
+          name="nickname"
+          type="text"
+          required
+          minLength={3}
+          maxLength={20}
+          autoComplete="off"
+          defaultValue={profilo?.nickname ?? ""}
+          placeholder="Come vuoi comparire in classifica"
+          className="taglio-sm border border-border-strong bg-surface-2 px-3 py-3 outline-none transition-colors focus:border-brand-vivid"
+        />
+        <button
+          type="submit"
+          className="taglio-sm display bg-brand px-4 py-3 text-xl text-on-brand transition-colors hover:bg-brand-hover"
+        >
+          {profilo?.nickname ? "Cambia" : "Salva"}
+        </button>
+      </form>
+
+      {profilo && (
+        <dl className="flex flex-col gap-3 border-l-2 border-brand pl-4">
+          <div>
+            <dt className="eyebrow">Punti</dt>
+            <dd className="score text-lg font-bold tabular-nums">{punti}</dd>
+          </div>
+        </dl>
+      )}
 
       <NotifichePush />
 
-      {profilo.role === "admin" && (
+      {admin && (
         <Link
           href="/admin"
           className="taglio-sm display bg-brand px-4 py-2.5 text-center text-lg text-on-brand transition-colors hover:bg-brand-hover"
@@ -76,15 +86,6 @@ export default async function ProfiloPage({
           Pannello admin
         </Link>
       )}
-
-      <form action={esci}>
-        <button
-          type="submit"
-          className="taglio-sm w-full border border-border px-4 py-2.5 text-sm font-bold uppercase tracking-wide text-muted transition-colors hover:border-brand hover:text-foreground"
-        >
-          Esci
-        </button>
-      </form>
     </main>
   );
 }

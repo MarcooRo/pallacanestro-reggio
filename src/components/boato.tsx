@@ -13,7 +13,6 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { useChiediAccesso } from "@/src/components/accesso-richiesto";
 import { mandaTap } from "@/src/lib/boato/actions";
 import {
   ANTICIPO_MS,
@@ -42,14 +41,12 @@ export function Boato({
   matchId,
   inizio,
   statoIniziale,
-  loggato,
 }: {
   matchId: string;
   /** ISO: il componente è client, la Date non attraversa il confine */
   inizio: string;
   /** matches.status dal database (colonna text con check, non un enum TS) */
   statoIniziale: string;
-  loggato: boolean;
 }) {
   // 'attesa' finché non si sa (o finché la palla a due è lontana): il primo
   // render deve essere identico a quello del server.
@@ -61,7 +58,6 @@ export function Boato({
   // devono far ridisegnare nulla.
   const daInviare = useRef(0);
   const timerPulsa = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const chiediAccesso = useChiediAccesso();
 
   const gioca = statoIniziale === "scheduled" || statoIniziale === "live";
 
@@ -136,9 +132,7 @@ export function Boato({
   if (!gioca || finestra !== "aperta") return null;
 
   function tap() {
-    // Da ospite il bottone si preme comunque: al primo tap parte la
-    // richiesta di account, così il boato non è un muro spento.
-    if (!loggato) return chiediAccesso("farti sentire");
+    // Nessun account: il primo invio di tap crea da sé l'identità anonima.
     daInviare.current += 1;
     setMiei((n) => n + 1);
     setPulsa(true);
@@ -194,7 +188,7 @@ export function Boato({
         </button>
 
         <p className="text-xs text-muted">
-          {loggato && miei > 0 ? (
+          {miei > 0 ? (
             <>
               Il tuo contributo:{" "}
               <span className="score font-bold tabular-nums text-foreground">

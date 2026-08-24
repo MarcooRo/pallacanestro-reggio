@@ -7,7 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { getProfilo } from "@/src/lib/auth/session";
+import { richiediAdmin } from "@/src/lib/identita/admin";
 import { dataOra } from "@/src/lib/date";
 import {
   NOME_PIATTAFORMA,
@@ -23,8 +23,7 @@ import {
 export const metadata: Metadata = { title: "Admin · Social" };
 
 export default async function AdminSocialPage() {
-  const profilo = await getProfilo();
-  if (!profilo || profilo.role !== "admin") notFound();
+  await richiediAdmin();
 
   const righe = await getPostsSocial();
   const perStato = new Map<string, RigaPostSocial[]>();

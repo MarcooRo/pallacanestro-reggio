@@ -1,14 +1,10 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
-import { MarchioR } from "@/src/components/marchio-r";
 import { NewsCard } from "@/src/components/news-card";
 import { PartitaCard } from "@/src/components/partita-card";
 import { Pagella } from "@/src/components/pagella";
 import { VideoCard } from "@/src/components/video-card";
-import { entraComeOspite } from "@/src/lib/auth/actions";
-import { isOspite } from "@/src/lib/auth/ospite";
-import { getProfilo, getUtente } from "@/src/lib/auth/session";
+import { getProfilo } from "@/src/lib/identita/sessione";
 import { getNews } from "@/src/lib/news/queries";
 import {
   getProssimaPartita,
@@ -17,57 +13,10 @@ import {
 } from "@/src/lib/partite/queries";
 import { getVideoHome } from "@/src/lib/video/queries";
 
+// La home è per tutti, dal primo tap: nessuna vetrina, nessun accesso.
+// L'identità anonima nasce solo quando si partecipa (voto, reazioni…).
 export default async function HomePage() {
-  const utente = await getUtente();
-
-  // Loggato ma senza nickname: il profilo va completato prima di entrare.
-  if (utente && !(await getProfilo())) redirect("/benvenuto");
-
-  if (utente) return <HomeContenuti />;
-
-  // Chi ha scelto "Continua senza account" vede la home vera: legge tutto,
-  // e il dialog gli chiede l'account solo quando prova a partecipare.
-  if (await isOspite()) return <HomeContenuti />;
-
-  // Splash per chi non è loggato. Solo la home fa da vetrina: le pagine
-  // pubbliche (pagelle, classifiche) restano apribili dal link condiviso,
-  // come da principio "zero attrito" della spec.
-  return (
-    <main className="relative mx-auto flex w-full max-w-lg flex-1 flex-col justify-center gap-10 overflow-hidden px-5 py-12">
-      {/* Richiamo al logo: la R in negativo, watermark dietro il titolo */}
-      <MarchioR className="pointer-events-none absolute -right-8 top-10 h-52 w-auto text-foreground opacity-[0.05]" />
-      {/* 17vw sfondava: su un iPhone "REGGIANA," da sola era più larga della
-          pagina e l'overflow-hidden la tagliava a metà parola */}
-      <h1 className="display flex flex-col text-[13vw] leading-[0.95] sm:text-6xl">
-        <span className="sale">Pall. Reggiana,</span>
-        <span className="sale sale-2">ogni news,</span>
-        <span className="sale sale-3 text-brand-vivid">ogni partita.</span>
-      </h1>
-
-      {/* Due livelli di lettura: la promessa, poi il dettaglio nudo */}
-      <div className="sale sale-3 flex flex-col gap-4">
-        <p className="border-l-2 border-brand pl-4 text-base font-bold">
-          Vota i tuoi preferiti in campo
-        </p>
-        <p className="text-sm leading-relaxed text-muted">
-          News e comunicati della squadra, calendario, statistiche, risultati
-          e classifiche sempre aggiornati in tempo reale.
-        </p>
-      </div>
-
-      {/* Una porta sola, senza account: si entra e si guarda tutto. Il
-          voto e le altre azioni chiederanno l'accesso al momento del tap
-          (dialog di accesso-richiesto), non prima. */}
-      <form action={entraComeOspite} className="sale sale-4">
-        <button
-          type="submit"
-          className="taglio display w-full cursor-pointer bg-brand px-6 py-4 text-center text-2xl text-on-brand transition-colors hover:bg-brand-hover"
-        >
-          Entra
-        </button>
-      </form>
-    </main>
-  );
+  return <HomeContenuti />;
 }
 
 async function HomeContenuti() {
@@ -83,15 +32,8 @@ async function HomeContenuti() {
   return (
     // Ogni sezione dopo la prima è separata da un divisorio e respira.
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-2 px-4 py-6 lg:max-w-5xl [&>section]:py-6 [&>section+section]:border-t [&>section+section]:border-border">
-      {profilo ? (
+      {profilo?.nickname && (
         <p className="eyebrow sale">Ciao, {profilo.nickname}</p>
-      ) : (
-        <p className="eyebrow sale flex items-baseline justify-between gap-2">
-          <span>Stai guardando come ospite</span>
-          <Link href="/accesso" className="text-brand-vivid">
-            entra →
-          </Link>
-        </p>
       )}
 
       {/* Il primo blocco è sempre la prossima partita di Reggio. */}

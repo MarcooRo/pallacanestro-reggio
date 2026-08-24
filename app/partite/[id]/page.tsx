@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { Boato } from "@/src/components/boato";
-import { BottoneAccesso } from "@/src/components/bottone-accesso";
 import { CampoPartita } from "@/src/components/campo-partita";
 import { FormVoto } from "@/src/components/form-voto";
 import { IoCiSono } from "@/src/components/io-ci-sono";
@@ -18,7 +17,7 @@ import {
 import { Pronostici } from "@/src/components/pronostici";
 import { Reazioni } from "@/src/components/reazioni";
 import { TornaIndietro } from "@/src/components/torna-indietro";
-import { getProfilo, getUtente } from "@/src/lib/auth/session";
+import { getProfilo } from "@/src/lib/identita/sessione";
 import { dataBreve, etichettaStagione, soloOra } from "@/src/lib/date";
 import { getFlag } from "@/src/lib/flag";
 import { contestoPartita } from "@/src/lib/partite/etichette";
@@ -145,7 +144,6 @@ export default async function PartitaPage({
           matchId={partita.id}
           inizio={partita.startsAt.toISOString()}
           statoIniziale={partita.status}
-          loggato={Boolean(profilo)}
         />
       )}
 
@@ -307,7 +305,6 @@ async function SezionePresenza({
     <IoCiSono
       matchId={matchId}
       statoIniziale={await getStatoPresenza(matchId, userId)}
-      loggato={Boolean(userId)}
     />
   );
 }
@@ -325,7 +322,6 @@ async function SezioneReazioni({
       <Reazioni
         matchId={matchId}
         statoIniziale={await getStatoReazioni(matchId, userId)}
-        loggato={Boolean(userId)}
       />
     </div>
   );
@@ -342,7 +338,6 @@ async function SezionePronostici({
   return (
     <Pronostici
       iniziali={await getPronosticiPartita(matchId, userId)}
-      loggato={Boolean(userId)}
     />
   );
 }
@@ -354,8 +349,9 @@ async function SezioneVoto({
   matchId: string;
   chiusura: Date;
 }) {
-  const utente = await getUtente();
-  const profilo = utente ? await getProfilo() : null;
+  // Niente cancelli: il modulo si mostra a chiunque e l'identità anonima
+  // nasce al momento del voto, dentro la server action.
+  const profilo = await getProfilo();
 
   return (
     <section className="flex flex-col gap-3">
@@ -364,27 +360,7 @@ async function SezioneVoto({
         <span className="eyebrow">chiude {soloOra(chiusura)}</span>
       </div>
 
-      {!utente ? (
-        <div className="taglio flex flex-col gap-3 card p-4">
-          <p className="text-sm">
-            Per votare serve l&apos;accesso: registrarsi richiede 10 secondi.
-          </p>
-          {/* Dialog e non link: chi guarda da ospite non perde la partita */}
-          <BottoneAccesso azione="votare il migliore in campo">
-            Registrati e vota
-          </BottoneAccesso>
-        </div>
-      ) : !profilo ? (
-        <div className="taglio flex flex-col gap-3 card p-4">
-          <p className="text-sm">Completa il profilo con un nickname per votare.</p>
-          <Link
-            href="/benvenuto"
-            className="taglio-sm display self-start bg-brand px-5 py-2.5 text-lg text-on-brand transition-colors hover:bg-brand-hover"
-          >
-            Scegli il nickname
-          </Link>
-        </div>
-      ) : (await haVotato(matchId, profilo.id)) ? (
+      {profilo && (await haVotato(matchId, profilo.id)) ? (
         <div className="taglio border border-brand bg-brand-tint p-4">
           <p className="display text-lg text-brand-vivid">Hai già votato</p>
           <p className="mt-1 text-sm text-muted">

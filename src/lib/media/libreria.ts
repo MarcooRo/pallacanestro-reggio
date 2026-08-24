@@ -20,6 +20,7 @@ import {
   salvaFile,
   urlFile,
 } from "@/src/lib/media/archivio";
+import { comprimi } from "@/src/lib/media/comprimi";
 import { firmaUpload } from "@/src/lib/media/firma-upload";
 import { scaricaImmagine } from "@/src/lib/media/scarica";
 import { urlSito } from "@/src/lib/sito";
@@ -104,12 +105,16 @@ export async function caricaAsset(
     originUrl?: string | null;
   },
 ): Promise<MediaAsset> {
-  const metadati = await leggiMetadati(buffer);
+  // Prima si legge l'originale (valida il formato e salva la data EXIF),
+  // poi si comprime: la compressione scarta i metadati.
+  const originale = await leggiMetadati(buffer);
+  const compresso = await comprimi(buffer);
+  const metadati = await leggiMetadati(compresso.dati);
   const id = randomUUID();
   const adesso = new Date();
   const chiave = chiaveStorage(id, metadati.formato, adesso);
 
-  await salvaFile(chiave, buffer);
+  await salvaFile(chiave, compresso.dati);
 
   const [asset] = await db
     .insert(mediaAssets)
@@ -125,7 +130,7 @@ export async function caricaAsset(
       source: opts.source,
       originUrl: opts.originUrl ?? null,
       caption: opts.caption?.trim() || null,
-      takenAt: metadati.takenAt ?? adesso,
+      takenAt: originale.takenAt ?? adesso,
       tags: normalizzaTags(opts.tags ?? []),
     })
     .returning();
@@ -207,7 +212,15 @@ export async function finalizzaAsset(id: string): Promise<MediaAsset> {
     );
   }
 
-  const metadati = await leggiMetadati(dati);
+  // Come in caricaAsset: EXIF dall'originale, poi si comprime e si
+  // sovrascrive il file (stessa chiave: l'URL non cambia).
+  const originale = await leggiMetadati(dati);
+  const compresso = await comprimi(dati);
+  if (compresso.dati !== dati) {
+    await salvaFile(asset.storageKey, compresso.dati);
+  }
+
+  const metadati = await leggiMetadati(compresso.dati);
   const [pronto] = await db
     .update(mediaAssets)
     .set({
@@ -216,7 +229,7 @@ export async function finalizzaAsset(id: string): Promise<MediaAsset> {
       height: metadati.height,
       mime: metadati.mime,
       bytes: metadati.bytes,
-      takenAt: asset.takenAt ?? metadati.takenAt ?? new Date(),
+      takenAt: asset.takenAt ?? originale.takenAt ?? new Date(),
     })
     .where(eq(mediaAssets.id, id))
     .returning();

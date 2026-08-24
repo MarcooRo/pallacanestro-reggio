@@ -1,13 +1,16 @@
 "use server";
 
-// Gestione delle sottoscrizioni push dell'utente loggato.
+// Gestione delle sottoscrizioni push dell'identità corrente.
 
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "@/src/db";
 import { pushSubscriptions } from "@/src/db/schema";
-import { getProfilo } from "@/src/lib/auth/session";
+import {
+  getProfilo,
+  ottieniOCreaProfilo,
+} from "@/src/lib/identita/sessione";
 
 const schemaSottoscrizione = z.object({
   endpoint: z.string().url(),
@@ -22,8 +25,8 @@ export async function salvaSottoscrizione(
   sottoscrizione: unknown,
   categorie: string[],
 ): Promise<{ ok?: boolean; errore?: string }> {
-  const profilo = await getProfilo();
-  if (!profilo) return { errore: "Accedi per attivare le notifiche" };
+  const profilo = await ottieniOCreaProfilo();
+  if (!profilo) return { errore: "Troppe richieste da questa rete: riprova tra un minuto" };
 
   const sub = schemaSottoscrizione.safeParse(sottoscrizione);
   const cats = schemaCategorie.safeParse(categorie);

@@ -253,14 +253,17 @@ export const playerMatchStats = pgTable(
 
 // ============ UTENTI ============
 
-// La FK profiles.id → auth.users(id) vive nella migrazione 0000, scritta a
-// mano: auth è uno schema esterno gestito da Supabase e Drizzle non deve
-// sapere che esiste, altrimenti ogni generate prova a crearne le tabelle.
+// Dal 24/08/2026 il profilo è un'identità anonima autonoma (niente più
+// auth.users di Supabase): nasce alla prima partecipazione e vive nel
+// cookie firmato del dispositivo (src/lib/identita). La vecchia FK verso
+// auth.users è caduta con la migrazione 0012.
 export const profiles = pgTable(
   "profiles",
   {
-    id: uuid().primaryKey(),
-    nickname: text().notNull().unique(),
+    id: uuid().primaryKey().defaultRandom(),
+    // Null finché il tifoso non lo sceglie: l'identità anonima nasce senza
+    // nome e compare nelle classifiche solo quando un nome ce l'ha.
+    nickname: text().unique(),
     role: text().notNull().default("user"),
     subscriptionCode: text(), // autodichiarato, non verificato
     subscriptionYears: integer(),

@@ -11,7 +11,7 @@ import { z } from "zod";
 
 import { db } from "@/src/db";
 import { news } from "@/src/db/schema";
-import { getProfilo } from "@/src/lib/auth/session";
+import { richiediAdmin } from "@/src/lib/identita/admin";
 import { dataDaRoma } from "@/src/lib/date";
 import {
   archiviaArticolo,
@@ -20,11 +20,6 @@ import {
 } from "@/src/lib/news/redazione";
 
 const uuid = z.string().uuid();
-
-async function richiediAdmin() {
-  const profilo = await getProfilo();
-  if (!profilo || profilo.role !== "admin") redirect("/");
-}
 
 function esito(id: string, messaggio: string): never {
   // La lista, la pagina dell'articolo e le due pagine pubbliche che lo

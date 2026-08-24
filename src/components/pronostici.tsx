@@ -9,20 +9,13 @@
 
 import { useState, useTransition } from "react";
 
-import { useChiediAccesso } from "@/src/components/accesso-richiesto";
 import { rispondi } from "@/src/lib/pronostici/actions";
 import {
   distribuzioneVisibile,
   type PronosticoPubblico,
 } from "@/src/lib/pronostici/regole";
 
-export function Pronostici({
-  iniziali,
-  loggato,
-}: {
-  iniziali: PronosticoPubblico[];
-  loggato: boolean;
-}) {
+export function Pronostici({ iniziali }: { iniziali: PronosticoPubblico[] }) {
   const [pronostici, setPronostici] = useState(iniziali);
   const [errore, setErrore] = useState<string | null>(null);
 
@@ -38,7 +31,6 @@ export function Pronostici({
         <Domanda
           key={p.id}
           pronostico={p}
-          loggato={loggato}
           onRisposta={(aggiornati) => {
             setPronostici(aggiornati);
             setErrore(null);
@@ -54,27 +46,20 @@ export function Pronostici({
 
 function Domanda({
   pronostico,
-  loggato,
   onRisposta,
   onErrore,
 }: {
   pronostico: PronosticoPubblico;
-  loggato: boolean;
   onRisposta: (aggiornati: PronosticoPubblico[]) => void;
   onErrore: (messaggio: string) => void;
 }) {
   const [selezionata, setSelezionata] = useState<number | null>(null);
   const [inCorso, avvia] = useTransition();
-  const chiediAccesso = useChiediAccesso();
 
   const aperto = pronostico.status === "open";
   const risolto = pronostico.status === "resolved";
   const annullato = pronostico.status === "voided";
-  const puoRispondere = aperto && loggato && pronostico.mia === null;
-  // Da ospite le opzioni restano toccabili: il tap chiede l'account invece
-  // di mostrare una domanda inerte (la distribuzione è nascosta comunque,
-  // finché non hai risposto).
-  const invitaAccesso = aperto && !loggato;
+  const puoRispondere = aperto && pronostico.mia === null;
   const mostraDistribuzione = distribuzioneVisibile(pronostico);
 
   function conferma() {
@@ -107,14 +92,12 @@ function Domanda({
           const mia = pronostico.mia === i;
           const corretta = risolto && pronostico.corretta === i;
 
-          if (puoRispondere || invitaAccesso) {
+          if (puoRispondere) {
             return (
               <button
                 key={i}
                 type="button"
-                onClick={() =>
-                  invitaAccesso ? chiediAccesso("pronosticare") : setSelezionata(i)
-                }
+                onClick={() => setSelezionata(i)}
                 aria-pressed={selezionata === i}
                 className={`taglio-sm cursor-pointer border px-3 py-2.5 text-left text-sm transition-colors ${
                   selezionata === i
@@ -171,12 +154,6 @@ function Domanda({
         >
           {inCorso ? "Invio…" : "Conferma"}
         </button>
-      )}
-
-      {invitaAccesso && (
-        <p className="text-xs text-muted">
-          Tocca la tua risposta: serve un account per pronosticare.
-        </p>
       )}
 
       {mostraDistribuzione && pronostico.totale > 0 && (

@@ -6,7 +6,6 @@
 
 import { useState, useTransition } from "react";
 
-import { useChiediAccesso } from "@/src/components/accesso-richiesto";
 import { reagisci } from "@/src/lib/reazioni/actions";
 import type { StatoReazioni } from "@/src/lib/reazioni/queries";
 import { REAZIONI } from "@/src/lib/reazioni/tipi";
@@ -14,20 +13,15 @@ import { REAZIONI } from "@/src/lib/reazioni/tipi";
 export function Reazioni({
   matchId,
   statoIniziale,
-  loggato,
 }: {
   matchId: string;
   statoIniziale: StatoReazioni;
-  loggato: boolean;
 }) {
   const [stato, setStato] = useState(statoIniziale);
   const [errore, setErrore] = useState<string | null>(null);
   const [inCorso, avvia] = useTransition();
-  const chiediAccesso = useChiediAccesso();
 
   function tap(code: string) {
-    // Da ospite le reazioni si vedono e si toccano: il tap chiede l'account.
-    if (!loggato) return chiediAccesso("dire la tua");
     if (inCorso) return;
 
     // Ottimistico: si sposta il conteggio come farà il server.

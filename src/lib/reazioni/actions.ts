@@ -9,7 +9,7 @@ import { z } from "zod";
 
 import { db } from "@/src/db";
 import { matchReactions } from "@/src/db/schema";
-import { getProfilo } from "@/src/lib/auth/session";
+import { ottieniOCreaProfilo } from "@/src/lib/identita/sessione";
 import { getFlag } from "@/src/lib/flag";
 import { getStatoReazioni, type StatoReazioni } from "@/src/lib/reazioni/queries";
 import { reazioneValida } from "@/src/lib/reazioni/tipi";
@@ -34,8 +34,8 @@ export async function reagisci(
   const flag = await getFlag();
   if (!flag.reazioni) return { errore: "Le reazioni non sono attive" };
 
-  const profilo = await getProfilo();
-  if (!profilo) return { errore: "Accedi per reagire" };
+  const profilo = await ottieniOCreaProfilo();
+  if (!profilo) return { errore: "Troppe richieste da questa rete: riprova tra un minuto" };
 
   const parsed = schema.safeParse({ matchId, kind });
   if (!parsed.success) return { errore: "Reazione non valida" };

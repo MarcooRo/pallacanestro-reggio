@@ -75,7 +75,7 @@ export function VideoCard({ video, className = "" }: { video: Video; className?:
 // - video orizzontale su telefono in verticale: il player si corica di
 //   90° e prende lo schermo intero, come girare il telefono;
 // - video verticale (Shorts/reel): box 9:16 alto l'80% dello schermo.
-// Portal sul body per gli stessi motivi di accesso-richiesto: il
+// Portal sul body per il solito motivo: il
 // backdrop-blur dell'header creerebbe un containing block e il fixed
 // resterebbe intrappolato.
 function Teatro({ video, chiudi }: { video: Video; chiudi: () => void }) {

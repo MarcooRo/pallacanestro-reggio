@@ -8,11 +8,10 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 
 import { FormCaricaFoto } from "@/src/components/form-carica-foto";
 import { FormImportaUrl } from "@/src/components/form-importa-url";
-import { getProfilo } from "@/src/lib/auth/session";
+import { richiediAdmin } from "@/src/lib/identita/admin";
 import { dataOra } from "@/src/lib/date";
 import { cancellaFoto, modificaFoto } from "@/src/lib/media/actions";
 import { elencaAssetsAdmin } from "@/src/lib/media/libreria";
@@ -24,8 +23,7 @@ export default async function AdminMediaPage({
 }: {
   searchParams: Promise<{ esito?: string }>;
 }) {
-  const profilo = await getProfilo();
-  if (!profilo || profilo.role !== "admin") notFound();
+  await richiediAdmin();
 
   const { esito } = await searchParams;
   const assets = await elencaAssetsAdmin();

@@ -10,7 +10,7 @@ import { z } from "zod";
 
 import { db } from "@/src/db";
 import { attendances } from "@/src/db/schema";
-import { getProfilo } from "@/src/lib/auth/session";
+import { ottieniOCreaProfilo } from "@/src/lib/identita/sessione";
 import { getFlag } from "@/src/lib/flag";
 import { getStatoPresenza, type StatoPresenza } from "@/src/lib/presenza/queries";
 
@@ -23,8 +23,8 @@ export async function dichiaraPresenza(matchId: string): Promise<EsitoPresenza> 
   const flag = await getFlag();
   if (!flag.ioCiSono) return { errore: "Funzionalità non attiva" };
 
-  const profilo = await getProfilo();
-  if (!profilo) return { errore: "Accedi per dire che ci sei" };
+  const profilo = await ottieniOCreaProfilo();
+  if (!profilo) return { errore: "Troppe richieste da questa rete: riprova tra un minuto" };
 
   const parsed = z.string().uuid().safeParse(matchId);
   if (!parsed.success) return { errore: "Partita non valida" };

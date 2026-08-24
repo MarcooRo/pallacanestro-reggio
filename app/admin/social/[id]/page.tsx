@@ -9,7 +9,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { branding } from "@/src/branding";
-import { getProfilo } from "@/src/lib/auth/session";
+import { richiediAdmin } from "@/src/lib/identita/admin";
 import { dataOra } from "@/src/lib/date";
 import {
   approvaPost,
@@ -32,8 +32,7 @@ export default async function DettaglioPostPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ esito?: string }>;
 }) {
-  const profilo = await getProfilo();
-  if (!profilo || profilo.role !== "admin") notFound();
+  await richiediAdmin();
 
   const { id } = await params;
   const { esito } = await searchParams;

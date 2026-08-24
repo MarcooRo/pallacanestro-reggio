@@ -5,9 +5,8 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 
-import { getProfilo } from "@/src/lib/auth/session";
+import { richiediAdmin } from "@/src/lib/identita/admin";
 import { dataOra } from "@/src/lib/date";
 import { numeroParole } from "@/src/lib/news/blocchi";
 import {
@@ -23,8 +22,7 @@ export default async function AdminNewsPage({
 }: {
   searchParams: Promise<{ esito?: string }>;
 }) {
-  const profilo = await getProfilo();
-  if (!profilo || profilo.role !== "admin") notFound();
+  await richiediAdmin();
 
   const { esito } = await searchParams;
   const articoli = await elencaArticoli();

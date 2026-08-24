@@ -7,7 +7,6 @@
 
 import { useState, useTransition } from "react";
 
-import { useChiediAccesso } from "@/src/components/accesso-richiesto";
 import { dichiaraPresenza } from "@/src/lib/presenza/actions";
 import type { StatoPresenza } from "@/src/lib/presenza/queries";
 
@@ -30,20 +29,15 @@ function frase({ quanti, ciSono }: StatoPresenza): {
 export function IoCiSono({
   matchId,
   statoIniziale,
-  loggato,
 }: {
   matchId: string;
   statoIniziale: StatoPresenza;
-  loggato: boolean;
 }) {
   const [stato, setStato] = useState(statoIniziale);
   const [errore, setErrore] = useState<string | null>(null);
   const [inCorso, avvia] = useTransition();
-  const chiediAccesso = useChiediAccesso();
 
   function tap() {
-    // Da ospite il bottone non è spento: il tap spiega cosa serve.
-    if (!loggato) return chiediAccesso("dire che ci sarai");
     if (inCorso) return;
     const precedente = stato;
     setStato({

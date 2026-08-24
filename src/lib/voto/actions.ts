@@ -10,7 +10,7 @@ import { z } from "zod";
 
 import { db } from "@/src/db";
 import { pointsLedger, votes } from "@/src/db/schema";
-import { getProfilo } from "@/src/lib/auth/session";
+import { ottieniOCreaProfilo } from "@/src/lib/identita/sessione";
 import {
   finestraAperta,
   PUNTI_VOTO_ESPRESSO,
@@ -40,8 +40,8 @@ export async function esprimiVoto(
   _prev: StatoVoto,
   formData: FormData,
 ): Promise<StatoVoto> {
-  const profilo = await getProfilo();
-  if (!profilo) return { errore: "Accedi per votare" };
+  const profilo = await ottieniOCreaProfilo();
+  if (!profilo) return { errore: "Troppe richieste da questa rete: riprova tra un minuto" };
 
   const parsed = schemaVoto.safeParse({
     matchId: formData.get("matchId"),

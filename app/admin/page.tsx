@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
 import {
   aggiornaNewsAction,
@@ -14,7 +13,7 @@ import {
   risolviPronostico,
   salvaFlag,
 } from "@/src/lib/admin/actions";
-import { getProfilo } from "@/src/lib/auth/session";
+import { richiediAdmin } from "@/src/lib/identita/admin";
 import { dataOra } from "@/src/lib/date";
 import { CHIAVI_FLAG, getFlag, NOMI_FLAG } from "@/src/lib/flag";
 import { contaBozzeArticoli } from "@/src/lib/news/queries";
@@ -34,8 +33,7 @@ export default async function AdminPage({
   searchParams: Promise<{ esito?: string }>;
 }) {
   // Autorizzazione nella pagina E in ogni action. Mai nel proxy.
-  const profilo = await getProfilo();
-  if (!profilo || profilo.role !== "admin") redirect("/");
+  await richiediAdmin();
 
   const { esito } = await searchParams;
   const [partite, flag, bozze] = await Promise.all([

@@ -11,16 +11,11 @@ import { z } from "zod";
 
 import { db } from "@/src/db";
 import { socialMediaItems, socialPosts } from "@/src/db/schema";
-import { getProfilo } from "@/src/lib/auth/session";
+import { richiediAdmin } from "@/src/lib/identita/admin";
 import { dataDaRoma } from "@/src/lib/date";
 import { renderizzaPost } from "@/src/lib/social/render";
 
 const uuid = z.string().uuid();
-
-async function richiediAdmin() {
-  const profilo = await getProfilo();
-  if (!profilo || profilo.role !== "admin") redirect("/");
-}
 
 function esito(postId: string, messaggio: string): never {
   revalidatePath("/admin/social");

@@ -31,14 +31,14 @@ export default async function HomePage() {
   return <HomeContenuti />;
 }
 
-// Quante notizie entrano in ogni spazio: Qui Reggio sei a coppie (tre
-// righe), la coda chiude con tutto quello che resta.
-const QUI_REGGIO = 6;
+// Quante notizie entrano in ogni spazio: Qui Reggio quattro a coppie
+// (due righe), la coda chiude con tutto quello che resta.
+const QUI_REGGIO = 4;
 const CODA = 12;
 
-// Il pezzo della redazione non segue la cronaca: ha il suo box e ci
-// resta finché non ne esce uno più nuovo, anche dopo settimane. Uno
-// alla volta: è la firma della casa, non un flusso.
+// L'apertura è il pezzo della redazione: è il contenuto più nostro che
+// c'è (testo scritto in casa, foto dalla libreria) e non segue la
+// cronaca — resta in testata finché non ne esce uno più nuovo.
 const SPAZIO_REDAZIONE = 1;
 
 // Quante squadre nel box classifica: sei righe stanno all'altezza
@@ -147,10 +147,12 @@ async function HomeContenuti() {
     return scelte;
   };
 
-  // L'apertura è la notizia del giorno: quella fissata dall'admin se c'è
-  // (la query le mette in testa), altrimenti la più fresca di Reggio,
-  // altrimenti la più fresca e basta.
-  let [testata] = prendi(1, (n) => n.isPinned || fonteDiCasa(n.source));
+  // L'apertura è SEMPRE il pezzo della redazione, quando c'è. Senza,
+  // si ripiega sulla notizia del giorno: quella fissata dall'admin
+  // (la query le mette in testa), poi la più fresca di Reggio, poi la
+  // più fresca e basta.
+  let testata: NewsInLista | undefined = redazione[0];
+  if (!testata) [testata] = prendi(1, (n) => n.isPinned || fonteDiCasa(n.source));
   if (!testata) [testata] = prendi(1);
   const quiReggio = prendi(QUI_REGGIO, (n) => fonteDiCasa(n.source));
   const coda = prendi(CODA);
@@ -194,18 +196,22 @@ async function HomeContenuti() {
               per tutte le altre.
             </p>
           )}
-          {/* Sotto il tabellone, la partecipazione: il voto quando la
-              finestra è aperta, altrimenti l'ultima pagella. */}
-          {votazione ? (
-            <Link
-              href={`/partite/${votazione.id}`}
-              className="taglio display flex items-baseline justify-between bg-brand px-4 py-3 text-xl text-on-brand transition-colors hover:bg-brand-hover"
-            >
-              <span>Si vota, ora</span>
-              <span className="eyebrow">vota →</span>
-            </Link>
-          ) : (
-            ultima && (
+          {/* Sotto la partita, la sezione del voto — il prodotto della
+              casa. Tre stati: finestra aperta (si vota), pagella
+              pubblicata (il verdetto), attesa (il voto apre a fine
+              gara). mt-auto: se la colonna avanza sull'apertura, il
+              respiro sta in mezzo. */}
+          <div className="mt-auto flex flex-col gap-3 pt-3">
+            <TitoloSezione titolo="Il voto" href="/voto" link="tutte" />
+            {votazione ? (
+              <Link
+                href={`/partite/${votazione.id}`}
+                className="taglio display flex items-baseline justify-between bg-brand px-4 py-3.5 text-xl text-on-brand transition-colors hover:bg-brand-hover"
+              >
+                <span>Si vota, ora</span>
+                <span className="eyebrow">vota il migliore →</span>
+              </Link>
+            ) : ultima ? (
               <Link
                 href={`/partite/${ultima.partita.id}`}
                 className="taglio group flex flex-col gap-1 border-l-[3px] border-l-brand-vivid bg-brand-tint px-4 py-3"
@@ -223,49 +229,13 @@ async function HomeContenuti() {
                   il migliore secondo la curva →
                 </span>
               </Link>
-            )
-          )}
-
-          {/* Sotto la partita, il pezzo della redazione: card orizzontale
-              nel suo rosso spento, foto piccola e titolo — l'ultimo, che
-              non scivola via con la cronaca. mt-auto: se la colonna
-              avanza sull'apertura, il respiro sta in mezzo. */}
-          {redazione.length > 0 && (
-            <div className="mt-auto flex flex-col gap-3 pt-3">
-              <TitoloSezione
-                titolo="Redazione"
-                href="/news?f=redazione"
-                link="tutti"
-              />
-              <Link
-                href={`/news/${redazione[0].slug ?? redazione[0].id}`}
-                className="taglio group flex gap-3.5 border-l-[3px] border-l-brand-vivid bg-brand-tint p-3.5"
-              >
-                {redazione[0].copertina && (
-                  <span className="relative block aspect-[4/3] w-28 shrink-0 self-center overflow-hidden">
-                    <Image
-                      src={redazione[0].copertina}
-                      alt=""
-                      fill
-                      sizes="7rem"
-                      className="object-cover transition-transform duration-700 group-hover:scale-[1.06]"
-                    />
-                  </span>
-                )}
-                <span className="flex min-w-0 flex-col gap-1.5">
-                  <span className="eyebrow">
-                    {soloOra(redazione[0].publishedAt)}
-                  </span>
-                  <span className="line-clamp-3 leading-snug font-bold transition-colors group-hover:text-brand-vivid">
-                    {redazione[0].title}
-                  </span>
-                  <span className="eyebrow text-brand-vivid transition-transform group-hover:translate-x-1">
-                    leggi →
-                  </span>
-                </span>
-              </Link>
-            </div>
-          )}
+            ) : (
+              <p className="taglio-sm card p-4 text-sm text-muted">
+                Il voto apre al fischio finale: a fine gara qui si sceglie
+                il migliore in campo.
+              </p>
+            )}
+          </div>
         </div>
       </section>
 

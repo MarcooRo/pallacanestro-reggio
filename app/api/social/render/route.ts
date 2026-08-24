@@ -7,7 +7,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 
-import { getProfilo } from "@/src/lib/auth/session";
+import { isAdmin } from "@/src/lib/identita/admin";
 import { bearerMcpValido } from "@/src/lib/social/bearer";
 import { renderizzaPost } from "@/src/lib/social/render";
 
@@ -17,11 +17,8 @@ const corpo = z.object({ postId: z.string().uuid() });
 
 export async function POST(request: NextRequest) {
   const daMcp = bearerMcpValido(request.headers.get("authorization"));
-  if (!daMcp) {
-    const profilo = await getProfilo();
-    if (!profilo || profilo.role !== "admin") {
-      return NextResponse.json({ errore: "non autorizzato" }, { status: 401 });
-    }
+  if (!daMcp && !(await isAdmin())) {
+    return NextResponse.json({ errore: "non autorizzato" }, { status: 401 });
   }
 
   const esito = corpo.safeParse(await request.json().catch(() => null));

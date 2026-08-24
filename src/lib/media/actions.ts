@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { getProfilo } from "@/src/lib/auth/session";
+import { richiediAdmin } from "@/src/lib/identita/admin";
 import {
   aggiornaAsset,
   cancellaAsset,
@@ -16,11 +16,6 @@ import {
 } from "@/src/lib/media/libreria";
 
 const uuid = z.string().uuid();
-
-async function richiediAdmin() {
-  const profilo = await getProfilo();
-  if (!profilo || profilo.role !== "admin") redirect("/");
-}
 
 function esito(messaggio: string): never {
   revalidatePath("/admin/media");

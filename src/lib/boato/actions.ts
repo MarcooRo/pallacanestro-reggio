@@ -10,7 +10,7 @@ import { z } from "zod";
 
 import { db } from "@/src/db";
 import { roarBuckets } from "@/src/db/schema";
-import { getProfilo } from "@/src/lib/auth/session";
+import { ottieniOCreaProfilo } from "@/src/lib/identita/sessione";
 import {
   finestraBoatoAperta,
   inizioBucket,
@@ -32,8 +32,8 @@ export async function mandaTap(
   const flag = await getFlag();
   if (!flag.boato) return { errore: "Il boato non è attivo", chiuso: true };
 
-  const profilo = await getProfilo();
-  if (!profilo) return { errore: "Accedi per far sentire la tua voce" };
+  const profilo = await ottieniOCreaProfilo();
+  if (!profilo) return { errore: "Troppe richieste da questa rete: riprova tra un minuto" };
 
   const parsed = z.string().uuid().safeParse(matchId);
   if (!parsed.success) return { errore: "Partita non valida", chiuso: true };

@@ -19,7 +19,7 @@ import {
   voteTallies,
 } from "@/src/db/schema";
 import { aggiornaNews } from "@/src/ingestion/news";
-import { getProfilo } from "@/src/lib/auth/session";
+import { richiediAdmin } from "@/src/lib/identita/admin";
 import { CHIAVE_FLAG, CHIAVI_FLAG, type Flag } from "@/src/lib/flag";
 import {
   leggiOpzioni,
@@ -41,12 +41,6 @@ async function pushSicura(...args: Parameters<typeof inviaPushCategoria>) {
   } catch (err) {
     console.warn("Invio push fallito:", err);
   }
-}
-
-async function richiediAdmin() {
-  const profilo = await getProfilo();
-  if (!profilo || profilo.role !== "admin") redirect("/");
-  return profilo;
 }
 
 function esitoAdmin(messaggio: string): never {

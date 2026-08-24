@@ -85,8 +85,12 @@ doppio, accettato come rischio tollerabile per un fun project.
   chiave `admin_password_hash`, si imposta con `scripts/imposta-password.ts`),
   sessione in cookie firmato httpOnly di 30 giorni (`/admin/accesso`).
 - Supabase Auth, le pagine di accesso/registrazione, la vetrina e la
-  modalità ospite sono state rimosse. Supabase resta SOLO per lo Storage
-  delle foto (bucket `media`), finché anche quello non trasloca sulla VPS.
+  modalità ospite sono state rimosse. Lo stesso 24/08 è traslocato anche lo
+  Storage: i file media vivono in `MEDIA_DIR` sulla VPS
+  (`src/lib/media/archivio.ts`), serviti uno a uno dalla route
+  `/media/[...chiave]` (nessuna cartella esposta), upload MCP via URL
+  firmato interno (`/api/media/carica/[id]`). **Supabase è eliminato del
+  tutto.**
 - Upgrade futuro possibile: passkey ("salva l'identità con Face ID") per
   chi vuole uno storico a prova di cancellazione dati.
 

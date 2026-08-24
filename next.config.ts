@@ -21,8 +21,9 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "www.pallacanestroreggiana.it" },
       // thumbnail dei video YouTube
       { protocol: "https", hostname: "i.ytimg.com" },
-      // JPEG dei post social sul bucket pubblico Supabase
-      { protocol: "https", hostname: "*.supabase.co" },
+      // il nostro archivio media, servito dalla route /media (URL assoluti)
+      { protocol: "https", hostname: "tiforeggiana.it" },
+      { protocol: "http", hostname: "localhost" },
     ],
   },
 };

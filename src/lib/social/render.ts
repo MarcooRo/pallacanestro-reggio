@@ -1,14 +1,13 @@
 // Render dei media di un post: template + params → PNG (satori, in
 // processo: stesso codice dell'endpoint /api/og, senza rifare il giro
-// HTTP con la firma) → JPEG con sharp → bucket pubblico Supabase.
+// HTTP con la firma) → JPEG con sharp → archivio media locale.
 //
 // Il JPEG non è un vezzo: Instagram accetta SOLO JPEG e ImageResponse
 // produce PNG. chromaSubsampling 4:4:4 perché il testo su fondo scuro
 // col subsampling di default si sporca ai bordi.
 //
 // Idempotente: rilanciato sullo stesso post rigenera e sovrascrive
-// (upsert sulla stessa chiave; l'URL salvato cambia solo nella ?v=,
-// che buca la cache CDN di Supabase).
+// (stessa chiave; l'URL salvato cambia solo nella ?v=, che buca la cache).
 
 import { asc, eq } from "drizzle-orm";
 import { ImageResponse } from "next/og";
@@ -16,13 +15,10 @@ import sharp from "sharp";
 
 import { db } from "@/src/db";
 import { mediaAssets, socialMediaItems, socialPosts } from "@/src/db/schema";
-import { BUCKET_MEDIA } from "@/src/lib/media/libreria";
+import { leggiFile, salvaFile, urlFile } from "@/src/lib/media/archivio";
 import { fontOg } from "@/src/lib/og/font";
 import { dimensioniTemplate, getTemplateOg } from "@/src/lib/og/registry";
 import { fuoriProporzioni } from "@/src/lib/social/forme";
-import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
-
-const BUCKET = "social";
 
 export interface EsitoRender {
   postId: string;
@@ -64,7 +60,6 @@ export async function renderizzaPost(postId: string): Promise<EsitoRender> {
     .orderBy(asc(socialMediaItems.position));
   if (items.length === 0) throw new Error(`il post ${postId} non ha media da renderizzare`);
 
-  const supabase = createSupabaseAdminClient();
   const renderizzati: EsitoRender["renderizzati"] = [];
 
   for (const item of items) {
@@ -108,13 +103,11 @@ export async function renderizzaPost(postId: string): Promise<EsitoRender> {
         continue;
       }
 
-      const { data, error } = await supabase.storage
-        .from(BUCKET_MEDIA)
-        .download(asset.storageKey);
-      if (error || !data) {
-        throw new Error(`download dell'asset ${asset.id} fallito: ${error?.message ?? "vuoto"}`);
+      const originale = await leggiFile(asset.storageKey);
+      if (!originale) {
+        throw new Error(`il file dell'asset ${asset.id} non è nell'archivio`);
       }
-      jpeg = await sharp(Buffer.from(await data.arrayBuffer()))
+      jpeg = await sharp(originale)
         .resize(1080, 1350, { fit: "cover" })
         .jpeg({ quality: 90, chromaSubsampling: "4:4:4" })
         .toBuffer();
@@ -122,19 +115,10 @@ export async function renderizzaPost(postId: string): Promise<EsitoRender> {
       height = 1350;
     }
 
-    const chiave = `${postId}/${item.position}.jpg`;
-    const { error } = await supabase.storage
-      .from(BUCKET)
-      .upload(chiave, jpeg, { contentType: "image/jpeg", upsert: true });
-    if (error) {
-      throw new Error(
-        `upload di ${chiave} sul bucket "${BUCKET}" fallito: ${error.message}`,
-      );
-    }
-
-    const { data } = supabase.storage.from(BUCKET).getPublicUrl(chiave);
-    // ?v= buca la cache CDN quando la stessa chiave viene sovrascritta
-    const url = `${data.publicUrl}?v=${Date.now()}`;
+    const chiave = `social/${postId}/${item.position}.jpg`;
+    await salvaFile(chiave, jpeg);
+    // ?v= buca la cache quando la stessa chiave viene sovrascritta
+    const url = `${urlFile(chiave)}?v=${Date.now()}`;
 
     await db
       .update(socialMediaItems)

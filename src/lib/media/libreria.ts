@@ -1,7 +1,8 @@
 // La libreria foto: materiale nostro (palazzetto, squadra, tifosi) e, da
 // agosto 2026, anche immagini importate da un URL esterno — quelle portano
 // `origin_url` valorizzato, che è l'unico modo per riconoscerle dopo.
-// I byte finiscono sempre sul nostro bucket, mai linkati dall'origine.
+// I byte finiscono sempre nel nostro archivio locale (src/lib/media/
+// archivio.ts), mai linkati dall'origine.
 // I metadati (dimensioni, mime, EXIF) si leggono sempre server-side dai byte
 // veri: quello che dichiara il client non tocca mai il database.
 
@@ -13,10 +14,15 @@ import sharp from "sharp";
 
 import { db } from "@/src/db";
 import { mediaAssets, news, socialMediaItems } from "@/src/db/schema";
+import {
+  cancellaFile,
+  leggiFile,
+  salvaFile,
+  urlFile,
+} from "@/src/lib/media/archivio";
+import { firmaUpload } from "@/src/lib/media/firma-upload";
 import { scaricaImmagine } from "@/src/lib/media/scarica";
-import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
-
-export const BUCKET_MEDIA = "media";
+import { urlSito } from "@/src/lib/sito";
 
 export type MediaAsset = typeof mediaAssets.$inferSelect;
 
@@ -103,14 +109,7 @@ export async function caricaAsset(
   const adesso = new Date();
   const chiave = chiaveStorage(id, metadati.formato, adesso);
 
-  const supabase = createSupabaseAdminClient();
-  const { error } = await supabase.storage
-    .from(BUCKET_MEDIA)
-    .upload(chiave, buffer, { contentType: metadati.mime });
-  if (error) {
-    throw new Error(`upload di ${chiave} sul bucket "${BUCKET_MEDIA}" fallito: ${error.message}`);
-  }
-  const { data } = supabase.storage.from(BUCKET_MEDIA).getPublicUrl(chiave);
+  await salvaFile(chiave, buffer);
 
   const [asset] = await db
     .insert(mediaAssets)
@@ -118,7 +117,7 @@ export async function caricaAsset(
       id,
       status: "ready",
       storageKey: chiave,
-      url: data.publicUrl,
+      url: urlFile(chiave),
       width: metadati.width,
       height: metadati.height,
       mime: metadati.mime,
@@ -176,29 +175,23 @@ export async function creaUploadFirmato(opts: {
   // L'estensione vera si scopre alla finalizzazione: la chiave è neutra
   const chiave = `${new Date().getFullYear()}/mcp/${id}`;
 
-  const supabase = createSupabaseAdminClient();
-  const { data, error } = await supabase.storage
-    .from(BUCKET_MEDIA)
-    .createSignedUploadUrl(chiave);
-  if (error) {
-    throw new Error(`URL di upload firmato non creato: ${error.message}`);
-  }
+  const token = firmaUpload(id);
+  const uploadUrl = `${urlSito()}/api/media/carica/${id}?token=${token}`;
 
-  const { data: pubblico } = supabase.storage.from(BUCKET_MEDIA).getPublicUrl(chiave);
   const [asset] = await db
     .insert(mediaAssets)
     .values({
       id,
       status: "pending",
       storageKey: chiave,
-      url: pubblico.publicUrl,
+      url: urlFile(chiave),
       source: "mcp",
       caption: opts.caption?.trim() || null,
       tags: normalizzaTags(opts.tags ?? []),
     })
     .returning();
 
-  return { asset, uploadUrl: data.signedUrl, token: data.token };
+  return { asset, uploadUrl, token };
 }
 
 /** Scarica il file di un asset pending, ne legge i metadati e lo promuove a ready. */
@@ -207,17 +200,14 @@ export async function finalizzaAsset(id: string): Promise<MediaAsset> {
   if (!asset) throw new Error(`asset ${id} inesistente`);
   if (asset.status === "ready") return asset;
 
-  const supabase = createSupabaseAdminClient();
-  const { data, error } = await supabase.storage
-    .from(BUCKET_MEDIA)
-    .download(asset.storageKey);
-  if (error || !data) {
+  const dati = await leggiFile(asset.storageKey);
+  if (!dati) {
     throw new Error(
-      `il file dell'asset ${id} non è sul bucket: l'upload all'URL firmato è andato a buon fine? (${error?.message ?? "vuoto"})`,
+      `il file dell'asset ${id} non è nell'archivio: l'upload all'URL firmato è andato a buon fine?`,
     );
   }
 
-  const metadati = await leggiMetadati(Buffer.from(await data.arrayBuffer()));
+  const metadati = await leggiMetadati(dati);
   const [pronto] = await db
     .update(mediaAssets)
     .set({
@@ -334,6 +324,5 @@ export async function cancellaAsset(id: string): Promise<void> {
     );
   }
   await db.delete(mediaAssets).where(eq(mediaAssets.id, id));
-  const supabase = createSupabaseAdminClient();
-  await supabase.storage.from(BUCKET_MEDIA).remove([asset.storageKey]);
+  await cancellaFile(asset.storageKey);
 }

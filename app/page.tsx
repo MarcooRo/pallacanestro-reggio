@@ -21,19 +21,19 @@ import { getVideoHome } from "@/src/lib/video/queries";
 // L'identità anonima nasce solo quando si partecipa (voto, reazioni…).
 //
 // Dal 24/08/2026 la home è un giornale: prima le notizie di Reggio, poi
-// il resto del campionato. Testata a due righe (apertura con accanto la
-// prossima partita + tre riquadri), una fascia a tre colonne (Qui Reggio
-// | redazione | video), in coda le news di lega. Le gerarchie sono
-// pensate per il desktop; il telefono incolonna e avrà le sue dopo.
+// il resto del campionato. Testata con l'apertura e a fianco la colonna
+// della partita (prossima gara + il pezzo della redazione), sotto la
+// fascia Qui Reggio su due colonne coi video a destra, in coda tutti
+// gli altri articoli. Le gerarchie sono pensate per il desktop; il
+// telefono incolonna e avrà le sue dopo.
 export default async function HomePage() {
   return <HomeContenuti />;
 }
 
-// Quante notizie entrano in ogni spazio: la testata è 1+3, la colonna di
-// Reggio una lista da 5, la lega chiude a coppie.
-const SOTTO_APERTURA = 3;
-const COLONNA_REGGIO = 5;
-const CODA_LEGA = 8;
+// Quante notizie entrano in ogni spazio: Qui Reggio quattro su due
+// colonne, la coda chiude a coppie con tutto quello che resta.
+const QUI_REGGIO = 4;
+const CODA = 10;
 
 // Il pezzo della redazione non segue la cronaca: ha il suo box e ci
 // resta finché non ne esce uno più nuovo, anche dopo settimane. Uno
@@ -70,9 +70,8 @@ async function HomeContenuti() {
   // altrimenti la più fresca e basta.
   let [testata] = prendi(1, (n) => n.isPinned || fonteDiCasa(n.source));
   if (!testata) [testata] = prendi(1);
-  const sottoApertura = prendi(SOTTO_APERTURA);
-  const colonnaReggio = prendi(COLONNA_REGGIO, (n) => fonteDiCasa(n.source));
-  const codaLega = prendi(CODA_LEGA, (n) => n.source === "lba");
+  const quiReggio = prendi(QUI_REGGIO, (n) => fonteDiCasa(n.source));
+  const coda = prendi(CODA);
 
   return (
     // Ogni sezione dopo la prima è separata da un divisorio e respira.
@@ -101,7 +100,9 @@ async function HomeContenuti() {
           prossima partita — il tabellone sta in testata come sui
           giornali sportivi. ── */}
       <section className="sale sale-2 flex flex-col gap-2.5">
-        <div className="grid gap-2.5 lg:grid-cols-[2fr_1fr] lg:items-start">
+        {/* Niente items-start: l'apertura si stira all'altezza della
+            colonna partita+redazione, la foto cresce e il buco sparisce */}
+        <div className="grid gap-2.5 lg:grid-cols-[2fr_1fr]">
           {testata && <NewsApertura item={testata} />}
           <div className="flex flex-col gap-3">
             <div className="flex items-baseline justify-between">
@@ -124,24 +125,44 @@ async function HomeContenuti() {
                 per tutte le altre.
               </p>
             )}
+
+            {/* Il box della redazione sta sotto il tabellone: fondo
+                rosso spento come la striscia "Solo Reggio" delle News,
+                un pezzo alla volta — l'ultimo — che non scivola via con
+                la cronaca. */}
+            {redazione.length > 0 && (
+              <div className="taglio flex flex-col gap-3 bg-brand-tint p-4">
+                <div className="flex items-baseline justify-between">
+                  <h2 className="display text-2xl">Dalla redazione</h2>
+                  <Link
+                    href="/news?f=redazione"
+                    className="eyebrow text-brand-vivid"
+                  >
+                    tutti →
+                  </Link>
+                </div>
+                <NewsRiquadro item={redazione[0]} />
+              </div>
+            )}
           </div>
         </div>
       </section>
 
-      {/* ── Seconda riga: la fascia a tre colonne con la cronaca di
-          Reggio, il box della redazione, i video. Tre verticali
-          affiancate da lg, incolonnate sul telefono. ── */}
+      {/* ── Seconda riga: Qui Reggio largo due colonne coi suoi quattro
+          articoli, i video nella terza. Sul telefono si incolonna. ── */}
       <section className="sale sale-3 grid gap-8 lg:grid-cols-3 lg:gap-6">
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 lg:col-span-2">
           <div className="flex items-baseline justify-between">
             <h2 className="display text-2xl">Qui Reggio</h2>
             <Link href="/news?f=reggio" className="eyebrow text-brand-vivid">
               tutte →
             </Link>
           </div>
-          {colonnaReggio.length > 0 ? (
-            <div className="flex flex-col">
-              {colonnaReggio.map((n) => (
+          {quiReggio.length > 0 ? (
+            // Quattro articoli a coppie: due colonne di righe, come
+            // l'archivio della pagina News
+            <div className="grid lg:grid-cols-2 lg:gap-x-6">
+              {quiReggio.map((n) => (
                 <NewsRiga key={n.id} item={n} />
               ))}
             </div>
@@ -151,25 +172,6 @@ async function HomeContenuti() {
             </p>
           )}
         </div>
-
-        {/* Il box della redazione: fondo rosso spento come la striscia
-            "Solo Reggio" delle News, un pezzo alla volta — l'ultimo — che
-            non scivola via con la cronaca. self-start: il rosso finisce
-            dove finisce l'articolo, non si stira sulla colonna. */}
-        {redazione.length > 0 && (
-          <div className="taglio flex flex-col gap-3 self-start bg-brand-tint p-4">
-            <div className="flex items-baseline justify-between">
-              <h2 className="display text-2xl">Dalla redazione</h2>
-              <Link
-                href="/news?f=redazione"
-                className="eyebrow text-brand-vivid"
-              >
-                tutti →
-              </Link>
-            </div>
-            <NewsRiquadro item={redazione[0]} />
-          </div>
-        )}
 
         <div className="flex flex-col gap-3">
           <div className="flex items-baseline justify-between">
@@ -192,34 +194,18 @@ async function HomeContenuti() {
         </div>
       </section>
 
-      {/* ── I tre riquadri delle notizie che incalzano: la riga fa da
-          cerniera tra la parte di Reggio e la coda di lega. ── */}
-      {sottoApertura.length > 0 && (
-        <section className="sale sale-4 grid gap-2.5 lg:grid-cols-3">
-          {sottoApertura.map((n, i) => (
-            <NewsRiquadro
-              key={n.id}
-              item={n}
-              className="sale"
-              // un gradino per riquadro, come le tessere della pagina News
-              style={{ animationDelay: `${0.05 * i}s` }}
-            />
-          ))}
-        </section>
-      )}
-
-      {/* ── Il resto del campionato: due colonne di card, in fondo dove
-          stanno le notizie che non sono di Reggio. ── */}
-      {codaLega.length > 0 && (
+      {/* ── La coda: tutti gli altri articoli, di qualunque fonte, a
+          coppie fino al limite — per il resto c'è la pagina News. ── */}
+      {coda.length > 0 && (
         <section className="sale sale-4 flex flex-col gap-3">
           <div className="flex items-baseline justify-between">
-            <h2 className="display text-2xl">Dal campionato</h2>
-            <Link href="/news?f=seriea" className="eyebrow text-brand-vivid">
+            <h2 className="display text-2xl">Tutte le news</h2>
+            <Link href="/news" className="eyebrow text-brand-vivid">
               tutte →
             </Link>
           </div>
           <div className="grid gap-2.5 lg:grid-cols-2">
-            {codaLega.map((n) => (
+            {coda.map((n) => (
               <NewsCard key={n.id} item={n} />
             ))}
           </div>

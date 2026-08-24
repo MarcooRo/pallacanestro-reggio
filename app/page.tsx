@@ -1,11 +1,15 @@
 import Link from "next/link";
 
+import { NewsApertura } from "@/src/components/news-apertura";
 import { NewsCard } from "@/src/components/news-card";
+import { NewsRiga } from "@/src/components/news-riga";
+import { NewsRiquadro } from "@/src/components/news-riquadro";
 import { PartitaCard } from "@/src/components/partita-card";
 import { Pagella } from "@/src/components/pagella";
 import { VideoCard } from "@/src/components/video-card";
 import { getProfilo } from "@/src/lib/identita/sessione";
-import { getNews } from "@/src/lib/news/queries";
+import { fonteDiCasa } from "@/src/lib/news/etichette";
+import { getNews, type NewsInLista } from "@/src/lib/news/queries";
 import {
   getProssimaPartita,
   getUltimaPagella,
@@ -15,19 +19,59 @@ import { getVideoHome } from "@/src/lib/video/queries";
 
 // La home è per tutti, dal primo tap: nessuna vetrina, nessun accesso.
 // L'identità anonima nasce solo quando si partecipa (voto, reazioni…).
+//
+// Dal 24/08/2026 la home è un giornale: prima le notizie di Reggio, poi
+// il resto del campionato. Testata a due righe (apertura + tre riquadri),
+// una fascia a tre colonne (partita | Qui Reggio | video), lo spazio
+// fisso della redazione e in coda le news di lega. Le gerarchie sono
+// pensate per il desktop; il telefono incolonna e avrà le sue dopo.
 export default async function HomePage() {
   return <HomeContenuti />;
 }
 
+// Quante notizie entrano in ogni spazio: la testata è 1+3, la colonna di
+// Reggio una lista da 5, la lega chiude a coppie.
+const SOTTO_APERTURA = 3;
+const COLONNA_REGGIO = 5;
+const CODA_LEGA = 8;
+
+// I pezzi della redazione non seguono la cronaca: hanno il loro spazio e
+// ci restano finché non ne arrivano di più nuovi, anche dopo settimane.
+const SPAZIO_REDAZIONE = 3;
+
 async function HomeContenuti() {
   const profilo = await getProfilo();
-  const [votazione, prossima, ultima, ultimeNews, video] = await Promise.all([
-    getVotazioneAperta(),
-    getProssimaPartita(),
-    getUltimaPagella(),
-    getNews(4),
-    getVideoHome(),
-  ]);
+  const [votazione, prossima, ultima, redazione, tutte, video] =
+    await Promise.all([
+      getVotazioneAperta(),
+      getProssimaPartita(),
+      getUltimaPagella(),
+      // Query separata: gli articoli nostri non devono competere per
+      // freschezza con la cronaca — lo spazio è loro comunque.
+      getNews(SPAZIO_REDAZIONE, "redazione"),
+      getNews(40),
+      getVideoHome(),
+    ]);
+
+  // Dal mucchio si spartiscono gli spazi, senza mai ripetere una notizia.
+  const usate = new Set(redazione.map((n) => n.id));
+  const prendi = (
+    quante: number,
+    vaBene: (n: NewsInLista) => boolean = () => true,
+  ) => {
+    const scelte = tutte.filter((n) => !usate.has(n.id) && vaBene(n)).slice(0, quante);
+    for (const n of scelte) usate.add(n.id);
+    return scelte;
+  };
+
+  // L'apertura è la notizia del giorno: quella fissata dall'admin se c'è
+  // (la query le mette in testa), altrimenti la più fresca di Reggio,
+  // altrimenti la più fresca e basta.
+  let [testata] = prendi(1, (n) => n.isPinned || fonteDiCasa(n.source));
+  if (!testata) [testata] = prendi(1);
+  const sottoApertura = prendi(SOTTO_APERTURA);
+  const colonnaReggio = prendi(COLONNA_REGGIO, (n) => fonteDiCasa(n.source));
+  const codaLega = prendi(CODA_LEGA, (n) => n.source === "lba");
 
   return (
     // Ogni sezione dopo la prima è separata da un divisorio e respira.
@@ -36,29 +80,10 @@ async function HomeContenuti() {
         <p className="eyebrow sale">Ciao, {profilo.nickname}</p>
       )}
 
-      {/* Il primo blocco è sempre la prossima partita di Reggio. */}
-      <section className="sale sale-2 flex flex-col gap-3">
-        <h2 className="display text-2xl">Prossima partita</h2>
-        {prossima ? (
-          // A tutta larghezza desktop il tabellone si sfilaccia: si contiene
-          <div className="lg:max-w-2xl">
-            <PartitaCard partita={prossima} />
-          </div>
-        ) : (
-          <p className="taglio-sm card p-4 text-sm text-muted">
-            Nessuna partita di Reggio pianificata. Guarda il{" "}
-            <Link href="/calendario" className="font-bold text-brand-vivid underline">
-              calendario
-            </Link>{" "}
-            per tutte le altre.
-          </p>
-        )}
-      </section>
-
-      {/* Votazione aperta: striscia compatta, non il fulcro della home.
-          Il voto è una funzionalità, il focus resta seguire la squadra. */}
+      {/* Votazione aperta: la striscia resta in cima a tutto — il voto è
+          il prodotto, il giornale gli sta intorno. */}
       {votazione && (
-        <section className="sale sale-2 flex flex-col gap-3">
+        <section className="sale flex flex-col gap-3">
           <Link
             href={`/partite/${votazione.id}`}
             className="taglio display flex items-baseline justify-between bg-brand px-4 py-3.5 text-xl text-on-brand transition-colors hover:bg-brand-hover"
@@ -69,19 +94,83 @@ async function HomeContenuti() {
         </section>
       )}
 
-      {/* L'ultimo video di ciascun canale (Reggio + LBA), prima delle news */}
-      {video.length > 0 && (
-        <section className="sale sale-3 flex flex-col gap-3">
+      {/* ── Testata: due righe. L'apertura alla scala che merita, sotto i
+          tre riquadri delle notizie che incalzano. ── */}
+      {testata && (
+        <section className="sale sale-2 flex flex-col gap-2.5">
+          <NewsApertura item={testata} />
+          {sottoApertura.length > 0 && (
+            <div className="grid gap-2.5 lg:grid-cols-3">
+              {sottoApertura.map((n, i) => (
+                <NewsRiquadro
+                  key={n.id}
+                  item={n}
+                  className="sale"
+                  // un gradino per riquadro, come le tessere della pagina News
+                  style={{ animationDelay: `${0.05 * i}s` }}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* ── Fascia a tre colonne: la partita, la cronaca di Reggio, i
+          video. Tre verticali affiancate da lg, incolonnate sul telefono. ── */}
+      <section className="sale sale-3 grid gap-8 lg:grid-cols-3 lg:gap-6">
+        <div className="flex flex-col gap-3">
+          <div className="flex items-baseline justify-between">
+            <h2 className="display text-2xl">Prossima partita</h2>
+            <Link href="/calendario" className="eyebrow text-brand-vivid">
+              calendario →
+            </Link>
+          </div>
+          {prossima ? (
+            <PartitaCard partita={prossima} />
+          ) : (
+            <p className="taglio-sm card p-4 text-sm text-muted">
+              Nessuna partita di Reggio pianificata. Guarda il{" "}
+              <Link
+                href="/calendario"
+                className="font-bold text-brand-vivid underline"
+              >
+                calendario
+              </Link>{" "}
+              per tutte le altre.
+            </p>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <div className="flex items-baseline justify-between">
+            <h2 className="display text-2xl">Qui Reggio</h2>
+            <Link href="/news?f=reggio" className="eyebrow text-brand-vivid">
+              tutte →
+            </Link>
+          </div>
+          {colonnaReggio.length > 0 ? (
+            <div className="flex flex-col">
+              {colonnaReggio.map((n) => (
+                <NewsRiga key={n.id} item={n} />
+              ))}
+            </div>
+          ) : (
+            <p className="taglio-sm card p-4 text-sm text-muted">
+              Nessun&apos;altra notizia da Reggio, per ora.
+            </p>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-3">
           <div className="flex items-baseline justify-between">
             <h2 className="display text-2xl">Video</h2>
             <Link href="/video" className="eyebrow text-brand-vivid">
               tutti →
             </Link>
           </div>
-          {/* Slide orizzontale: -mx-4/px-4 per far sbordare lo scroll
-              fino ai bordi dello schermo mantenendo l'allineamento.
-              Su desktop non si scrolla col dito: griglia a tre. */}
-          <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] lg:mx-0 lg:grid lg:grid-cols-3 lg:overflow-visible lg:px-0">
+          {/* Sul telefono i video scorrono col dito come prima; nella
+              colonna desktop stanno incolonnati */}
+          <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0">
             {video.map((v) => (
               <VideoCard
                 key={v.videoId}
@@ -90,19 +179,40 @@ async function HomeContenuti() {
               />
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ── Lo spazio della redazione: fondo rosso spento come la striscia
+          "Solo Reggio" delle News. I pezzi nostri non scivolano via con la
+          cronaca: restano qui finché non ne escono di più nuovi. ── */}
+      {redazione.length > 0 && (
+        <section className="sale sale-3 taglio -mx-4 flex flex-col gap-3 !border-t-0 bg-brand-tint px-4 sm:mx-0 sm:px-5">
+          <div className="flex items-baseline justify-between">
+            <h2 className="display text-2xl">Dalla redazione</h2>
+            <Link href="/news?f=redazione" className="eyebrow text-brand-vivid">
+              tutti →
+            </Link>
+          </div>
+          <div className="grid gap-2.5 lg:grid-cols-3">
+            {redazione.map((n) => (
+              <NewsRiquadro key={n.id} item={n} />
+            ))}
+          </div>
         </section>
       )}
 
-      {ultimeNews.length > 0 && (
-        <section className="sale sale-3 flex flex-col gap-3">
+      {/* ── Il resto del campionato: due colonne di card, in fondo dove
+          stanno le notizie che non sono di Reggio. ── */}
+      {codaLega.length > 0 && (
+        <section className="sale sale-4 flex flex-col gap-3">
           <div className="flex items-baseline justify-between">
-            <h2 className="display text-2xl">News</h2>
-            <Link href="/news" className="eyebrow text-brand-vivid">
+            <h2 className="display text-2xl">Dal campionato</h2>
+            <Link href="/news?f=seriea" className="eyebrow text-brand-vivid">
               tutte →
             </Link>
           </div>
           <div className="grid gap-2.5 lg:grid-cols-2">
-            {ultimeNews.map((n) => (
+            {codaLega.map((n) => (
               <NewsCard key={n.id} item={n} />
             ))}
           </div>

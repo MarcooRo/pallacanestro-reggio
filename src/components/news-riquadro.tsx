@@ -3,6 +3,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import type { CSSProperties } from "react";
 
 import { soloOra } from "@/src/lib/date";
 import { fonteDiCasa, nomeFonte } from "@/src/lib/news/etichette";
@@ -11,9 +12,11 @@ import type { NewsInLista } from "@/src/lib/news/queries";
 export function NewsRiquadro({
   item,
   className = "",
+  style,
 }: {
   item: NewsInLista;
   className?: string;
+  style?: CSSProperties;
 }) {
   const diCasa = fonteDiCasa(item.source);
   return (
@@ -22,6 +25,7 @@ export function NewsRiquadro({
       className={`taglio-sm card group flex flex-col overflow-hidden transition-colors hover:border-brand ${
         diCasa ? "border-l-[3px] border-l-brand-vivid" : ""
       } ${className}`}
+      style={style}
     >
       {item.copertina && (
         <span className="relative block aspect-[16/9] w-full">

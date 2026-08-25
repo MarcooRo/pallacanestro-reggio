@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { InstallaApp } from "@/src/components/installa-app";
 import { NotifichePush } from "@/src/components/notifiche-push";
 import { isAdmin } from "@/src/lib/identita/admin";
 import { aggiornaNickname } from "@/src/lib/identita/azioni";
@@ -75,6 +76,10 @@ export default async function ProfiloPage({
           </div>
         </dl>
       )}
+
+      {/* Prima l'installazione, poi le notifiche: su iPhone le push
+          esistono solo dentro l'app aggiunta alla Home */}
+      <InstallaApp />
 
       <NotifichePush />
 

@@ -67,7 +67,7 @@ function Campi({
             bytes: files.reduce((somma, f) => somma + f.size, 0),
           });
         }}
-        className="text-sm file:mr-3 file:rounded-md file:border-0 file:bg-brand file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-on-brand"
+        className="text-sm file:mr-3 file:rounded-md file:border-0 file:bg-brand file:px-4 file:py-2.5 file:text-sm file:font-semibold file:text-on-brand"
       />
       {scelta.quante > 0 && (
         <p className="text-xs text-muted">
@@ -96,7 +96,7 @@ function Campi({
       <button
         type="submit"
         disabled={pending || troppoGrande}
-        className="flex items-center gap-2 self-start rounded-md bg-brand px-3 py-1.5 text-sm font-semibold text-on-brand disabled:opacity-50"
+        className="btn-admin btn-admin-pieno self-start"
       >
         {pending && <Rotella />}
         {pending ? "Carico…" : "Carica"}

@@ -58,7 +58,7 @@ function Campi() {
       <button
         type="submit"
         disabled={pending}
-        className="flex items-center gap-2 self-start rounded-md border border-border-strong px-3 py-1.5 text-sm font-semibold hover:bg-surface disabled:opacity-50"
+        className="btn-admin btn-admin-bordo self-start"
       >
         {pending && <Rotella />}
         {pending ? "Scarico…" : "Importa"}

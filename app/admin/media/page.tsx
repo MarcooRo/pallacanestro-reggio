@@ -119,7 +119,7 @@ export default async function AdminMediaPage({
                 <div className="flex items-center gap-2">
                   <button
                     type="submit"
-                    className="rounded-md border border-border-strong px-3 py-1 text-sm font-semibold hover:bg-surface"
+                    className="btn-admin btn-admin-bordo"
                   >
                     Salva
                   </button>
@@ -127,7 +127,7 @@ export default async function AdminMediaPage({
                     <button
                       type="submit"
                       formAction={cancellaFoto}
-                      className="rounded-md px-3 py-1 text-sm font-semibold text-muted hover:text-brand"
+                      className="btn-admin btn-admin-lieve"
                     >
                       Cancella
                     </button>

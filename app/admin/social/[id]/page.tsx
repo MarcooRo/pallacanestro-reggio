@@ -148,7 +148,7 @@ export default async function DettaglioPostPage({
             </label>
             <button
               type="submit"
-              className="rounded-md bg-brand px-3 py-1.5 text-sm font-semibold text-on-brand"
+              className="btn-admin btn-admin-pieno"
             >
               Approva
             </button>
@@ -184,7 +184,7 @@ export default async function DettaglioPostPage({
             </label>
             <button
               type="submit"
-              className="self-start rounded-md border border-border-strong px-3 py-1.5 text-sm font-semibold hover:bg-surface"
+              className="btn-admin btn-admin-bordo self-start"
             >
               Salva modifiche
             </button>
@@ -196,7 +196,7 @@ export default async function DettaglioPostPage({
             <input type="hidden" name="postId" value={post.id} />
             <button
               type="submit"
-              className="rounded-md border border-border-strong px-3 py-1.5 text-sm font-semibold hover:bg-surface"
+              className="btn-admin btn-admin-bordo"
             >
               Rigenera immagini
             </button>
@@ -206,7 +206,7 @@ export default async function DettaglioPostPage({
               <input type="hidden" name="postId" value={post.id} />
               <button
                 type="submit"
-                className="rounded-md border border-border-strong px-3 py-1.5 text-sm font-semibold hover:bg-surface"
+                className="btn-admin btn-admin-bordo"
               >
                 Archivia
               </button>

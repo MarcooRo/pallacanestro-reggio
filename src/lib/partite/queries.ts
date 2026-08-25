@@ -209,7 +209,9 @@ export async function getVotazioneAperta() {
 }
 
 // Le partite del club di casa, per il pannello admin: sono le uniche
-// su cui ha senso aprire una votazione.
+// su cui ha senso aprire una votazione. Stesso ordine del calendario:
+// l'admin lavora sulla gara appena giocata o su quella che arriva, non
+// sull'ultima di maggio — che col desc secco finiva in cima.
 export async function getPartiteClubCasa(limite = 60) {
   return db
     .select(colonnePartita)
@@ -224,7 +226,7 @@ export async function getPartiteClubCasa(limite = 60) {
           and c.id in (${casa.clubId}, ${ospite.clubId})
       )`,
     )
-    .orderBy(desc(matches.startsAt))
+    .orderBy(ordineCalendario())
     .limit(limite);
 }
 

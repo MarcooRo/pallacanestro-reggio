@@ -137,7 +137,7 @@ export default async function DettaglioArticoloPage({
             </label>
             <button
               type="submit"
-              className="rounded-md bg-brand px-3 py-1.5 text-sm font-semibold text-on-brand"
+              className="btn-admin btn-admin-pieno"
             >
               Pubblica
             </button>
@@ -186,7 +186,7 @@ export default async function DettaglioArticoloPage({
           </label>
           <button
             type="submit"
-            className="self-start rounded-md border border-border-strong px-3 py-1.5 text-sm font-semibold hover:bg-surface"
+            className="btn-admin btn-admin-bordo self-start"
           >
             Salva testata
           </button>
@@ -202,7 +202,7 @@ export default async function DettaglioArticoloPage({
                 <input type="hidden" name="id" value={articolo.id} />
                 <button
                   type="submit"
-                  className="rounded-md border border-border-strong px-3 py-1.5 text-sm font-semibold hover:bg-surface"
+                  className="btn-admin btn-admin-bordo"
                 >
                   {articolo.isPinned ? "Togli dall'evidenza" : "Fissa in alto"}
                 </button>
@@ -211,7 +211,7 @@ export default async function DettaglioArticoloPage({
                 <input type="hidden" name="id" value={articolo.id} />
                 <button
                   type="submit"
-                  className="rounded-md border border-border-strong px-3 py-1.5 text-sm font-semibold hover:bg-surface"
+                  className="btn-admin btn-admin-bordo"
                 >
                   Ritira dal sito
                 </button>
@@ -223,7 +223,7 @@ export default async function DettaglioArticoloPage({
               <input type="hidden" name="id" value={articolo.id} />
               <button
                 type="submit"
-                className="rounded-md border border-border-strong px-3 py-1.5 text-sm font-semibold hover:bg-surface"
+                className="btn-admin btn-admin-bordo"
               >
                 Archivia
               </button>

@@ -47,28 +47,36 @@ export default async function AdminPage({
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 px-4 py-8 lg:max-w-2xl">
       <h1 className="text-2xl font-bold">Admin · Partite</h1>
       <p className="text-sm text-muted">
-        Le partite del club, dalla più recente. Apertura voto, chiusura con
-        pubblicazione della pagella, correzione del risultato.
+        Le partite del club: prima la prossima da giocare, poi le giocate
+        dalla più recente. Apertura voto, chiusura con pubblicazione della
+        pagella, correzione del risultato.
       </p>
 
-      <div className="flex flex-wrap gap-x-4">
+      {/* Le tre aree come card piene, non righe di testo: dal telefono
+          si centrano col pollice senza mirare */}
+      <div className="grid gap-2 sm:grid-cols-3">
         <Link
           href="/admin/social"
-          className="text-sm font-semibold text-brand hover:underline"
+          className="flex flex-col gap-0.5 rounded-md border border-border-strong px-4 py-3 hover:bg-surface"
         >
-          Social → la coda dei post
+          <span className="text-sm font-bold text-brand">Social →</span>
+          <span className="text-xs text-muted">la coda dei post</span>
         </Link>
         <Link
           href="/admin/news"
-          className="text-sm font-semibold text-brand hover:underline"
+          className="flex flex-col gap-0.5 rounded-md border border-border-strong px-4 py-3 hover:bg-surface"
         >
-          Articoli → i pezzi nostri{bozze > 0 ? ` (${bozze} in bozza)` : ""}
+          <span className="text-sm font-bold text-brand">Articoli →</span>
+          <span className="text-xs text-muted">
+            i pezzi nostri{bozze > 0 ? ` (${bozze} in bozza)` : ""}
+          </span>
         </Link>
         <Link
           href="/admin/media"
-          className="text-sm font-semibold text-brand hover:underline"
+          className="flex flex-col gap-0.5 rounded-md border border-border-strong px-4 py-3 hover:bg-surface"
         >
-          Foto → la libreria media
+          <span className="text-sm font-bold text-brand">Foto →</span>
+          <span className="text-xs text-muted">la libreria media</span>
         </Link>
       </div>
 
@@ -81,7 +89,7 @@ export default async function AdminPage({
       <form action={aggiornaNewsAction}>
         <button
           type="submit"
-          className="rounded-md border border-border-strong px-3 py-1.5 text-sm font-semibold hover:bg-surface"
+          className="btn-admin btn-admin-bordo"
         >
           Aggiorna news dalle fonti
         </button>
@@ -110,7 +118,7 @@ export default async function AdminPage({
         </div>
         <button
           type="submit"
-          className="self-start rounded-md border border-border-strong px-3 py-1.5 text-sm font-semibold hover:bg-surface"
+          className="btn-admin btn-admin-bordo self-start"
         >
           Salva funzionalità
         </button>
@@ -164,7 +172,7 @@ function PronosticoAdminRiga({ pronostico }: { pronostico: PronosticoAdmin }) {
             <input type="hidden" name="predictionId" value={pronostico.id} />
             <button
               type="submit"
-              className="rounded-md border border-border-strong px-2.5 py-1 text-xs font-semibold hover:bg-surface"
+              className="btn-admin btn-admin-bordo"
             >
               Chiudi alle risposte
             </button>
@@ -178,7 +186,7 @@ function PronosticoAdminRiga({ pronostico }: { pronostico: PronosticoAdmin }) {
               name="opzione"
               defaultValue=""
               required
-              className="rounded-md border border-border-strong bg-background px-2 py-1 text-xs"
+              className="rounded-md border border-border-strong bg-background px-2 py-2 text-sm"
             >
               <option value="" disabled>
                 risposta giusta…
@@ -191,7 +199,7 @@ function PronosticoAdminRiga({ pronostico }: { pronostico: PronosticoAdmin }) {
             </select>
             <button
               type="submit"
-              className="rounded-md bg-brand px-2.5 py-1 text-xs font-semibold text-on-brand hover:bg-brand-hover"
+              className="btn-admin btn-admin-pieno"
             >
               Risolvi
             </button>
@@ -203,7 +211,7 @@ function PronosticoAdminRiga({ pronostico }: { pronostico: PronosticoAdmin }) {
             <input type="hidden" name="predictionId" value={pronostico.id} />
             <button
               type="submit"
-              className="rounded-md border border-border px-2.5 py-1 text-xs text-muted hover:bg-surface"
+              className="btn-admin btn-admin-bordo btn-admin-lieve"
             >
               Annulla
             </button>
@@ -270,11 +278,11 @@ function RigaAdmin({
               defaultValue={ORE_FINESTRA_DEFAULT}
               min={1}
               max={96}
-              className="w-16 rounded-md border border-border-strong bg-background px-2 py-1 text-sm"
+              className="w-16 rounded-md border border-border-strong bg-background px-2 py-2 text-sm"
             />
             <button
               type="submit"
-              className="rounded-md bg-brand px-3 py-1.5 text-sm font-semibold text-on-brand hover:bg-brand-hover"
+              className="btn-admin btn-admin-pieno"
             >
               Apri voto
             </button>
@@ -286,7 +294,7 @@ function RigaAdmin({
             <input type="hidden" name="matchId" value={partita.id} />
             <button
               type="submit"
-              className="rounded-md bg-brand px-3 py-1.5 text-sm font-semibold text-on-brand hover:bg-brand-hover"
+              className="btn-admin btn-admin-pieno"
             >
               Chiudi e pubblica pagella
             </button>
@@ -300,7 +308,7 @@ function RigaAdmin({
             <input type="hidden" name="matchId" value={partita.id} />
             <button
               type="submit"
-              className="rounded-md border border-border-strong px-3 py-1.5 text-sm font-semibold hover:border-brand"
+              className="btn-admin btn-admin-bordo"
             >
               Ricalcola pagella
             </button>
@@ -309,7 +317,7 @@ function RigaAdmin({
       </div>
 
       <details open={pronostici.some((p) => p.status === "closed")}>
-        <summary className="cursor-pointer text-xs text-muted">
+        <summary className="cursor-pointer py-1 text-sm text-muted">
           Pronostici{pronostici.length > 0 ? ` (${pronostici.length})` : ""}
         </summary>
         <div className="mt-2 flex flex-col gap-3">
@@ -340,13 +348,13 @@ function RigaAdmin({
               <input
                 name="closesAt"
                 type="datetime-local"
-                className="rounded-md border border-border-strong bg-background px-2 py-1 text-sm"
+                className="rounded-md border border-border-strong bg-background px-2 py-2 text-sm"
               />
               <span>(vuoto = palla a due)</span>
             </label>
             <button
               type="submit"
-              className="self-start rounded-md bg-brand px-3 py-1.5 text-sm font-semibold text-on-brand hover:bg-brand-hover"
+              className="btn-admin btn-admin-pieno self-start"
             >
               Crea pronostico
             </button>
@@ -355,7 +363,7 @@ function RigaAdmin({
       </details>
 
       <details>
-        <summary className="cursor-pointer text-xs text-muted">
+        <summary className="cursor-pointer py-1 text-sm text-muted">
           Correggi risultato
         </summary>
         <form action={aggiornaPartita} className="mt-2 flex flex-wrap items-center gap-2">
@@ -366,7 +374,7 @@ function RigaAdmin({
             min={0}
             defaultValue={partita.homeScore ?? ""}
             placeholder="casa"
-            className="w-20 rounded-md border border-border-strong bg-background px-2 py-1 text-sm"
+            className="w-20 rounded-md border border-border-strong bg-background px-2 py-2 text-sm"
           />
           <input
             name="awayScore"
@@ -374,12 +382,12 @@ function RigaAdmin({
             min={0}
             defaultValue={partita.awayScore ?? ""}
             placeholder="ospiti"
-            className="w-20 rounded-md border border-border-strong bg-background px-2 py-1 text-sm"
+            className="w-20 rounded-md border border-border-strong bg-background px-2 py-2 text-sm"
           />
           <select
             name="status"
             defaultValue={partita.status}
-            className="rounded-md border border-border-strong bg-background px-2 py-1 text-sm"
+            className="rounded-md border border-border-strong bg-background px-2 py-2 text-sm"
           >
             <option value="scheduled">in programma</option>
             <option value="live">in corso</option>
@@ -389,7 +397,7 @@ function RigaAdmin({
           </select>
           <button
             type="submit"
-            className="rounded-md border border-border-strong px-3 py-1.5 text-sm font-semibold hover:bg-surface"
+            className="btn-admin btn-admin-bordo"
           >
             Salva
           </button>

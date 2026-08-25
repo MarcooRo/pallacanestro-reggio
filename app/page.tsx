@@ -172,8 +172,11 @@ async function HomeContenuti() {
       )}
 
       {/* ── Testata: l'apertura da manchette e la colonna di destra con
-          la partita sopra e il pezzo della redazione sotto. ── */}
-      <section className="sale sale-2 grid gap-2.5 lg:grid-cols-12">
+          la partita sopra e il pezzo della redazione sotto. Da lg le
+          colonne prendono lo stesso gap della riga sotto: hero e rail
+          appiccicati a 10px soffocavano, e così il bordo destro
+          dell'apertura casca a piombo su quello di Qui Reggio. ── */}
+      <section className="sale sale-2 grid gap-2.5 lg:grid-cols-12 lg:gap-x-6">
         {testata && <Apertura item={testata} />}
 
         <div className="flex flex-col gap-3 lg:col-span-4">
@@ -249,7 +252,7 @@ async function HomeContenuti() {
           {quiReggio.length > 0 ? (
             <div className="grid flex-1 lg:grid-cols-2 lg:gap-x-8">
               {quiReggio.map((n) => (
-                <NewsRiga key={n.id} item={n} />
+                <NewsRiga key={n.id} item={n} fotoSempre />
               ))}
             </div>
           ) : (

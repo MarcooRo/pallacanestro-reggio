@@ -12,9 +12,13 @@ import type { NewsInLista } from "@/src/lib/news/queries";
 export function NewsRiga({
   item,
   className = "",
+  fotoSempre = false,
 }: {
   item: NewsInLista;
   className?: string;
+  /** Miniatura anche sul telefono: in Qui Reggio la foto fa parte della
+   *  notizia, solo nelle code d'archivio si sacrifica alla densità. */
+  fotoSempre?: boolean;
 }) {
   const diCasa = fonteDiCasa(item.source);
   return (
@@ -46,7 +50,7 @@ export function NewsRiga({
           alt=""
           width={104}
           height={66}
-          className="hidden shrink-0 object-cover sm:block"
+          className={`shrink-0 object-cover ${fotoSempre ? "" : "hidden sm:block"}`}
           style={{ width: 104, height: 66 }}
         />
       )}

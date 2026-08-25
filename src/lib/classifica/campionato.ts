@@ -80,6 +80,24 @@ export async function getClassificaCampionato(
   return null;
 }
 
+// Le stagioni per il selettore della classifica: basta la Regular Season
+// agganciata alla fonte, anche a zero gare giocate. La stagione nuova deve
+// comparire nella tendina: scegliendola si legge l'avviso "arriva con la
+// prima giornata", non sparire come se non esistesse.
+export async function getStagioniClassifica(): Promise<number[]> {
+  const righe = await db
+    .selectDistinct({ seasonYear: competitions.seasonYear })
+    .from(competitions)
+    .where(
+      and(
+        eq(competitions.typeCode, "RS"),
+        isNotNull(competitions.lbaChampionshipId),
+      ),
+    )
+    .orderBy(desc(competitions.seasonYear));
+  return righe.map((r) => r.seasonYear);
+}
+
 // Solo DB, nessuna chiamata alla fonte: serve una Regular Season agganciata
 // alla fonte e almeno una gara giocata. Chi mostra un rimando alla
 // classifica di una stagione lo chiede prima di renderlo.

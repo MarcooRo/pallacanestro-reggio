@@ -11,6 +11,7 @@ import {
   sincronizzaCalendarioCorrente,
   sincronizzaTabellini,
 } from "@/src/ingestion/sync";
+import { pubblicaCoda } from "@/src/lib/social/publisher";
 import {
   apriVotazioniAutomatiche,
   promemoriaChiusura,
@@ -91,6 +92,23 @@ export async function jobNews() {
   if (esito.nuoveLba + esito.nuoveWordPress > 0) {
     revalidatePath("/news");
     revalidatePath("/");
+  }
+  return esito;
+}
+
+// La coda social: pubblica su Meta i post approved arrivati alla loro
+// ora. Corsa frequente (ogni pochi minuti): quasi sempre a vuoto, e a
+// vuoto non logga — ingestion_runs non è un heartbeat.
+export async function jobSocial() {
+  const esito = await pubblicaCoda();
+  if (esito.pubblicati.length > 0 || esito.falliti.length > 0) {
+    await logIngestione("meta", "social", {
+      seen: esito.pubblicati.length + esito.falliti.length,
+      changed: esito.pubblicati.length,
+      diff: esito,
+      status: esito.falliti.length > 0 ? "partial" : "ok",
+    });
+    revalidatePath("/admin/social");
   }
   return esito;
 }

@@ -609,7 +609,7 @@ export const socialPosts = pgTable(
     ),
     check(
       "social_posts_platform_check",
-      sql`${t.platform} in ('instagram_feed','instagram_story')`,
+      sql`${t.platform} in ('instagram_feed','instagram_story','facebook')`,
     ),
     check("social_posts_kind_check", sql`${t.kind} in ('single','carousel')`),
     check("social_posts_source_check", sql`${t.source} in ('mcp','admin')`),

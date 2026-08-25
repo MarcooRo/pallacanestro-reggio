@@ -22,4 +22,5 @@ export const NOME_STATO: Record<string, string> = {
 export const NOME_PIATTAFORMA: Record<string, string> = {
   instagram_feed: "Instagram · feed",
   instagram_story: "Instagram · story",
+  facebook: "Facebook · Pagina",
 };

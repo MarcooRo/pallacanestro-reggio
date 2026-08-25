@@ -33,7 +33,7 @@ import { renderizzaPost } from "@/src/lib/social/render";
 export { ErroreTool };
 
 const STATI = ["draft", "approved", "publishing", "published", "failed", "archived"] as const;
-const PIATTAFORME = ["instagram_feed", "instagram_story"] as const;
+const PIATTAFORME = ["instagram_feed", "instagram_story", "facebook"] as const;
 
 // ---------- input dei tool ----------
 

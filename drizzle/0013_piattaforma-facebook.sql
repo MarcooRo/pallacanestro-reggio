@@ -1,0 +1,2 @@
+ALTER TABLE "social_posts" DROP CONSTRAINT "social_posts_platform_check";--> statement-breakpoint
+ALTER TABLE "social_posts" ADD CONSTRAINT "social_posts_platform_check" CHECK ("social_posts"."platform" in ('instagram_feed','instagram_story','facebook'));

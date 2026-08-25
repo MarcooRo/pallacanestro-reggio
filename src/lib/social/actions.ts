@@ -66,7 +66,7 @@ export async function approvaPost(formData: FormData) {
     postId,
     typeof quando === "string" && quando
       ? "Approvato e programmato"
-      : "Approvato: si pubblica alla prossima corsa (fase 2)",
+      : "Approvato: si pubblica alla prossima corsa del cron",
   );
 }
 

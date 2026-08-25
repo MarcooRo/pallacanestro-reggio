@@ -92,6 +92,13 @@
       "when": 1787563491563,
       "tag": "0012_identita-anonima",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1787661885158,
+      "tag": "0013_piattaforma-facebook",
+      "breakpoints": true
     }
   ]
 }

@@ -6,10 +6,12 @@ import { Pillola } from "@/src/components/pillola";
 import { SelettoreStagione } from "@/src/components/selettore-stagione";
 import { stagioneHaClassifica } from "@/src/lib/classifica/campionato";
 import { etichettaStagione } from "@/src/lib/date";
+import { contestoPartita } from "@/src/lib/partite/etichette";
 import {
   getCalendario,
   getStagioni,
   haPartiteDaGiocare,
+  type PartitaLista,
 } from "@/src/lib/partite/queries";
 
 export const metadata: Metadata = { title: "Calendario" };
@@ -40,6 +42,18 @@ export default async function CalendarioPage({
     getCalendario(stagione, soloReggio),
     stagioneHaClassifica(stagione),
   ]);
+
+  // Le partite si leggono a giornate: gruppi consecutivi con la stessa
+  // etichetta (giornata o fase). Consecutivi e non per chiave assoluta:
+  // l'ordine "prima le prossime" può spezzare una giornata a metà tra
+  // giocate e da giocare, e i due pezzi restano dove il lettore li cerca.
+  const giornate: { etichetta: string; partite: PartitaLista[] }[] = [];
+  for (const p of partite) {
+    const etichetta = contestoPartita(p);
+    const ultima = giornate.at(-1);
+    if (ultima && ultima.etichetta === etichetta) ultima.partite.push(p);
+    else giornate.push({ etichetta, partite: [p] });
+  }
 
   const url = (patch: { s?: number; f?: string }) => {
     const query = new URLSearchParams();
@@ -97,11 +111,23 @@ export default async function CalendarioPage({
         {haPartiteDaGiocare(partite) ? "prima le prossime" : "dalla più recente"}
       </p>
 
-      {/* Su desktop due colonne: si legge riga per riga, la cronologia
-          scorre in orizzontale prima di andare a capo */}
-      <div className="grid gap-2.5 lg:grid-cols-2">
-        {partite.map((p) => (
-          <PartitaCard key={p.id} partita={p} />
+      {/* Una sezione per giornata, con l'etichetta una volta sola in testa
+          e le card senza contesto. Su desktop due colonne: si legge riga
+          per riga, la cronologia scorre in orizzontale prima di andare a
+          capo. La chiave porta l'indice: la stessa etichetta può tornare
+          (andata/ritorno, giornata spezzata). */}
+      <div className="flex flex-col gap-7">
+        {giornate.map((g, i) => (
+          <section key={`${g.etichetta}-${i}`} className="flex flex-col gap-2.5">
+            <h2 className="eyebrow border-b border-border pb-1.5">
+              {g.etichetta}
+            </h2>
+            <div className="grid gap-2.5 lg:grid-cols-2">
+              {g.partite.map((p) => (
+                <PartitaCard key={p.id} partita={p} senzaContesto />
+              ))}
+            </div>
+          </section>
         ))}
       </div>
     </main>

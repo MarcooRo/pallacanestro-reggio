@@ -59,7 +59,15 @@ function RigaSquadra({
   );
 }
 
-export function PartitaCard({ partita }: { partita: PartitaLista }) {
+export function PartitaCard({
+  partita,
+  senzaContesto = false,
+}: {
+  partita: PartitaLista;
+  /** Nel calendario la giornata è già nell'intestazione del gruppo:
+   *  la fascia tiene solo la data, senza ripeterla su ogni card. */
+  senzaContesto?: boolean;
+}) {
   const giocata = partita.status === "finished";
   const inCorso = partita.status === "live";
   const punti =
@@ -78,8 +86,10 @@ export function PartitaCard({ partita }: { partita: PartitaLista }) {
           Prima la giornata e poi la competizione: se lo spazio finisce si
           taglia la parte che si sapeva già, non "Quarti di finale". */}
       <div className="fascia flex items-baseline justify-between gap-2 border-b border-border px-3 py-2">
-        <span className="truncate font-bold">{contestoPartita(partita)}</span>
-        <span className="shrink-0">
+        {!senzaContesto && (
+          <span className="truncate font-bold">{contestoPartita(partita)}</span>
+        )}
+        <span className="ml-auto shrink-0">
           {inCorso ? (
             <span className="flex items-center gap-1.5 font-bold text-brand-vivid">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-vivid" />

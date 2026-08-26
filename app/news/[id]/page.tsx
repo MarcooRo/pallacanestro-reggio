@@ -5,7 +5,11 @@ import { notFound, redirect } from "next/navigation";
 import { branding } from "@/src/branding";
 import { Condividi } from "@/src/components/condividi";
 import { CorpoArticolo } from "@/src/components/corpo-articolo";
-import { fonteDiCasa, nomeFonte } from "@/src/lib/news/etichette";
+import {
+  descrizioneFonte,
+  fonteDiCasa,
+  nomeFonte,
+} from "@/src/lib/news/etichette";
 import { TornaIndietro } from "@/src/components/torna-indietro";
 import { dataBreve } from "@/src/lib/date";
 import { getCorpoNews } from "@/src/lib/news/articolo";
@@ -153,7 +157,7 @@ export default async function NewsLetturaPage({
 
         <h1 className="display text-3xl">{item.title}</h1>
 
-        {nostro && (
+        {nostro ? (
           <div className="flex flex-col gap-0.5">
             {item.authorName && (
               <p className="text-sm font-semibold">di {item.authorName}</p>
@@ -161,6 +165,12 @@ export default async function NewsLetturaPage({
             {/* Dichiarato in chiaro, in piccolo: chi legge sa com'è nato il testo */}
             <p className="text-[11px] text-muted">Generato in parte con AI</p>
           </div>
+        ) : (
+          // Il testo non è nostro e va detto subito, non solo in fondo:
+          // stessa posizione della firma sugli articoli di redazione.
+          <p className="text-sm text-muted">
+            Articolo {descrizioneFonte[item.source] ?? `da ${fonte}`}
+          </p>
         )}
 
         {item.imageUrl && (
@@ -202,18 +212,29 @@ export default async function NewsLetturaPage({
           titolo={item.title}
         />
 
-        {/* La fonte si cita sempre, e il link è la scappatoia se il
-            corpo non è arrivato. Un articolo nostro non ha nessun altrove:
-            la fonte è questa pagina. */}
-        {item.url && (
-          <a
-            href={item.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="eyebrow self-start transition-colors hover:text-brand-vivid"
-          >
-            Fonte: {fonte} ↗
-          </a>
+        {/* La fonte si cita sempre, per esteso, e il link all'originale
+            è la scappatoia se il corpo non è arrivato. Un articolo
+            nostro non ha nessun altrove: la fonte è questa pagina. */}
+        {!nostro && (
+          <div className="taglio-sm card flex flex-col gap-1.5 p-4">
+            <p className="eyebrow">Fonte</p>
+            <p className="text-sm text-muted">
+              Questo articolo arriva{" "}
+              {descrizioneFonte[item.source] ?? `da ${fonte}`}: il testo è
+              di <span className="font-semibold text-foreground">{fonte}</span>,
+              riportato qui integralmente.
+            </p>
+            {item.url && (
+              <a
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="eyebrow self-start text-brand-vivid transition-colors hover:text-foreground"
+              >
+                leggi l&apos;originale su {fonte} ↗
+              </a>
+            )}
+          </div>
         )}
       </article>
     </main>

@@ -17,6 +17,14 @@ export const nomeFonte: Record<string, string> = {
   redazione: "Redazione",
 };
 
+// Da dove arriva il testo, detto per esteso: la pagina dell'articolo lo
+// dichiara sotto il titolo e nel riquadro fonte in fondo. Frasi già
+// complete di preposizione, da accodare a "Articolo …".
+export const descrizioneFonte: Record<string, string> = {
+  lba: "dal sito ufficiale della Lega Basket Serie A",
+  pr_wordpress: "dal sito ufficiale della Pallacanestro Reggiana",
+};
+
 /** Le fonti "di casa": in lista si riconoscono dal filo rosso a sinistra. */
 export function fonteDiCasa(source: string): boolean {
   return source === "pr_wordpress" || source === "redazione";

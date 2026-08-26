@@ -44,6 +44,12 @@ export default async function AdminSocialPage() {
         I post preparati dall&apos;AI arrivano qui come bozze: si approvano da
         questa pagina, mai da fuori.
       </p>
+      <Link
+        href="/admin/social/template"
+        className="self-start text-sm font-semibold text-brand-vivid hover:text-brand"
+      >
+        Guarda tutti i template grafici →
+      </Link>
 
       {righe.length === 0 && (
         <p className="rounded-md border border-border p-4 text-sm text-muted">

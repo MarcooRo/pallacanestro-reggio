@@ -9,6 +9,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { branding } from "@/src/branding";
+import { FormSostituisciSlide } from "@/src/components/form-sostituisci-slide";
 import { richiediAdmin } from "@/src/lib/identita/admin";
 import { dataOra } from "@/src/lib/date";
 import {
@@ -87,11 +88,14 @@ export default async function DettaglioPostPage({
                 className="h-auto w-full rounded-md border border-border"
               />
               <figcaption className="text-xs text-muted">
-                {m.position + 1} · {m.template}
+                {m.position + 1} · {m.template ?? "foto"}
                 {m.renderedAt
                   ? ` · JPEG del ${dataOra(m.renderedAt)}`
                   : " · non ancora renderizzata (anteprima dal template)"}
               </figcaption>
+              {/* La grafica non convince? La slide si sostituisce con una
+                  foto caricata al volo, che entra anche in libreria. */}
+              {bozza && <FormSostituisciSlide postId={post.id} itemId={m.id} />}
             </figure>
           ))}
         </div>

@@ -11,9 +11,13 @@ import { z } from "zod";
 
 import { branding } from "@/src/branding";
 
+import { SfondoFoto } from "../sfondo-foto";
 import type { TemplateOg } from "../tipi";
 
 const schema = z.strictObject({
+  /** Foto di sfondo opzionale, sotto un velo scuro. In una composizione
+      {assetId, template} si compila da solo con l'url dell'asset. */
+  imageUrl: z.url().optional(),
   homeTeam: z.string().min(1),
   awayTeam: z.string().min(1),
   homeScore: z.number().int().min(0),
@@ -59,12 +63,14 @@ function render(p: Params) {
         height: "100%",
         display: "flex",
         flexDirection: "column",
+        position: "relative",
         backgroundColor: colori.scuro,
         color: "#ffffff",
         fontFamily: "Archivo",
         padding: "72px 80px 64px",
       }}
     >
+      {p.imageUrl && <SfondoFoto url={p.imageUrl} />}
       {/* Il punteggio: contesto, secondario */}
       <div
         style={{
@@ -194,7 +200,7 @@ function render(p: Params) {
 export const migliorePartita: TemplateOg<Params> = {
   nome: "migliore-partita",
   descrizione:
-    "Il migliore della partita votato dalla curva: cognome del vincitore gigante, percentuale sotto (solo se showPercent), punteggio piccolo in alto, eventuali 2° e 3° in una riga sottile in basso. showPercent va messo a false sotto i 30 votanti.",
+    "Il migliore della partita votato dalla curva: cognome del vincitore gigante, percentuale sotto (solo se showPercent), punteggio piccolo in alto, eventuali 2° e 3° in una riga sottile in basso. showPercent va messo a false sotto i 30 votanti. Sfondo fotografico opzionale sotto un velo scuro: usalo come composizione {assetId, template} con una foto della libreria (ideale: il giocatore vincitore o la partita) — dà molta più vita del fondo piatto.",
   formato: "feed",
   schema,
   esempio: {

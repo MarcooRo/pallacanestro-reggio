@@ -6,9 +6,13 @@ import { z } from "zod";
 
 import { branding } from "@/src/branding";
 
+import { SfondoFoto } from "../sfondo-foto";
 import type { TemplateOg } from "../tipi";
 
 const schema = z.strictObject({
+  /** Foto di sfondo opzionale, sotto un velo scuro. In una composizione
+      {assetId, template} si compila da solo con l'url dell'asset. */
+  imageUrl: z.url().optional(),
   name: z.string(),
   surname: z.string().min(1),
   /** Come testo: "00" è un numero di maglia legittimo */
@@ -44,12 +48,14 @@ function render(p: Params) {
         height: "100%",
         display: "flex",
         flexDirection: "column",
+        position: "relative",
         backgroundColor: colori.scuro,
         color: "#ffffff",
         fontFamily: "Archivo",
         padding: "72px 80px",
       }}
     >
+      {p.imageUrl && <SfondoFoto url={p.imageUrl} />}
       {/* Testata: numero e ruolo */}
       <div
         style={{
@@ -177,7 +183,7 @@ function render(p: Params) {
 export const schedaGiocatore: TemplateOg<Params> = {
   nome: "scheda-giocatore",
   descrizione:
-    "Scheda statistica di un giocatore: numero e ruolo in alto, cognome gigante, griglia di 3-5 statistiche con valori molto grandi. Nessuna foto, solo tipografia. subtitle opzionale (es. la partita o il periodo a cui si riferiscono i numeri).",
+    "Scheda statistica di un giocatore: numero e ruolo in alto, cognome gigante, griglia di 3-5 statistiche con valori molto grandi. subtitle opzionale (es. la partita o il periodo a cui si riferiscono i numeri). Sfondo fotografico opzionale sotto un velo scuro: usalo come composizione {assetId, template} con una foto del giocatore dalla libreria — molto meglio del fondo piatto quando la foto c'è.",
   formato: "feed",
   schema,
   esempio: {

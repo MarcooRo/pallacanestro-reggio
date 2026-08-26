@@ -1,14 +1,20 @@
-// Rilancio di una notizia CON PAROLE NOSTRE: solo tipografia su fondo
-// scuro, nessuna immagine — così si cita la fonte senza ripubblicarne le
-// foto di agenzia. La fonte va in piccolo in fondo, sempre.
+// Rilancio di una notizia CON PAROLE NOSTRE: tipografia su fondo scuro,
+// così si cita la fonte senza ripubblicarne le foto di agenzia. La fonte
+// va in piccolo in fondo, sempre. Lo sfondo fotografico opzionale NON
+// cambia la regola: solo foto NOSTRE dalla libreria, mai della fonte.
 
 import { z } from "zod";
 
 import { branding } from "@/src/branding";
 
+import { SfondoFoto } from "../sfondo-foto";
 import type { TemplateOg } from "../tipi";
 
 const schema = z.strictObject({
+  /** Foto di sfondo opzionale, sotto un velo scuro: SOLO foto nostre
+      dalla libreria, mai foto della fonte. In una composizione
+      {assetId, template} si compila da solo con l'url dell'asset. */
+  imageUrl: z.url().optional(),
   /** Riga piccola sopra il testo, es. "MERCATO" o "SERIE A" */
   overline: z.string().min(1),
   /** Il contenuto, riscritto con parole nostre: MAI il testo della fonte */
@@ -35,12 +41,14 @@ function render(p: Params) {
         height: "100%",
         display: "flex",
         flexDirection: "column",
+        position: "relative",
         backgroundColor: colori.scuro,
         color: "#ffffff",
         fontFamily: "Archivo",
         padding: "72px 80px",
       }}
     >
+      {p.imageUrl && <SfondoFoto url={p.imageUrl} />}
       <div
         style={{
           display: "flex",
@@ -93,7 +101,7 @@ function render(p: Params) {
 export const citazioneNotizia: TemplateOg<Params> = {
   nome: "citazione-notizia",
   descrizione:
-    "Rilancio testuale di una notizia letta altrove, riscritta con parole nostre: overline d'accento, testo grande su fondo scuro, testata citata in piccolo in fondo. Nessuna immagine: serve proprio a NON ripubblicare foto di agenzia. Il campo text va riscritto, mai copiato dalla fonte.",
+    "Rilancio testuale di una notizia letta altrove, riscritta con parole nostre: overline d'accento, testo grande su fondo scuro, testata citata in piccolo in fondo. Il campo text va riscritto, mai copiato dalla fonte. Sfondo fotografico opzionale sotto un velo scuro, SOLO con foto nostre della libreria (composizione {assetId, template}): serve a dare vita alla grafica senza MAI ripubblicare foto di agenzia o della fonte.",
   formato: "feed",
   schema,
   esempio: {

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { LogoClub } from "@/src/components/logo-club";
 import { NewsRiga } from "@/src/components/news-riga";
 import { NewsRiquadro } from "@/src/components/news-riquadro";
+import { NewsTessera } from "@/src/components/news-tessera";
 import { PartitaCard } from "@/src/components/partita-card";
 import { Pagella } from "@/src/components/pagella";
 import { VideoCard } from "@/src/components/video-card";
@@ -31,9 +32,10 @@ export default async function HomePage() {
   return <HomeContenuti />;
 }
 
-// Quante notizie entrano in ogni spazio: Qui Reggio quattro a coppie
-// (due righe), la coda chiude con tutto quello che resta.
-const QUI_REGGIO = 4;
+// Quante notizie entrano in ogni spazio: Qui Reggio tre — la più
+// fresca grande, le altre due piccole — la coda chiude con tutto
+// quello che resta.
+const QUI_REGGIO = 3;
 const CODA = 12;
 
 // L'apertura è il pezzo della redazione: è il contenuto più nostro che
@@ -242,17 +244,22 @@ async function HomeContenuti() {
         </div>
       </section>
 
-      {/* ── Seconda riga: la cronaca di Reggio a coppie (due colonne di
-          righe) e accanto la classifica del campionato. Sei articoli e
-          sei squadre: le due colonne chiudono naturalmente alla pari,
-          senza stirare le righe. ── */}
+      {/* ── Seconda riga: la cronaca di Reggio a tessere — la notizia
+          più fresca grande a sinistra, le altre due impilate accanto —
+          e a destra la classifica del campionato. La griglia si stira
+          all'altezza della classifica: sono le foto a crescere. ── */}
       <section className="sale sale-3 grid gap-8 lg:grid-cols-3 lg:gap-6">
         <div className="flex flex-col gap-3 lg:col-span-2">
           <TitoloSezione titolo="Qui Reggio" href="/news?f=reggio" link="tutte" />
           {quiReggio.length > 0 ? (
-            <div className="grid flex-1 lg:grid-cols-2 lg:gap-x-8">
-              {quiReggio.map((n) => (
-                <NewsRiga key={n.id} item={n} fotoSempre />
+            <div className="grid flex-1 gap-2.5 lg:grid-cols-2 lg:grid-rows-2">
+              <NewsTessera
+                item={quiReggio[0]}
+                grande
+                className="min-h-[16rem] lg:row-span-2 lg:min-h-[22rem]"
+              />
+              {quiReggio.slice(1).map((n) => (
+                <NewsTessera key={n.id} item={n} className="min-h-[10rem]" />
               ))}
             </div>
           ) : (

@@ -128,6 +128,9 @@ export default async function NewsLetturaPage({
   const nostro = item.source === "redazione";
   const paragrafi = nostro ? null : await getCorpoNews(item);
   const fonte = nomeFonte[item.source] ?? item.source;
+  // L'indirizzo canonico (slug quando c'è): è quello che si condivide
+  // e che finisce nei dati strutturati — un solo link in giro.
+  const canonical = `${urlSito()}/news/${item.slug ?? item.id}`;
   // Le foto dentro il corpo: il blocco porta l'id, url e misure stanno in
   // libreria (misure vere = nessun salto di layout mentre carica).
   const immagini = nostro ? await risolviImmaginiCorpo(item.body) : {};
@@ -140,7 +143,7 @@ export default async function NewsLetturaPage({
       {nostro && (
         <DatiStrutturati
           articolo={item}
-          url={`${urlSito()}/news/${item.slug ?? item.id}`}
+          url={canonical}
           immaginiCorpo={urlImmaginiCorpo(item.body, immagini)}
         />
       )}
@@ -158,13 +161,9 @@ export default async function NewsLetturaPage({
         <h1 className="display text-3xl">{item.title}</h1>
 
         {nostro ? (
-          <div className="flex flex-col gap-0.5">
-            {item.authorName && (
-              <p className="text-sm font-semibold">di {item.authorName}</p>
-            )}
-            {/* Dichiarato in chiaro, in piccolo: chi legge sa com'è nato il testo */}
-            <p className="text-[11px] text-muted">Generato in parte con AI</p>
-          </div>
+          item.authorName && (
+            <p className="text-sm font-semibold">di {item.authorName}</p>
+          )
         ) : (
           // Il testo non è nostro e va detto subito, non solo in fondo:
           // stessa posizione della firma sugli articoli di redazione.
@@ -186,6 +185,10 @@ export default async function NewsLetturaPage({
           />
         )}
 
+        {/* Condividi anche qui, prima del corpo: chi gira il link spesso
+            non arriva in fondo. In fondo c'è il gemello per chi ha letto. */}
+        <Condividi url={canonical} titolo={item.title} />
+
         {nostro && item.body ? (
           <CorpoArticolo blocchi={item.body} immagini={immagini} grafici={grafici} />
         ) : paragrafi ? (
@@ -205,12 +208,7 @@ export default async function NewsLetturaPage({
           </div>
         )}
 
-        {/* Si condivide sempre il canonical (slug quando c'è), non
-            l'indirizzo con cui si è arrivati: un solo link in giro. */}
-        <Condividi
-          url={`${urlSito()}/news/${item.slug ?? item.id}`}
-          titolo={item.title}
-        />
+        <Condividi url={canonical} titolo={item.title} />
 
         {/* La fonte si cita sempre, per esteso, e il link all'originale
             è la scappatoia se il corpo non è arrivato. Un articolo
@@ -235,6 +233,12 @@ export default async function NewsLetturaPage({
               </a>
             )}
           </div>
+        )}
+
+        {/* Dichiarato in chiaro, in chiusura: chi legge sa com'è nato
+            il testo. Sta in fondo per non pesare sull'attacco. */}
+        {nostro && (
+          <p className="text-[11px] text-muted">Generato in parte con AI</p>
         )}
       </article>
     </main>

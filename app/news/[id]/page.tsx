@@ -3,6 +3,7 @@ import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
 
 import { branding } from "@/src/branding";
+import { Condividi } from "@/src/components/condividi";
 import { CorpoArticolo } from "@/src/components/corpo-articolo";
 import { fonteDiCasa, nomeFonte } from "@/src/lib/news/etichette";
 import { TornaIndietro } from "@/src/components/torna-indietro";
@@ -193,6 +194,13 @@ export default async function NewsLetturaPage({
             </p>
           </div>
         )}
+
+        {/* Si condivide sempre il canonical (slug quando c'è), non
+            l'indirizzo con cui si è arrivati: un solo link in giro. */}
+        <Condividi
+          url={`${urlSito()}/news/${item.slug ?? item.id}`}
+          titolo={item.title}
+        />
 
         {/* La fonte si cita sempre, e il link è la scappatoia se il
             corpo non è arrivato. Un articolo nostro non ha nessun altrove:

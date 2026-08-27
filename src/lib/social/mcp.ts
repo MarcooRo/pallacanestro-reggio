@@ -50,7 +50,11 @@ const INPUT = {
   list_og_templates: z.strictObject({}),
   preview_media: previewInput,
   queue_post: z.strictObject({
-    platform: z.enum(PIATTAFORME),
+    platform: z
+      .enum(PIATTAFORME)
+      .describe(
+        "Una piattaforma per post. Stesso contenuto su più piattaforme = un post per ciascuna, con caption adattata: Instagram vuole hashtag e niente link; Facebook pochi hashtag e i link funzionano (es. l'articolo su tiforeggiana.it)",
+      ),
     caption: z.string().default(""),
     hashtags: z.array(z.string()).default([]),
     media: z
@@ -126,7 +130,7 @@ export const DESCRIZIONI: Record<keyof typeof INPUT, string> = {
   preview_media:
     "URL firmato dell'anteprima di un'immagine (template + params) senza creare nulla in database.",
   queue_post:
-    "Crea un post in stato draft con le sue immagini e le renderizza. Il post NON viene pubblicato: lo approva l'admin dalla pagina /admin/social.",
+    "Crea un post in stato draft con le sue immagini e le renderizza. Il post NON viene pubblicato: lo approva l'admin dalla pagina /admin/social. Piattaforme: instagram_feed, instagram_story (una sola immagine, meglio se formato story 1080×1920) e facebook. Per uscire su più piattaforme crea un post per ciascuna, differenziando la caption.",
   list_posts: "Elenca i post in coda, filtrabili per stato e piattaforma.",
   get_post: "Dettaglio completo di un post: stato, caption, slide, anteprime.",
   update_post:

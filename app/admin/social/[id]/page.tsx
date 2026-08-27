@@ -15,6 +15,7 @@ import { dataOra } from "@/src/lib/date";
 import {
   approvaPost,
   archiviaPost,
+  duplicaPost,
   modificaPost,
   rigeneraImmagini,
 } from "@/src/lib/social/actions";
@@ -23,8 +24,13 @@ import { getPostSocial, urlAnteprima } from "@/src/lib/social/queries";
 
 export const metadata: Metadata = { title: "Admin · Social" };
 
-// Instagram tronca la caption nel feed intorno ai 125 caratteri.
-const TAGLIO_INSTAGRAM = 125;
+// Punto del "… altro" nel feed: Instagram intorno ai 125 caratteri,
+// Facebook molto più in là (circa 400).
+const TAGLIO_PIATTAFORMA: Record<string, number> = {
+  instagram_feed: 125,
+  instagram_story: 125,
+  facebook: 400,
+};
 
 export default async function DettaglioPostPage({
   params,
@@ -120,7 +126,11 @@ export default async function DettaglioPostPage({
         </div>
       </section>
 
-      <CaptionInstagram caption={post.caption} hashtags={post.hashtags} />
+      <AnteprimaCaption
+        caption={post.caption}
+        hashtags={post.hashtags}
+        platform={post.platform}
+      />
 
       {post.notes && (
         <section className="flex flex-col gap-2">
@@ -195,6 +205,42 @@ export default async function DettaglioPostPage({
           </form>
         )}
 
+        {/* Stesso contenuto su un'altra piattaforma: la copia nasce bozza,
+            così caption e hashtag si adattano prima di approvare. Le story
+            hanno una sola immagine: per un carosello l'opzione non appare. */}
+        <form
+          action={duplicaPost}
+          className="flex flex-wrap items-center gap-2 rounded-md border border-border p-3"
+        >
+          <input type="hidden" name="postId" value={post.id} />
+          <label className="flex items-center gap-2 text-sm">
+            Duplica per
+            <select
+              name="platform"
+              className="rounded-md border border-border bg-transparent px-2 py-1 text-sm"
+            >
+              {Object.entries(NOME_PIATTAFORMA)
+                .filter(
+                  ([valore]) =>
+                    valore !== post.platform &&
+                    !(valore === "instagram_story" && media.length > 1),
+                )
+                .map(([valore, nome]) => (
+                  <option key={valore} value={valore}>
+                    {nome}
+                  </option>
+                ))}
+            </select>
+          </label>
+          <button type="submit" className="btn-admin btn-admin-bordo">
+            Crea bozza
+          </button>
+          <p className="w-full text-xs text-muted">
+            Copia immagini, caption e hashtag in una nuova bozza da adattare
+            (Facebook: link ok e pochi hashtag; Instagram: hashtag, niente link).
+          </p>
+        </form>
+
         <div className="flex flex-wrap gap-2">
           <form action={rigeneraImmagini}>
             <input type="hidden" name="postId" value={post.id} />
@@ -223,24 +269,30 @@ export default async function DettaglioPostPage({
 }
 
 // La caption come apparirà davvero: larghezza da feed (~470px), font di
-// sistema come Instagram, taglio "… altro" al punto giusto. Gli hashtag
+// sistema, taglio "… altro" al punto giusto della piattaforma. Gli hashtag
 // fanno parte del testo pubblicato, quindi contano nel taglio.
-function CaptionInstagram({
+function AnteprimaCaption({
   caption,
   hashtags,
+  platform,
 }: {
   caption: string;
   hashtags: string[];
+  platform: string;
 }) {
+  const taglio = TAGLIO_PIATTAFORMA[platform] ?? 125;
   const testo = [caption.trim(), hashtags.join(" ")].filter(Boolean).join("\n\n");
-  const tagliata = testo.length > TAGLIO_INSTAGRAM;
-  const visibile = tagliata ? testo.slice(0, TAGLIO_INSTAGRAM).trimEnd() : testo;
-  const utente = branding.appShortName.toLowerCase().replaceAll(" ", "");
+  const tagliata = testo.length > taglio;
+  const visibile = tagliata ? testo.slice(0, taglio).trimEnd() : testo;
+  const utente =
+    platform === "facebook"
+      ? branding.appShortName
+      : branding.appShortName.toLowerCase().replaceAll(" ", "");
 
   return (
     <section className="flex flex-col gap-2">
       <h2 className="text-sm font-black uppercase tracking-wide">
-        Caption come su Instagram
+        Caption come su {platform === "facebook" ? "Facebook" : "Instagram"}
       </h2>
       <div className="max-w-[470px] rounded-md border border-border p-3 font-sans text-[14px] leading-[18px]">
         <p className="whitespace-pre-wrap">

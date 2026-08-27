@@ -4,7 +4,7 @@
 // action: il client non decide niente. L'unica strada verso 'approved'
 // è approvaPost — l'MCP per costruzione scrive solo draft e archived.
 
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -167,6 +167,76 @@ export async function rigeneraImmagini(formData: FormData) {
     esito(postId, `Render fallito: ${err instanceof Error ? err.message : err}`);
   }
   esito(postId, "Immagini rigenerate");
+}
+
+// Duplica un post verso un'altra piattaforma: bozza nuova con caption,
+// hashtag e slide copiate, render rifatto (le chiavi dei JPEG contengono
+// il postId: condividerle legherebbe i due post). Si duplica da qualunque
+// stato — il caso tipico è il post IG già pubblicato da rifare per
+// Facebook — e la copia nasce sempre draft: caption e hashtag si adattano
+// alla piattaforma prima di approvare.
+export async function duplicaPost(formData: FormData) {
+  await richiediAdmin();
+  const postId = uuid.parse(formData.get("postId"));
+  const platform = z
+    .enum(["instagram_feed", "instagram_story", "facebook"])
+    .parse(formData.get("platform"));
+
+  const [post] = await db
+    .select()
+    .from(socialPosts)
+    .where(eq(socialPosts.id, postId))
+    .limit(1);
+  if (!post) esito(postId, "Il post da duplicare non esiste più");
+  if (post.platform === platform) {
+    esito(postId, "Il post è già per questa piattaforma: scegline un'altra");
+  }
+
+  const media = await db
+    .select()
+    .from(socialMediaItems)
+    .where(eq(socialMediaItems.postId, postId))
+    .orderBy(asc(socialMediaItems.position));
+  if (media.length === 0) esito(postId, "Il post non ha immagini: niente da duplicare");
+  if (platform === "instagram_story" && media.length > 1) {
+    esito(postId, "Una story ha una sola immagine: questo post è un carosello");
+  }
+
+  const [copia] = await db
+    .insert(socialPosts)
+    .values({
+      status: "draft",
+      platform,
+      kind: media.length > 1 ? "carousel" : "single",
+      caption: post.caption,
+      hashtags: post.hashtags,
+      notes: [`Duplicato per ${platform} dal post ${post.id}.`, post.notes]
+        .filter(Boolean)
+        .join("\n\n"),
+      source: "admin",
+    })
+    .returning({ id: socialPosts.id });
+
+  await db.insert(socialMediaItems).values(
+    media.map((m, i) => ({
+      postId: copia.id,
+      position: i,
+      kind: m.kind,
+      assetId: m.assetId,
+      template: m.template,
+      params: m.params,
+      width: m.width,
+      height: m.height,
+    })),
+  );
+
+  let messaggio = "Bozza duplicata: adatta caption e hashtag alla piattaforma";
+  try {
+    await renderizzaPost(copia.id);
+  } catch (err) {
+    messaggio = `Bozza duplicata, ma il render è fallito: ${err instanceof Error ? err.message : err}. Riprova con "Rigenera immagini"`;
+  }
+  esito(copia.id, messaggio);
 }
 
 export async function archiviaPost(formData: FormData) {

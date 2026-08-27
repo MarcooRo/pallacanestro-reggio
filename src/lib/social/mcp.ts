@@ -497,8 +497,23 @@ export async function eseguiToolMcp(
   } catch (err) {
     if (err instanceof ErroreTool) return { testo: err.message, errore: true };
     const messaggio = err instanceof Error ? err.message : String(err);
+    // L'errore Drizzle mostra la query ma nasconde la causa Postgres nel
+    // cause: senza codice e constraint la diagnosi dal client è cieca.
+    let causa = "";
+    if (err instanceof Error && err.cause instanceof Error) {
+      const c = err.cause as Error &
+        Partial<{ code: string; constraint_name: string; detail: string }>;
+      const dettagli = [
+        c.code ? `codice ${c.code}` : null,
+        c.constraint_name ? `constraint ${c.constraint_name}` : null,
+        c.detail ?? null,
+      ]
+        .filter(Boolean)
+        .join(", ");
+      causa = ` Causa: ${c.message}${dettagli ? ` (${dettagli})` : ""}.`;
+    }
     return {
-      testo: `Errore interno in ${nome}: ${messaggio}. Riprova; se persiste segnalalo all'admin nelle note di un post o direttamente.`,
+      testo: `Errore interno in ${nome}: ${messaggio}.${causa} Riprova; se persiste segnalalo all'admin nelle note di un post o direttamente.`,
       errore: true,
     };
   }

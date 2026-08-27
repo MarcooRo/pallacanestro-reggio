@@ -118,15 +118,17 @@ export async function jobPromemoria() {
   return { avvisate };
 }
 
-// Orchestratore per il piano Hobby di Vercel (un solo cron giornaliero):
-// esegue tutto in sequenza; le anagrafiche solo il lunedì.
+// Orchestratore del cron giornaliero: esegue tutto in sequenza. Le
+// anagrafiche giravano solo il lunedì (prudenza verso la fonte), ma in
+// piena stagione di mercato il roster cambia in settimana e i nuovi
+// arrivi comparivano sul sito con giorni di ritardo: da 27/08 ogni giorno,
+// tanto è una sola passata sul club di casa.
 export async function jobGiornaliero() {
   const calendario = await jobCalendario();
   const tabellini = await jobTabellini(20);
   const news = await jobNews();
   const promemoria = await jobPromemoria();
-  const anagrafiche =
-    new Date().getUTCDay() === 1 ? await jobAnagrafiche() : "salta (non è lunedì)";
+  const anagrafiche = await jobAnagrafiche();
 
   return { calendario, tabellini, news, promemoria, anagrafiche };
 }

@@ -44,7 +44,12 @@ function erroreRpc(id: MessaggioJsonRpc["id"], code: number, message: string) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!bearerMcpValido(request.headers.get("authorization"))) {
+  if (
+    !bearerMcpValido(
+      request.headers.get("authorization"),
+      request.nextUrl.searchParams.get("key"),
+    )
+  ) {
     return NextResponse.json(
       { errore: "bearer token mancante o sbagliato (header Authorization: Bearer <MCP_BEARER_TOKEN>)" },
       { status: 401 },

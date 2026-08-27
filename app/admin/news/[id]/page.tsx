@@ -13,6 +13,7 @@ import { richiediAdmin } from "@/src/lib/identita/admin";
 import { dataOra } from "@/src/lib/date";
 import {
   archiviaArticoloAction,
+  eliminaArticoloAction,
   correggiTestata,
   fissaInAlto,
   pubblicaArticolo,
@@ -226,6 +227,17 @@ export default async function DettaglioArticoloPage({
                 className="btn-admin btn-admin-bordo"
               >
                 Archivia
+              </button>
+            </form>
+          )}
+          {(articolo.status === "draft" || articolo.status === "archived") && (
+            <form action={eliminaArticoloAction}>
+              <input type="hidden" name="id" value={articolo.id} />
+              <button
+                type="submit"
+                className="btn-admin btn-admin-bordo"
+              >
+                Elimina definitivamente
               </button>
             </form>
           )}

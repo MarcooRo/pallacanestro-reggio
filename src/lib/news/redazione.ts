@@ -225,6 +225,20 @@ export async function archiviaArticolo(id: string): Promise<Articolo> {
   return riga ?? articolo;
 }
 
+// Cancellazione definitiva: solo bozze e archiviati, per costruzione.
+// Un pubblicato prima si archivia (esce dal sito), poi si può eliminare:
+// il gesto distruttivo è sempre in due tempi. La copertina e le foto del
+// corpo restano in libreria: appartengono all'archivio, non all'articolo.
+export async function eliminaArticolo(id: string): Promise<void> {
+  const articolo = await getArticolo(id);
+  if (articolo.status !== "draft" && articolo.status !== "archived") {
+    throw new ErroreArticolo(
+      `L'articolo è in stato "${articolo.status}": si eliminano solo bozze e archiviati. Se è pubblicato, prima archivialo.`,
+    );
+  }
+  await db.delete(news).where(eq(news.id, id));
+}
+
 /** Gli articoli nostri per l'admin, in lavorazione prima di tutto. */
 export async function elencaArticoli(stato?: string) {
   return db

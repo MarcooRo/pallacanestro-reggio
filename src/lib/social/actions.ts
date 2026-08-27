@@ -14,6 +14,7 @@ import { socialMediaItems, socialPosts } from "@/src/db/schema";
 import { richiediAdmin } from "@/src/lib/identita/admin";
 import { dataDaRoma } from "@/src/lib/date";
 import { caricaAsset } from "@/src/lib/media/libreria";
+import { eliminaPost } from "@/src/lib/social/elimina";
 import { fuoriProporzioni } from "@/src/lib/social/forme";
 import { renderizzaPost } from "@/src/lib/social/render";
 
@@ -247,4 +248,20 @@ export async function archiviaPost(formData: FormData) {
     .set({ status: "archived", updatedAt: new Date() })
     .where(eq(socialPosts.id, postId));
   esito(postId, "Archiviato");
+}
+
+// Cancellazione definitiva (solo bozze e archiviati: il controllo vive in
+// eliminaPost). Il redirect va alla coda: la pagina del post non c'è più.
+export async function eliminaPostAction(formData: FormData) {
+  await richiediAdmin();
+  const postId = uuid.parse(formData.get("postId"));
+  try {
+    await eliminaPost(postId);
+  } catch (err) {
+    esito(postId, err instanceof Error ? err.message : String(err));
+  }
+  revalidatePath("/admin/social");
+  redirect(
+    `/admin/social?esito=${encodeURIComponent("Post eliminato definitivamente")}`,
+  );
 }

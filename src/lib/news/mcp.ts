@@ -21,6 +21,7 @@ import {
   archiviaArticolo,
   creaBozza,
   elencaArticoli,
+  eliminaArticolo,
   ErroreArticolo,
   getArticolo,
   type Articolo,
@@ -84,6 +85,7 @@ const INPUT = {
     assetId: z.string().uuid().nullable().optional().describe("null toglie la copertina"),
   }),
   archive_article: z.strictObject({ id: z.string().uuid() }),
+  delete_article: z.strictObject({ id: z.string().uuid() }),
   list_article_blocks: z.strictObject({}),
   list_matches: z.strictObject({
     limite: z
@@ -120,7 +122,9 @@ export const DESCRIZIONI_NEWS: Record<keyof typeof INPUT, string> = {
   update_article:
     "Corregge un articolo ANCORA in bozza: titolo, corpo (foto e widget compresi), sommario, rubrica, firma, copertina. Dopo la pubblicazione non si tocca più da qui.",
   archive_article:
-    "Archivia un articolo: se era pubblicato esce dal sito, se era una bozza esce dalla lista di lavoro.",
+    "Archivia un articolo: se era pubblicato esce dal sito, se era una bozza esce dalla lista di lavoro. Recuperabile.",
+  delete_article:
+    "Elimina DEFINITIVAMENTE un articolo in bozza o archiviato (copertina e foto restano in libreria). Irreversibile: se basta toglierlo di mezzo usa archive_article. Un pubblicato prima si archivia.",
   list_article_blocks:
     "I widget grafici che puoi mettere dentro un articolo, con schema JSON dei parametri ed esempio valido. Vanno nel corpo come blocchi {t:'grafico', tipo, params}. Chiamalo prima di usarne uno: i nomi non si indovinano.",
   list_matches:
@@ -201,6 +205,16 @@ const TOOL: Record<
   async archive_article(input: z.output<(typeof INPUT)["archive_article"]>, ctx: Contesto) {
     const articolo = await archiviaArticolo(input.id);
     return { articolo: esponiArticolo(articolo, ctx.base) };
+  },
+
+  // L'unico gesto distruttivo del layer: ammesso solo su bozze e archiviati
+  // (il controllo vive in eliminaArticolo, condiviso con l'action admin).
+  async delete_article(input: z.output<(typeof INPUT)["delete_article"]>) {
+    await eliminaArticolo(input.id);
+    return {
+      eliminato: input.id,
+      nota: "Articolo eliminato definitivamente. Copertina e foto restano in libreria.",
+    };
   },
 
   // Stessa forma di list_og_templates per le grafiche social: il registry è

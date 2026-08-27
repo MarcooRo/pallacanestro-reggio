@@ -26,6 +26,7 @@ import {
 import { ErroreScarico } from "@/src/lib/media/scarica";
 import { signOgUrl } from "@/src/lib/og/firma";
 import { dimensioniTemplate, tuttiTemplateOg } from "@/src/lib/og/registry";
+import { eliminaPost } from "@/src/lib/social/elimina";
 import { ErroreTool } from "@/src/lib/social/errore";
 import { mediaInput, risolviMedia } from "@/src/lib/social/forme";
 import { renderizzaPost } from "@/src/lib/social/render";
@@ -93,6 +94,7 @@ const INPUT = {
       .describe("Se presente SOSTITUISCE tutte le slide (stesse tre forme di queue_post)"),
   }),
   archive_post: z.strictObject({ id: z.string().uuid() }),
+  delete_post: z.strictObject({ id: z.string().uuid() }),
   list_media: z.strictObject({
     tag: z.string().optional().describe("Solo asset con questo tag"),
     from: z.iso.datetime({ offset: true }).optional().describe("taken_at da qui in poi"),
@@ -135,7 +137,9 @@ export const DESCRIZIONI: Record<keyof typeof INPUT, string> = {
   get_post: "Dettaglio completo di un post: stato, caption, slide, anteprime.",
   update_post:
     "Modifica caption, hashtag, note, programmazione proposta o slide di un post ANCORA in stato draft. Dopo l'approvazione non si tocca più.",
-  archive_post: "Sposta un post in archived (lo toglie dalla coda).",
+  archive_post: "Sposta un post in archived (lo toglie dalla coda, recuperabile).",
+  delete_post:
+    "Elimina DEFINITIVAMENTE un post in bozza o archiviato, immagini generate comprese (le foto della libreria restano). Irreversibile: se basta toglierlo dalla coda usa archive_post. Pubblicati, approvati e falliti non si eliminano da qui.",
   list_media:
     "Le foto della libreria (materiale nostro: palazzetto, squadra, tifosi), dalla più recente. caption e tags sono ciò su cui basarti per scegliere la foto giusta: sono scritti apposta. Usa l'id in queue_post come assetId, da solo o con un template di composizione.",
   create_upload_url:
@@ -398,6 +402,16 @@ const TOOL: Record<
       .set({ status: "archived", updatedAt: new Date() }) // letterale, mai da input
       .where(eq(socialPosts.id, post.id));
     return { post: esponiPost({ ...post, status: "archived" }, ctx.base) };
+  },
+
+  // L'unico gesto distruttivo del layer: ammesso solo su bozze e archiviati
+  // (il controllo vive in eliminaPost, condiviso con la server action admin).
+  async delete_post(input: z.output<(typeof INPUT)["delete_post"]>) {
+    await eliminaPost(input.id);
+    return {
+      eliminato: input.id,
+      nota: "Post e immagini generate eliminati definitivamente. Le foto della libreria non sono state toccate.",
+    };
   },
 
   async list_media(input: z.output<(typeof INPUT)["list_media"]>) {

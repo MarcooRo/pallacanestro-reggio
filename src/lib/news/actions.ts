@@ -15,6 +15,7 @@ import { richiediAdmin } from "@/src/lib/identita/admin";
 import { dataDaRoma } from "@/src/lib/date";
 import {
   archiviaArticolo,
+  eliminaArticolo,
   ErroreArticolo,
   getArticolo,
 } from "@/src/lib/news/redazione";
@@ -133,4 +134,20 @@ export async function archiviaArticoloAction(formData: FormData) {
   const id = uuid.parse(formData.get("id"));
   await archiviaArticolo(id);
   esito(id, "Archiviato: fuori dal sito");
+}
+
+// Cancellazione definitiva (solo bozze e archiviati: il controllo vive in
+// eliminaArticolo). Il redirect va alla lista: la pagina non c'è più.
+export async function eliminaArticoloAction(formData: FormData) {
+  await richiediAdmin();
+  const id = uuid.parse(formData.get("id"));
+  try {
+    await eliminaArticolo(id);
+  } catch (err) {
+    esito(id, err instanceof Error ? err.message : String(err));
+  }
+  revalidatePath("/admin/news");
+  redirect(
+    `/admin/news?esito=${encodeURIComponent("Articolo eliminato definitivamente")}`,
+  );
 }

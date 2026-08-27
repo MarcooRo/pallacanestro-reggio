@@ -21,9 +21,14 @@ import {
 
 export const metadata: Metadata = { title: "Admin · Social" };
 
-export default async function AdminSocialPage() {
+export default async function AdminSocialPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ esito?: string }>;
+}) {
   await richiediAdmin();
 
+  const { esito } = await searchParams;
   const righe = await getPostsSocial();
   const perStato = new Map<string, RigaPostSocial[]>();
   for (const riga of righe) {
@@ -44,6 +49,12 @@ export default async function AdminSocialPage() {
         I post preparati dall&apos;AI arrivano qui come bozze: si approvano da
         questa pagina, mai da fuori.
       </p>
+
+      {esito && (
+        <p className="rounded-md bg-brand-tint px-3 py-2 text-sm font-semibold text-brand">
+          {esito}
+        </p>
+      )}
       <Link
         href="/admin/social/template"
         className="self-start text-sm font-semibold text-brand-vivid hover:text-brand"

@@ -16,6 +16,7 @@ import {
   approvaPost,
   archiviaPost,
   duplicaPost,
+  eliminaPostAction,
   modificaPost,
   rigeneraImmagini,
 } from "@/src/lib/social/actions";
@@ -259,6 +260,17 @@ export default async function DettaglioPostPage({
                 className="btn-admin btn-admin-bordo"
               >
                 Archivia
+              </button>
+            </form>
+          )}
+          {(post.status === "draft" || post.status === "archived") && (
+            <form action={eliminaPostAction}>
+              <input type="hidden" name="postId" value={post.id} />
+              <button
+                type="submit"
+                className="btn-admin btn-admin-bordo"
+              >
+                Elimina definitivamente
               </button>
             </form>
           )}

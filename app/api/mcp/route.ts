@@ -16,6 +16,7 @@ import {
   esisteToolNews,
   nomiToolNews,
 } from "@/src/lib/news/mcp";
+import { urlSito } from "@/src/lib/sito";
 import { bearerMcpValido } from "@/src/lib/social/bearer";
 import { elencoToolMcp, eseguiToolMcp, nomiToolMcp } from "@/src/lib/social/mcp";
 
@@ -65,7 +66,10 @@ export async function POST(request: NextRequest) {
     return new NextResponse(null, { status: 202 });
   }
 
-  const base = new URL(request.url).origin;
+  // L'indirizzo canonico, non l'origin della richiesta: dietro Caddy la
+  // richiesta arriva da 127.0.0.1:3002 e gli adminUrl uscivano con
+  // "localhost" — link inutilizzabili per chi legge le risposte dei tool.
+  const base = urlSito();
 
   switch (msg.method) {
     case "initialize": {

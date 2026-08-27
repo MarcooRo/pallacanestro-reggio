@@ -25,6 +25,14 @@ import {
   getArticolo,
   type Articolo,
 } from "@/src/lib/news/redazione";
+import {
+  getGiocatore,
+  getRosterStagione,
+  getStagioniRoster,
+  statisticheStagionaliDaDb,
+} from "@/src/lib/giocatori/queries";
+import { ordinaPerRuolo } from "@/src/lib/giocatori/ruoli";
+import { fotoUrl } from "@/src/lib/immagini";
 import { getPartiteClubCasa, matchIdsConTabellino } from "@/src/lib/partite/queries";
 import { ErroreTool } from "@/src/lib/social/errore";
 
@@ -90,6 +98,18 @@ const INPUT = {
       .optional()
       .describe("true = solo le gare che hanno già le statistiche a database"),
   }),
+  list_players: z.strictObject({
+    seasonYear: z
+      .number()
+      .int()
+      .min(2000)
+      .max(2100)
+      .optional()
+      .describe("Anno di inizio stagione (2026 = 2026/27). Senza indicazione: l'ultima con un roster"),
+  }),
+  get_player: z.strictObject({
+    id: z.string().uuid().describe("L'id del giocatore, da list_players"),
+  }),
 } satisfies Record<string, z.ZodType>;
 
 export const DESCRIZIONI_NEWS: Record<keyof typeof INPUT, string> = {
@@ -105,6 +125,10 @@ export const DESCRIZIONI_NEWS: Record<keyof typeof INPUT, string> = {
     "I widget grafici che puoi mettere dentro un articolo, con schema JSON dei parametri ed esempio valido. Vanno nel corpo come blocchi {t:'grafico', tipo, params}. Chiamalo prima di usarne uno: i nomi non si indovinano.",
   list_matches:
     "Le partite del club, dalla più recente: id, squadre, punteggio, stato e se hanno già il tabellino. Serve per prendere il matchId dei widget che leggono i dati veri di una gara.",
+  list_players:
+    "Il roster del club per una stagione, in ordine di ruolo: id, nome, numero, ruolo, nazionalità, foto e chi ha lasciato la squadra a stagione in corso. L'id serve a get_player.",
+  get_player:
+    "La scheda completa di un giocatore: anagrafica (età, altezza, peso, nascita, nazionalità), foto, carriera nel club stagione per stagione, e le statistiche dell'ultima stagione dai nostri tabellini — totali, medie e massimi per competizione. È la fonte per post e articoli sui singoli: numeri veri, non ricordati.",
 };
 
 // ---------- esposizione ----------
@@ -231,6 +255,70 @@ const TOOL: Record<
     return {
       partite: righe,
       nota: "matchId è quello che serve al widget tabellino. Senza haTabellino non c'è ancora nulla da mostrare.",
+    };
+  },
+
+  async list_players(input: z.output<(typeof INPUT)["list_players"]>, ctx: Contesto) {
+    const stagioni = await getStagioniRoster();
+    if (stagioni.length === 0) {
+      throw new ErroreTool("Nessun roster a database: il sync anagrafiche non è ancora passato.");
+    }
+    const seasonYear = input.seasonYear ?? stagioni[0];
+    if (!stagioni.includes(seasonYear)) {
+      throw new ErroreTool(
+        `Nessun roster per la stagione ${seasonYear}. Stagioni disponibili: ${stagioni.join(", ")}.`,
+      );
+    }
+    const roster = ordinaPerRuolo(await getRosterStagione(seasonYear));
+    return {
+      seasonYear,
+      stagioniDisponibili: stagioni,
+      giocatori: roster.map((g) => ({
+        id: g.id,
+        nome: `${g.firstName} ${g.lastName}`,
+        numero: g.jerseyNumber,
+        ruolo: g.role,
+        nazionalita: g.nationality,
+        fotoUrl: fotoUrl(g.photoKey, "large"),
+        dal: g.startDate,
+        // Valorizzato = ha lasciato la squadra a stagione in corso
+        al: g.endDate,
+        urlPagina: `${ctx.base}/giocatori/${g.id}`,
+      })),
+      nota: "\"al\" valorizzato = il giocatore ha lasciato la squadra durante la stagione. L'id si passa a get_player per la scheda completa con le statistiche.",
+    };
+  },
+
+  async get_player(input: z.output<(typeof INPUT)["get_player"]>, ctx: Contesto) {
+    const g = await getGiocatore(input.id);
+    if (!g) {
+      throw new ErroreTool(
+        `Il giocatore ${input.id} non esiste. Usa list_players per gli id del roster.`,
+      );
+    }
+    const statistiche = await statisticheStagionaliDaDb(g.id);
+    return {
+      giocatore: {
+        id: g.id,
+        nome: g.firstName,
+        cognome: g.lastName,
+        etaAnni: g.etaAnni,
+        dataNascita: g.birthDate,
+        luogoNascita: g.birthPlace,
+        nazionalita: g.nationality,
+        altezzaCm: g.heightCm,
+        pesoKg: g.weightKg,
+        fotoUrl: fotoUrl(g.photoKey, "large"),
+        urlPagina: `${ctx.base}/giocatori/${g.id}`,
+      },
+      // Tutte le permanenze nel club, dalla più recente: stagione, squadra,
+      // numero di maglia, ruolo, date di inizio e fine.
+      permanenze: g.permanenze,
+      statisticheUltimaStagione: statistiche,
+      nota:
+        statistiche.length > 0
+          ? "Statistiche dai nostri tabellini, ultima stagione disponibile, una riga per competizione: totali, medie (puntiMedia, minutiMedia, ratingMedia, assistMedia) e massimi (puntiMax, ratingMax). Usa questi numeri, non quelli ricordati."
+          : "Nessun tabellino a database per questo giocatore: niente statistiche da citare, evita di inventarle.",
     };
   },
 };

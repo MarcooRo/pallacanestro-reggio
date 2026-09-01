@@ -37,15 +37,28 @@ async function statoCorrente(postId: string): Promise<string | null> {
 
 // Approva, con data programmata facoltativa (datetime-local, ora italiana).
 // Prima di approvare renderizza i media mancanti: un post approvato deve
-// essere pubblicabile così com'è.
+// essere pubblicabile così com'è. Vale per story e Facebook: il feed
+// Instagram non passa dal cron (l'API Meta non ha le bozze) e si chiude
+// con segnaPubblicatoInstagram dopo la pubblicazione manuale.
 export async function approvaPost(formData: FormData) {
   await richiediAdmin();
   const postId = uuid.parse(formData.get("postId"));
   const quando = formData.get("scheduledAt");
 
-  const stato = await statoCorrente(postId);
-  if (stato !== "draft") {
-    esito(postId, `Solo una bozza si può approvare (stato attuale: ${stato})`);
+  const [post] = await db
+    .select({ status: socialPosts.status, platform: socialPosts.platform })
+    .from(socialPosts)
+    .where(eq(socialPosts.id, postId))
+    .limit(1);
+  if (!post) esito(postId, "Il post non esiste più");
+  if (post.platform === "instagram_feed") {
+    esito(
+      postId,
+      "I feed Instagram si pubblicano a mano dall'app: usa il pannello «Pubblicazione manuale»",
+    );
+  }
+  if (post.status !== "draft") {
+    esito(postId, `Solo una bozza si può approvare (stato attuale: ${post.status})`);
   }
 
   const media = await db
@@ -71,6 +84,42 @@ export async function approvaPost(formData: FormData) {
       ? "Approvato e programmato"
       : "Approvato: si pubblica alla prossima corsa del cron",
   );
+}
+
+// Il feed Instagram si pubblica a mano dall'app (l'API Meta non espone le
+// bozze e un post pubblicato non si corregge più): l'admin scarica le
+// immagini, copia la caption, pubblica da Instagram e poi segna qui
+// l'avvenuta pubblicazione. Niente externalId né permalink: il post non è
+// passato dalla Graph API. Accetta anche 'approved' per i feed approvati
+// prima di questo cambio, che il cron ormai ignora.
+export async function segnaPubblicatoInstagram(formData: FormData) {
+  await richiediAdmin();
+  const postId = uuid.parse(formData.get("postId"));
+
+  const [post] = await db
+    .select({ status: socialPosts.status, platform: socialPosts.platform })
+    .from(socialPosts)
+    .where(eq(socialPosts.id, postId))
+    .limit(1);
+  if (!post) esito(postId, "Il post non esiste più");
+  if (post.platform !== "instagram_feed") {
+    esito(postId, "Solo un feed Instagram si segna come pubblicato a mano");
+  }
+  if (post.status !== "draft" && post.status !== "approved") {
+    esito(postId, `Questo post non è in attesa di pubblicazione (stato attuale: ${post.status})`);
+  }
+
+  await db
+    .update(socialPosts)
+    .set({
+      status: "published",
+      publishedAt: new Date(),
+      error: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(socialPosts.id, postId));
+
+  esito(postId, "Segnato come pubblicato su Instagram");
 }
 
 export async function modificaPost(formData: FormData) {

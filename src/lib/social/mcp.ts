@@ -132,7 +132,7 @@ export const DESCRIZIONI: Record<keyof typeof INPUT, string> = {
   preview_media:
     "URL firmato dell'anteprima di un'immagine (template + params) senza creare nulla in database.",
   queue_post:
-    "Crea un post in stato draft con le sue immagini e le renderizza. Il post NON viene pubblicato: lo approva l'admin dalla pagina /admin/social. Piattaforme: instagram_feed, instagram_story (una sola immagine, meglio se formato story 1080×1920) e facebook. Per uscire su più piattaforme crea un post per ciascuna, differenziando la caption.",
+    "Crea un post in stato draft con le sue immagini e le renderizza. Il post NON viene pubblicato: passa dall'admin su /admin/social (story e facebook li approva e li pubblica il cron; instagram_feed lo pubblica a mano dall'app Instagram, l'API Meta non ha le bozze). Piattaforme: instagram_feed, instagram_story (una sola immagine, meglio se formato story 1080×1920) e facebook. Per uscire su più piattaforme crea un post per ciascuna, differenziando la caption.",
   list_posts: "Elenca i post in coda, filtrabili per stato e piattaforma.",
   get_post: "Dettaglio completo di un post: stato, caption, slide, anteprime.",
   update_post:

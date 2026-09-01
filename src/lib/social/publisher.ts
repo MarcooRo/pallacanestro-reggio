@@ -3,12 +3,17 @@
 // idempotente e reggere due corse sovrapposte — per questo il post si
 // "prende" con un UPDATE condizionato sullo stato, mai con un select.
 //
+// I feed Instagram NON passano da qui: l'API Meta non ha le bozze e un
+// post pubblicato non si corregge più, quindi si pubblicano a mano
+// dall'app Instagram (pannello "Pubblicazione manuale" nell'admin).
+// Il cron gestisce solo story e Facebook.
+//
 // Ritentativi: un errore riporta il post in approved (ci riprova la corsa
 // dopo) finché i tentativi non arrivano a MAX_TENTATIVI; da lì è failed e
 // se ne occupa l'admin. Un post Instagram con META_IG_USER_ID mancante non
 // è un errore: resta in coda ad aspettare che il collegamento arrivi.
 
-import { and, asc, eq, isNull, lte, or, sql } from "drizzle-orm";
+import { and, asc, eq, isNull, lte, ne, or, sql } from "drizzle-orm";
 
 import { db } from "@/src/db";
 import { socialMediaItems, socialPosts } from "@/src/db/schema";
@@ -51,6 +56,7 @@ export async function pubblicaCoda(limite = 5): Promise<EsitoCoda> {
     .where(
       and(
         eq(socialPosts.status, "approved"),
+        ne(socialPosts.platform, "instagram_feed"),
         or(isNull(socialPosts.scheduledAt), lte(socialPosts.scheduledAt, new Date())),
       ),
     )

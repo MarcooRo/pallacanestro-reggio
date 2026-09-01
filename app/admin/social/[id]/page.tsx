@@ -9,6 +9,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { branding } from "@/src/branding";
+import { CopiaCaption } from "@/src/components/copia-caption";
 import { FormSostituisciSlide } from "@/src/components/form-sostituisci-slide";
 import { richiediAdmin } from "@/src/lib/identita/admin";
 import { dataOra } from "@/src/lib/date";
@@ -19,6 +20,7 @@ import {
   eliminaPostAction,
   modificaPost,
   rigeneraImmagini,
+  segnaPubblicatoInstagram,
 } from "@/src/lib/social/actions";
 import { NOME_PIATTAFORMA } from "@/src/lib/social/etichette";
 import { getPostSocial, urlAnteprima } from "@/src/lib/social/queries";
@@ -49,6 +51,14 @@ export default async function DettaglioPostPage({
   const { post, media } = dettaglio;
 
   const bozza = post.status === "draft";
+  // Il feed Instagram non passa dal cron: l'API Meta non ha le bozze, quindi
+  // si pubblica a mano dall'app e qui si segna solo l'avvenuta pubblicazione.
+  const feedInstagram = post.platform === "instagram_feed";
+  const daPubblicareAMano =
+    feedInstagram && (post.status === "draft" || post.status === "approved");
+  const testoPubblicazione = [post.caption.trim(), post.hashtags.join(" ")]
+    .filter(Boolean)
+    .join("\n\n");
 
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-5 px-4 py-8 lg:max-w-2xl">
@@ -147,7 +157,48 @@ export default async function DettaglioPostPage({
       <section className="flex flex-col gap-3">
         <h2 className="text-sm font-black uppercase tracking-wide">Azioni</h2>
 
-        {bozza && (
+        {daPubblicareAMano && (
+          <div className="flex flex-col gap-2 rounded-md border border-border-strong p-3">
+            <p className="text-sm font-semibold">Pubblicazione manuale</p>
+            <p className="text-xs text-muted">
+              Instagram non permette di creare bozze via API: scarica le
+              immagini, copia la caption e pubblica dall&apos;app Instagram
+              (lì puoi salvare in bozza e ritoccare). Poi torna qui e segna il
+              post come pubblicato.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {media.map(
+                (m) =>
+                  m.renderedUrl && (
+                    <a
+                      key={m.id}
+                      href={m.renderedUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn-admin btn-admin-bordo"
+                    >
+                      Scarica slide {m.position + 1}
+                    </a>
+                  ),
+              )}
+              <CopiaCaption testo={testoPubblicazione} />
+            </div>
+            {media.some((m) => !m.renderedUrl) && (
+              <p className="text-xs text-muted">
+                Alcune slide non sono ancora renderizzate: usa «Rigenera
+                immagini» prima di scaricare.
+              </p>
+            )}
+            <form action={segnaPubblicatoInstagram}>
+              <input type="hidden" name="postId" value={post.id} />
+              <button type="submit" className="btn-admin btn-admin-pieno">
+                Segna come pubblicato
+              </button>
+            </form>
+          </div>
+        )}
+
+        {bozza && !feedInstagram && (
           <form
             action={approvaPost}
             className="flex flex-wrap items-center gap-2 rounded-md border border-border-strong p-3"
